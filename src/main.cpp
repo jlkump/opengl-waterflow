@@ -3,18 +3,164 @@
 * Made by Landon Kump
 * 
 * Resources and Refrences listed in README.md
+* Main code for boilerplate OpenGL CMake and window setup comes from
+* Tomasz Ga³aj's OpenGLSampleCMake, found here: 
+* https://shot511.github.io/2018-05-29-how-to-setup-opengl-project-with-cmake/
+* 
+* Github link: https://github.com/jlkump/opengl-waterflow
 */
 
-#include <stdlib.h>
-#include <iostream>
+// Graphics Imports
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <stb_image.h>
 
+// Std Library Imports
+#include <iostream>
+#include <stdlib.h>
+#include <vector>
+
+// Project Imports
+#include <RootDir.h>
 #include "FluidCube.hpp"
 
+GLFWwindow* window;
+const int kWindowWidth = 1024;
+const int kWindowHeight = 768;
+
+bool Init() 
+{
+    /* Initialize the library */
+    if (!glfwInit())
+        return false;
+
+    /* Create a windowed mode window and its OpenGL context */
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    window = glfwCreateWindow(kWindowWidth, kWindowHeight, "Water Flow Simulation", nullptr, nullptr);
+
+    if (!window)
+    {
+        glfwTerminate();
+        return false;
+    }
+
+    /* Make the window's context current */
+    glfwMakeContextCurrent(window);
+
+    /* Initialize glad */
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
+        glfwTerminate();
+        return false;
+    }
+
+    /* Set the viewport */
+    glClearColor(0.6784f, 0.8f, 1.0f, 1.0f);
+    glViewport(0, 0, kWindowWidth, kWindowHeight);
+
+    glEnable(GL_DEPTH_TEST);
+
+    return true;
+}
+
+void UpdateLoop() 
+{
+    float start_time = static_cast<float>(glfwGetTime());
+    float new_time = 0.0f;
+    float game_time = 0.0f; // Time the sim has been running
+    const std::vector<glm::vec3> kQuadVerts = { glm::vec3(-1, -1, 0), glm::vec3(1, -1, 0), glm::vec3(-1, 1, 0), glm::vec3(1, 1, 0) };
+    const std::vector<glm::vec2> kQuadUVs = { glm::vec2(0, 0), glm::vec2(1, 0), glm::vec2(0, 1), glm::vec2(1, 1)};
+    const std::vector<int> kQuadIndices = { 0, 1, 2, 1, 3, 2 };
+
+    GLuint shader_id = glShader
+
+    GLuint vert_buffer;
+    glGenBuffers(1, &vert_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, vert_buffer);
+    glBufferData(GL_ARRAY_BUFFER, kQuadVerts.size() * sizeof(glm::vec3), &kQuadVerts[0], GL_STATIC_DRAW);
+
+    GLuint uv_buffer;
+    glGenBuffers(1, &uv_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, uv_buffer);
+    glBufferData(GL_ARRAY_BUFFER, kQuadUVs.size() * sizeof(glm::vec2), &kQuadUVs[0], GL_STATIC_DRAW);
+
+    std::string file_path = "resources/textures/InkSplatter.png";
+
+    int width, height, components;
+    unsigned char* pixels = stbi_load((ROOT_DIR + file_path).c_str(), &width, &height, &components, 3);
+
+    GLuint texture_obj_id;
+    glGenTextures(1, &texture_obj_id);
+    glBindTexture(GL_TEXTURE_2D, texture_obj_id);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+    // GLuint texture_obj_uniform_id;
+    // GLuint RenderedTextureID = glGetUniformLocation(postProcessProgramId, "rederedTexture");
+
+
+    /* Loop until the user closes the window */
+    while (!glfwWindowShouldClose(window))
+    {
+        /* Update game time value */
+        new_time = static_cast<float>(glfwGetTime());
+        game_time = new_time - start_time;
+
+        /* Render here */
+        // glBindFramebuffer(GL_FRAMEBUFFER, texture_obj_id);
+
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, quad_vertexbuffer);
+        glVertexAttribPointer(
+            0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
+            3,                  // size
+            GL_FLOAT,           // type
+            GL_FALSE,           // normalized?
+            0,                  // stride
+            (void*)0            // array buffer offset
+        );
+
+        glEnableVertexAttribArray(1);
+        glBindBuffer(GL_ARRAY_BUFFER, quad_uvbuffer);
+        glVertexAttribPointer(
+            1,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
+            2,                  // size
+            GL_FLOAT,				// type
+            GL_FALSE,           // normalized?
+            0,                  // stride
+            (void*)0            // array buffer offset
+        );
+        // TODO: Rendering stuff :P
+        // render(gameTime);
+
+        /* Swap front and back buffers */
+        glfwSwapBuffers(window);
+
+        /* Poll for and process events */
+        glfwPollEvents();
+    }
+}
 
 int main() 
 {
-	std::cout << "Cmake hello world";
-	std::cin.get();
+    if (!Init()) 
+    {
+        fprintf(stderr, "Failure in initializing the window.");
+        return -1;
+    }
+
+    UpdateLoop();
+    glfwTerminate();
 
 	return 0;
 }

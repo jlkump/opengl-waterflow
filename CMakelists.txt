@@ -12,6 +12,7 @@ file(GLOB_RECURSE HEADER_FILES
 	"${CMAKE_SOURCE_DIR}/src/*.h"
 	"${CMAKE_SOURCE_DIR}/src/*.hpp")
 
+configure_file(src/RootDir.h.in src/RootDir.h)
 include_directories(${CMAKE_BINARY_DIR}/src)
 
 # For linking libraries, used the tutorial from https://shot511.github.io/2018-05-29-how-to-setup-opengl-project-with-cmake/
