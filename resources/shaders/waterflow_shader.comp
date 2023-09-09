@@ -1,0 +1,27 @@
+#version 430
+
+// Built-in input variables
+//	in uvec3 gl_NumWorkGroups;  This variable contains the number of work groups passed to the dispatch function.
+// 
+//	in uvec3 gl_WorkGroupID;    This is the current work group for this shader invocation. 
+//								Each of the XYZ components will be on the half-open range [0, gl_NumWorkGroups.XYZ).
+// 
+//	in uvec3 gl_LocalInvocationID;		This is the current invocation of the shader within the work group. 
+//										Each of the XYZ components will be on the half-open range [0, gl_WorkGroupSize.XYZ).
+//
+//	in uvec3 gl_GlobalInvocationID;		This value uniquely identifies this particular invocation of the compute 
+//										shader among all invocations of this compute dispatch call. 
+//										It's a short-hand for the math computation: 
+//										"gl_WorkGroupID * gl_WorkGroupSize + gl_LocalInvocationID;"
+//
+//	in uint  gl_LocalInvocationIndex;	This is a 1D version of gl_LocalInvocationID. 
+//										It identifies this invocation's index within the work group. 
+//										It is short-hand for this math computation:
+//										gl_LocalInvocationIndex =
+//                                      gl_LocalInvocationID.z * gl_WorkGroupSize.x * gl_WorkGroupSize.y +
+//                                      gl_LocalInvocationID.y * gl_WorkGroupSize.x + 
+//										gl_LocalInvocationID.x;
+
+// The size of the local group. Idk how big this needs to be yet, so just make it the smallest for now.
+layout(local_size_x=1, local_size_y=1, local_size_z=1) in; 
+layout (binding = 0, rgba32f) uniform image2D water_tex;
