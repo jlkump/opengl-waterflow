@@ -187,7 +187,7 @@ bool Shader::SetUniformTexture(const std::string& uniform_name, Texture& texture
     bool success = GetUniformLocation(uniform_name);
     if (success) 
     {
-        texture.ActiveBind();
+        texture.ActiveBind(texture_unit);
         glUniform1i(uniform_ids_[uniform_name], texture_unit);
     }
 }

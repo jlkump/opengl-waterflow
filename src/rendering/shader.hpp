@@ -85,7 +85,8 @@ public:
 
 	/*
 	* Calls glUseProgram to set this shader as the active shader
-	* being used for future bindings.
+	* being used for future bindings. Typically called in the
+	* render loop.
 	* 
 	* @return
 	* Returns false when the shader has not been linked. True
@@ -117,4 +118,5 @@ public:
 	*/
 	bool SetUniformTexture(const std::string& uniform_name, Texture& texture, GLint texture_unit);
 
+	// Other assorted SetUniforms to be added here as needed
 };

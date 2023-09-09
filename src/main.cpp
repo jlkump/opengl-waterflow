@@ -25,6 +25,8 @@
 // Project Imports
 #include <RootDir.h>
 #include "FluidCube.hpp"
+#include "rendering/shader.hpp"
+#include "rendering/texture.hpp"
 
 GLFWwindow* window;
 const int kWindowWidth = 1024;
@@ -78,7 +80,10 @@ void UpdateLoop()
     const std::vector<glm::vec2> kQuadUVs = { glm::vec2(0, 0), glm::vec2(1, 0), glm::vec2(0, 1), glm::vec2(1, 1)};
     const std::vector<int> kQuadIndices = { 0, 1, 2, 1, 3, 2 };
 
-    GLuint shader_id = glShader
+    Shader quad_shader("flat_quad_shader.vert", "flat_quad_shader.frag");
+    Texture ink_splatter_tex("InkSplatter.png");
+    GLuint ink_texture_unit = GL_TEXTURE0;
+    quad_shader.SetUniformTexture("tex", ink_splatter_tex, ink_texture_unit);
 
     GLuint vert_buffer;
     glGenBuffers(1, &vert_buffer);
@@ -90,24 +95,10 @@ void UpdateLoop()
     glBindBuffer(GL_ARRAY_BUFFER, uv_buffer);
     glBufferData(GL_ARRAY_BUFFER, kQuadUVs.size() * sizeof(glm::vec2), &kQuadUVs[0], GL_STATIC_DRAW);
 
-    std::string file_path = "resources/textures/InkSplatter.png";
-
-    int width, height, components;
-    unsigned char* pixels = stbi_load((ROOT_DIR + file_path).c_str(), &width, &height, &components, 3);
-
-    GLuint texture_obj_id;
-    glGenTextures(1, &texture_obj_id);
-    glBindTexture(GL_TEXTURE_2D, texture_obj_id);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, pixels);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-    // GLuint texture_obj_uniform_id;
-    // GLuint RenderedTextureID = glGetUniformLocation(postProcessProgramId, "rederedTexture");
-
+    GLuint index_buffer;
+    glGenBuffers(1, &index_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, index_buffer);
+    glBufferData(GL_ARRAY_BUFFER, kQuadIndices.size() * sizeof(unsigned short), &kQuadIndices[0], GL_STATIC_DRAW);
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
@@ -118,9 +109,11 @@ void UpdateLoop()
 
         /* Render here */
         // glBindFramebuffer(GL_FRAMEBUFFER, texture_obj_id);
+        quad_shader.SetActive();
+        ink_splatter_tex.ActiveBind();
 
         glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, quad_vertexbuffer);
+        glBindBuffer(GL_ARRAY_BUFFER, vert_buffer);
         glVertexAttribPointer(
             0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
             3,                  // size
@@ -131,7 +124,7 @@ void UpdateLoop()
         );
 
         glEnableVertexAttribArray(1);
-        glBindBuffer(GL_ARRAY_BUFFER, quad_uvbuffer);
+        glBindBuffer(GL_ARRAY_BUFFER, uv_buffer);
         glVertexAttribPointer(
             1,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
             2,                  // size
@@ -140,6 +133,17 @@ void UpdateLoop()
             0,                  // stride
             (void*)0            // array buffer offset
         );
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
+        // Draw the triangles !
+        glDrawElements(
+            GL_TRIANGLES,      // mode
+            kQuadIndices.size(),    // count
+            GL_UNSIGNED_SHORT, // type
+            (void*)0           // element array buffer offset
+        );
+
+        
         // TODO: Rendering stuff :P
         // render(gameTime);
 
