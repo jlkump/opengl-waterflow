@@ -176,6 +176,14 @@ Shader::Shader(const std::string& vertex_shader_file_name, const std::string& fr
     LinkProgram();
 }
 
+Shader::~Shader()
+{
+    if (program_id_ != 0)
+    {
+        glDeleteProgram(program_id_);
+    }
+}
+
 bool Shader::SetActive()
 {
     bool valid_program = program_id_ != 0 && is_linked_;
@@ -183,16 +191,24 @@ bool Shader::SetActive()
     {
         glUseProgram(program_id_);
     }
+    else if (is_linked_)
+    {
+        fprintf(stderr, "Invalid program. Error during linking\n");
+    }
+    else
+    {
+        fprintf(stderr, "Invalid program. Problem during creation.\n");
+    }
     return valid_program;
 }
 
-bool Shader::SetUniformTexture(const std::string& uniform_name, Texture& texture, GLint texture_unit)
+bool Shader::SetUniformTexture(const std::string& uniform_name, Texture& texture, GLenum texture_unit)
 {
     bool success = GetUniformLocation(uniform_name);
     if (success) 
     {
         texture.ActiveBind(texture_unit);
-        glUniform1i(uniform_ids_[uniform_name], texture_unit);
+        glUniform1i(uniform_ids_[uniform_name], texture_unit - GL_TEXTURE0);
     }
     return success;
 }

@@ -53,8 +53,8 @@ Texture::Texture(const std::string& filename) : texture_obj_id_(0)
         glGenTextures(1, &texture_obj_id_);
         glBindTexture(GL_TEXTURE_2D, texture_obj_id_);
 
-        glTexStorage2D(GL_TEXTURE_2D, 2 /* mip map levels */, kTextureStorageFormat_[channels - 1], width, height);
-        glTexSubImage2D(GL_TEXTURE_2D, 0 /* mip map level */, 0 /* xoffset */, 0 /* yoffset */, width, height, kTextureChannels_[channels - 1], GL_UNSIGNED_BYTE, pixels);
+        glTexStorage2D(GL_TEXTURE_2D, 2 /* mip map levels */, kTextureStorageFormat_[3], width, height);
+        glTexSubImage2D(GL_TEXTURE_2D, 0 /* mip map level */, 0 /* xoffset */, 0 /* yoffset */, width, height, kTextureChannels_[3], GL_UNSIGNED_BYTE, pixels);
         glGenerateMipmap(GL_TEXTURE_2D); // Replaces mipmap levels from 0 to 2 with generated mip maps
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);

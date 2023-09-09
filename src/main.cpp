@@ -76,13 +76,25 @@ void UpdateLoop()
     float start_time = static_cast<float>(glfwGetTime());
     float new_time = 0.0f;
     float game_time = 0.0f; // Time the sim has been running
-    const std::vector<glm::vec3> kQuadVerts = { glm::vec3(-1, -1, 0), glm::vec3(1, -1, 0), glm::vec3(-1, 1, 0), glm::vec3(1, 1, 0) };
-    const std::vector<glm::vec2> kQuadUVs = { glm::vec2(0, 0), glm::vec2(1, 0), glm::vec2(0, 1), glm::vec2(1, 1)};
-    const std::vector<int> kQuadIndices = { 0, 1, 2, 1, 3, 2 };
+    const std::vector<glm::vec3> kQuadVerts = { glm::vec3(-1.0, -1.0, 0.0), 
+                                                glm::vec3(1.0, -1.0, 0.0), 
+                                                glm::vec3(-1.0, 1.0, 0.0), 
+                                                glm::vec3(1.0, 1.0, 0.0) };
+
+    const std::vector<glm::vec2> kQuadUVs = {   glm::vec2(0, 0), 
+                                                glm::vec2(1, 0), 
+                                                glm::vec2(0, 1), 
+                                                glm::vec2(1, 1)};
+
+    const std::vector<unsigned short> kQuadIndices = { 0, 1, 2, 2, 1, 3 };
 
     Shader quad_shader("flat_quad_shader.vert", "flat_quad_shader.frag");
     Texture ink_splatter_tex("InkSplatter.png");
-    GLuint ink_texture_unit = GL_TEXTURE0;
+    GLenum ink_texture_unit = GL_TEXTURE0;
+
+    GLuint vert_array;
+    glGenVertexArrays(1, &vert_array);
+    glBindVertexArray(vert_array);
 
     GLuint vert_buffer;
     glGenBuffers(1, &vert_buffer);
@@ -108,6 +120,7 @@ void UpdateLoop()
 
         /* Render here */
         // glBindFramebuffer(GL_FRAMEBUFFER, texture_obj_id);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         quad_shader.SetActive();
         quad_shader.SetUniformTexture("tex", ink_splatter_tex, ink_texture_unit);

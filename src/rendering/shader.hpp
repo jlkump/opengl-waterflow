@@ -85,6 +85,8 @@ public:
 	Shader(	const std::string& vertex_shader_file_name,
 			const std::string& fragment_shader_file_name);
 
+	~Shader();
+
 	/*
 	* Calls glUseProgram to set this shader as the active shader
 	* being used for future bindings. Typically called in the
@@ -118,7 +120,7 @@ public:
 	* Returns true if the uniform could be set, false otherwise.
 	* (False usually means the uniform_name is incorrect)
 	*/
-	bool SetUniformTexture(const std::string& uniform_name, Texture& texture, GLint texture_unit);
+	bool SetUniformTexture(const std::string& uniform_name, Texture& texture, GLenum texture_unit);
 
 	// Other assorted SetUniforms to be added here as needed
 };
