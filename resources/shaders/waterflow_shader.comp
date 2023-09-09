@@ -24,4 +24,16 @@
 
 // The size of the local group. Idk how big this needs to be yet, so just make it the smallest for now.
 layout(local_size_x=1, local_size_y=1, local_size_z=1) in; 
-layout (binding = 0, rgba32f) uniform image2D water_tex;
+layout (binding = 0, rgba32f) uniform image2D water_vel_old; // Previous water sim velocity values
+layout (binding = 1, rgba32f) uniform image2D water_vel_new; // Values to be updated
+layout (binding = 2, r32f) uniform image2D water_tex; // The texture to actually display based on values 
+
+void main() 
+{
+	// Since we have a 2D image, coordinate is a vec2
+	// and vec4 is for the data we actually want to store.
+	imageStore(water_vel_new, vec2(0,0), vec4(0,0,0,0));
+
+	// Prevents other threads from getting ahead until everyone reaches this point.
+	barrier();
+}
