@@ -24,9 +24,21 @@
 
 // The size of the local group. Idk how big this needs to be yet, so just make it the smallest for now.
 layout(local_size_x=1, local_size_y=1, local_size_z=1) in; 
-layout (binding = 0, rgba32f) uniform image2D water_vel_old; // Previous water sim velocity values
-layout (binding = 1, rgba32f) uniform image2D water_vel_new; // Values to be updated
-layout (binding = 2, r32f) uniform image2D water_tex; // The texture to actually display based on values 
+
+// Shared read-only variables stored in a Shader Storage Buffer Object
+layout (std430, binding = 0) buffer variables 
+{
+	// Variables in struct-like syntax
+	float time;
+};
+
+// Simulation based textures
+layout (binding = 1, rgba32f) uniform image2D water_vel_old; // Previous water sim velocity values
+layout (binding = 2, rgba32f) uniform image2D water_vel_new; // Values to be updated
+
+// The actual textures we output
+layout (binding = 3, rgba32f) uniform image2D water_normals; // The texture to actually display based on values 
+layout (binding = 4, r32f) uniform image2D water_heightmap; // The texture to actually display based on values 
 
 void main() 
 {
