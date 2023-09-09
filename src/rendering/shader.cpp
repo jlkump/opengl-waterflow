@@ -1,6 +1,10 @@
 #include "shader.hpp"
 #include <RootDir.h>
 
+#include <glm/gtc/type_ptr.hpp>
+#include <fstream>
+#include <string>
+
 ///////////////////////
 ///	Private Methods ///
 ///////////////////////
@@ -17,7 +21,7 @@ bool Shader::GetUniformLocation(const std::string& uniform_name)
         return true;
     }
 
-    GLuint uniform_location = glGetUniformLocation(program_id_, uniform_name);
+    GLuint uniform_location = glGetUniformLocation(program_id_, uniform_name.c_str());
     if (uniform_location != -1)
     {
         uniform_ids_[uniform_name] = uniform_location;
@@ -35,23 +39,23 @@ void Shader::LinkProgram()
     glLinkProgram(program_id_);
 
     GLint status;
-    glGetProgramiv(program_id, GL_LINK_STATUS, &status);
+    glGetProgramiv(program_id_, GL_LINK_STATUS, &status);
 
     // Error checking
     // If is_linked_ is false, calls to SetActive() will do nothing.
-    is_linked_ = !(status == GL_FALSE)
+    is_linked_ = !(status == GL_FALSE);
     if (!is_linked_)
     {
         fprintf(stderr, "Failed to link shader program!\n");
 
         GLint log_len;
-        glGetProgramiv(program_id, GL_INFO_LOG_LENGTH, &log_len);
+        glGetProgramiv(program_id_, GL_INFO_LOG_LENGTH, &log_len);
 
         if (log_len > 0)
         {
             char* log = (char*)malloc(log_len);
             GLsizei written;
-            glGetProgramInfoLog(program_id, log_len, &written, log);
+            glGetProgramInfoLog(program_id_, log_len, &written, log);
 
             fprintf(stderr, "Program log: \n%s", log);
             free(log);
@@ -69,23 +73,23 @@ std::string Shader::LoadFile(const std::string& filename)
     std::string filetext;
     std::string line;
 
-    std::ifstream inFile(ROOT_DIR "resources/shaders/" + filename);
+    std::ifstream in_file(ROOT_DIR "resources/shaders/" + filename);
 
-    if (!inFile)
+    if (!in_file)
     {
         fprintf(stderr, "Could not open file %s\n", filename.c_str());
-        inFile.close();
+        in_file.close();
 
         return "";
     }
     else
     {
-        while (getline(inFile, line))
+        while (getline(in_file, line))
         {
             filetext.append(line + "\n");
         }
 
-        inFile.close();
+        in_file.close();
 
         return filetext;
     }
@@ -103,7 +107,7 @@ Shader::Shader(const std::string& vertex_shader_file_name, const std::string& fr
                                        fragment_shader_file_name };
     program_id_ = glCreateProgram();
 
-    if (program_id == 0)
+    if (program_id_ == 0)
     {
         fprintf(stderr, "Error while creating OpenGL program object.\n");
         printf("Press any key to continue...\n");
@@ -190,4 +194,5 @@ bool Shader::SetUniformTexture(const std::string& uniform_name, Texture& texture
         texture.ActiveBind(texture_unit);
         glUniform1i(uniform_ids_[uniform_name], texture_unit);
     }
+    return success;
 }

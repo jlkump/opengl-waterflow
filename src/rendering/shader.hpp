@@ -6,6 +6,8 @@
 #include <map>
 #include <string>
 
+#include "texture.hpp"
+
 class Shader {
 private:
 	/// <summary>

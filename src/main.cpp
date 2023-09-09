@@ -83,7 +83,6 @@ void UpdateLoop()
     Shader quad_shader("flat_quad_shader.vert", "flat_quad_shader.frag");
     Texture ink_splatter_tex("InkSplatter.png");
     GLuint ink_texture_unit = GL_TEXTURE0;
-    quad_shader.SetUniformTexture("tex", ink_splatter_tex, ink_texture_unit);
 
     GLuint vert_buffer;
     glGenBuffers(1, &vert_buffer);
@@ -109,8 +108,9 @@ void UpdateLoop()
 
         /* Render here */
         // glBindFramebuffer(GL_FRAMEBUFFER, texture_obj_id);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         quad_shader.SetActive();
-        ink_splatter_tex.ActiveBind();
+        quad_shader.SetUniformTexture("tex", ink_splatter_tex, ink_texture_unit);
 
         glEnableVertexAttribArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, vert_buffer);
@@ -142,10 +142,6 @@ void UpdateLoop()
             GL_UNSIGNED_SHORT, // type
             (void*)0           // element array buffer offset
         );
-
-        
-        // TODO: Rendering stuff :P
-        // render(gameTime);
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);

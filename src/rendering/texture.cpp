@@ -64,10 +64,17 @@ Texture::Texture(const std::string& filename) : texture_obj_id_(0)
     }
     else
     {
-        fprintf(stderr, "Texture \"%s\" could not be loaded. Is the texture file in \"resources/textures/\"?\n", filename);
+        fprintf(stderr, "Texture \"%s\" could not be loaded. Is the texture file in \"resources/textures/\"?\n", filename.c_str());
     }
 
     stbi_image_free(pixels);
+}
+
+Texture::~Texture() {
+    if (texture_obj_id_ != 0)
+    {
+        glDeleteTextures(1, &texture_obj_id_);
+    }
 }
 
 void Texture::ActiveBind(GLint texture_unit)
@@ -79,7 +86,7 @@ void Texture::ActiveBind(GLint texture_unit)
     }
 }
 
-void Texture::GetTextureId() 
+GLuint Texture::GetTextureId() 
 {
     return texture_obj_id_;
 }
