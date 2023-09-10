@@ -43,21 +43,12 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
     glfwGetCursorPos(window, &xpos, &ypos);
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) 
     {
-        std::vector<glm::vec4> data(512 * 512);
-        glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, data.data());
+        std::vector<glm::vec4> data(20 * 20, glm::vec4(0.0, 1.0, 1.0, 1.0));
         int pix_x = (xpos / kWindowWidth) * 512;
         int pix_y = 512 - (ypos / kWindowHeight) * 512;
 
-        for (int i = pix_x; i < pix_x + 20; i++) {
-            for (int j = pix_y; j < pix_y + 20; j++) {
-                data[i + j * 512] = glm::vec4(0.0, 1.0, 0.0, 1.0);
-            }
-        }
-
-        printf("Value of x and y in pix coords are %d, %d.\n", pix_x, pix_y);
-
-        diff_old->UpdatePixelData(pix_x, pix_y, 512, 512, 4, &data[0]);
-        diff_new->UpdatePixelData(pix_x, pix_y, 512, 512, 4, &data[0]);
+        diff_old->UpdatePixelData(pix_x, pix_y, 20, 20, &data[0]);
+        diff_new->UpdatePixelData(pix_x, pix_y, 20, 20, &data[0]);
     }
 }
 
@@ -188,11 +179,7 @@ void UpdateLoop()
 
     ComputeShader compute_shader("waterflow_shader.comp", glm::ivec3(512, 512, 1));
     GLuint ssbo = compute_shader.GenerateAndBindSSBO(&c_data, 8, 0);
-    std::vector<float> pix_data(512 * 512 * 4, 0.0);
-    for (int i = 150000; i < 180000; i++) {
-        pix_data[i] = 1.0;
-    }
-    Texture diffusion_old(4, 512, &pix_data[0]);
+    Texture diffusion_old(4, 512);
     Texture diffusion_new(4, 512);
     diff_old = &diffusion_old;
     diff_new = &diffusion_new;

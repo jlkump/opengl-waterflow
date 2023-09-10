@@ -88,5 +88,5 @@ public:
 	*/
 	GLuint GetTextureId();
 
-	void UpdatePixelData(GLint x_offset, GLint y_offset, GLsizei width, GLsizei height, int channels, const void* pixel_data);
+	void UpdatePixelData(GLint x_offset, GLint y_offset, GLsizei width, GLsizei height, const void* pixel_data);
 };

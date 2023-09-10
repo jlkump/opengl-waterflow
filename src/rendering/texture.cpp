@@ -33,8 +33,7 @@ Texture::Texture(int desired_channels, int dimensions, const float* data) : text
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 
-            dimensions, dimensions, 0, GL_RGBA, GL_FLOAT, data);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, dimensions, dimensions, 0, GL_RGBA, GL_FLOAT, data);
 }
 
 Texture::Texture(const std::string& filename) : texture_obj_id_(0)
@@ -100,14 +99,13 @@ GLuint Texture::GetTextureId()
     return texture_obj_id_;
 }
 
-void Texture::UpdatePixelData(GLint x_offset, GLint y_offset, GLsizei width, GLsizei height, int channels, const void* pixel_data)
+void Texture::UpdatePixelData(GLint x_offset, GLint y_offset, GLsizei width, GLsizei height, const void* pixel_data)
 {
-    ActiveBind(GL_TEXTURE1);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F,
-        width, height, 0, GL_RGBA, GL_FLOAT, pixel_data);
-    //glPixelStorei(GL_UNPACK_ROW_LENGTH, 512);
-    //glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    //glTexSubImage2D(GL_TEXTURE_2D, 0, x_offset, y_offset, width, height, GL_RGBA, GL_FLOAT, pixel_data);
-    //glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-    //glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+
+    glBindTexture(GL_TEXTURE_2D, texture_obj_id_);
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, width);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, x_offset, y_offset, width, height, GL_RGBA, GL_FLOAT, pixel_data);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 }
