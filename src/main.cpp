@@ -167,7 +167,7 @@ void UpdateLoop()
         compute_shader.SetActive();
         flow_texture.ActiveBind(GL_TEXTURE0);
         compute_shader.Dispatch();
-        compute_shader.Barrier()
+        compute_shader.Barrier();
 
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
