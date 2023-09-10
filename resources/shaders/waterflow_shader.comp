@@ -76,8 +76,13 @@ void main()
 						imageLoad(diffusion_old, ivec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y + 1)).rgb,
 						imageLoad(diffusion_old, ivec2(gl_GlobalInvocationID.x - 1, gl_GlobalInvocationID.y)).rgb,
 						imageLoad(diffusion_old, ivec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y - 1)).rgb };
-	float k = deltaTime; // The amount of change done 
-	d.xyz = d0.xyz + (k * (d_old[0].xyz + d_old[1].xyz + d_old[2].xyz + d_old[3].xyz)) / (k + 1);
+	float k = deltaTime * 10; // The amount of change done 
+	vec3 d_new[4] = { vec3(0, 0, 0), vec3(0, 0, 0), vec3(0, 0, 0), vec3(0, 0, 0) };
+	d_new[0] = (d_old[0] + k * ((d_new[1] + d_new[2] + d_new[3]) / 4)) / (1 + k);
+	d_new[1] = (d_old[1] + k * ((d_new[0] + d_new[2] + d_new[3]) / 4)) / (1 + k);
+	d_new[2] = (d_old[2] + k * ((d_new[1] + d_new[0] + d_new[3]) / 4)) / (1 + k);
+	d_new[3] = (d_old[3] + k * ((d_new[1] + d_new[2] + d_new[0]) / 4)) / (1 + k);
+	d = (d0 + k * ((d_new[0].xyz + d_new[1].xyz + d_new[2].xyz + d_new[3].xyz) / 4)) / (1 + k);
 
 
 
