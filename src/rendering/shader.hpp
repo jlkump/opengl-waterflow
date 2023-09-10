@@ -9,7 +9,7 @@
 #include "texture.hpp"
 
 class Shader {
-private:
+protected:
 	/// <summary>
 	/// A map between the name of a uniform in the programs and the associated
 	/// OpenGL index.
@@ -65,6 +65,12 @@ private:
 	*/
 	std::string LoadFile(const std::string& filename);
 
+	/*
+	* A do-nothing constructor for children classes to use and
+	* override the constructor
+	*/
+	Shader() : is_linked_(false), program_id_(0) {};
+
 public:
 	/*
 	* A helper for the boilerplate of creating
@@ -83,7 +89,7 @@ public:
 	* The name of the fragment shader to be loaded in.
 	*/
 	Shader(	const std::string& vertex_shader_file_name,
-			const std::string& fragment_shader_file_name);
+			const std::string& fragment_shader_file_name );
 
 	~Shader();
 

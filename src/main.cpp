@@ -27,6 +27,7 @@
 #include "FluidCube.hpp"
 #include "rendering/shader.hpp"
 #include "rendering/texture.hpp"
+#include "rendering/compute_shader.hpp"
 
 GLFWwindow* window;
 const int kWindowWidth = 1024;
@@ -147,8 +148,8 @@ void UpdateLoop()
 
 
     Shader quad_shader("flat_quad_shader.vert", "flat_quad_shader.frag");
-    Texture ink_splatter_tex("InkSplatter.png");
-    GLenum ink_texture_unit = GL_TEXTURE0;
+    ComputeShader compute_shader("waterflow_shader.comp", glm::vec3());
+    Texture flow_texture(3, 512); // This texture will have flow represented by simple colors and diffusion.
 
     GLuint vert_array, vert_buffer, uv_buffer, index_buffer;
     QuadTextureSetup(vert_array, vert_buffer, uv_buffer, index_buffer);
@@ -161,13 +162,18 @@ void UpdateLoop()
         game_time = new_time - start_time;
 
         /* Render here */
-        // TODO: Compute Shader
-
         // glBindFramebuffer(GL_FRAMEBUFFER, texture_obj_id);
+        // TODO: Compute Shader
+        compute_shader.SetActive();
+        flow_texture.ActiveBind(GL_TEXTURE0);
+        compute_shader.Compute();
+        compute_shader.Barrier()
+
+
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         quad_shader.SetActive();
-        quad_shader.SetUniformTexture("tex", ink_splatter_tex, ink_texture_unit);
+        quad_shader.SetUniformTexture("tex", flow_texture, GL_TEXTURE0);
         QuadTextureRender(vert_buffer, uv_buffer, index_buffer);
 
         /* Swap front and back buffers */
