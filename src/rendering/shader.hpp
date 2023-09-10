@@ -29,6 +29,7 @@ protected:
 	bool is_linked_;
 
 	/*
+	* @brief
 	* Gets the location of a uniform and stores it in uniform_ids_
 	* 
 	* @param
@@ -43,6 +44,7 @@ protected:
 	bool GetUniformLocation(const std::string& uniform_name);
 
 	/*
+	* @brief
 	* Links the shader programs into one program to be run on the GPU
 	* 
 	* If there are problems linking, the is_linked_ variable
@@ -52,6 +54,7 @@ protected:
 	void LinkProgram();
 
 	/*
+	* @brief
 	* Used for loading in the program's text
 	* 
 	* @param 
@@ -66,6 +69,7 @@ protected:
 	std::string LoadFile(const std::string& filename);
 
 	/*
+	* @brief
 	* A do-nothing constructor for children classes to use and
 	* override the constructor
 	*/
@@ -73,6 +77,7 @@ protected:
 
 public:
 	/*
+	* @brief
 	* A helper for the boilerplate of creating
 	* and managing shader programs with OpenGL.
 	* 
@@ -94,6 +99,7 @@ public:
 	~Shader();
 
 	/*
+	* @brief
 	* Calls glUseProgram to set this shader as the active shader
 	* being used for future bindings. Typically called in the
 	* render loop.
@@ -105,6 +111,7 @@ public:
 	bool SetActive();
 
 	/*
+	* @brief
 	* Sets a uniform texture for use in the shader programs.
 	* Note, the name of the uniform must be the same as the name
 	* in the vertex and fragment shaders. This can be called again

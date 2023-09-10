@@ -166,7 +166,7 @@ void UpdateLoop()
         // TODO: Compute Shader
         compute_shader.SetActive();
         flow_texture.ActiveBind(GL_TEXTURE0);
-        compute_shader.Compute();
+        compute_shader.Dispatch();
         compute_shader.Barrier()
 
 

@@ -73,3 +73,23 @@ void ComputeShader::Dispatch()
 {
     glDispatchCompute(work_group_dim_.x, work_group_dim_.y, work_group_dim_.z);
 }
+
+GLuint ComputeShader::GenerateAndBindSSBO(const void* data, unsigned int data_size, GLuint target_binding)
+{
+    GLuint ssbo;
+    glGenBuffers(1, &ssbo);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, data_size, data, GL_DYNAMIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, target_binding, ssbo);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER,0); // Unbind when done
+    return ssbo;
+}
+
+void ComputeShader::UpdateSSBO(GLuint ssbo, const void* data, unsigned int data_size, unsigned int data_offset)
+{
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+    glBufferSubData(GL_SHADER_STORAGE_BUFFER, data_offset, data_size, data);
+    // Might need this, not sure?
+    // glBindBufferBase(GL_SHADER_STORAGE_BUFFER, target_binding, ssbo);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // Unbind when done
+}

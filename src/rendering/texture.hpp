@@ -6,17 +6,25 @@
 class Texture 
 {
 private:
-	/// <summary>
-	/// Tracks the texture created on the GPU
-	/// which is associated with this Texture object.
-	/// </summary>
+
+	/*
+	* @brief
+	* Tracks the texture created on the GPU
+	* which is associated with this Texture object.
+	*/
 	GLuint texture_obj_id_;
 
+	/*
+	* @brief
+	* Constants which are used for setting up the texture
+	* with calls to glTexImage2d() and similar calls.
+	*/
 	const GLuint kTextureStorageFormat_[4] = { GL_R8, GL_RG8, GL_RGB8, GL_RGBA8 };
 	const GLuint kTextureChannels_[4] = { GL_RED, GL_RG, GL_RGB, GL_RGBA };
 
 public:
 	/*
+	* @brief
 	* Creates an empty texture which can be useful for drawing
 	* to texture with shaders. In this case, the GetTextureId()
 	* method will be useful in binding the texture to the
