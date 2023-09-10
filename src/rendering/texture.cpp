@@ -102,6 +102,12 @@ GLuint Texture::GetTextureId()
 
 void Texture::UpdatePixelData(GLint x_offset, GLint y_offset, GLsizei width, GLsizei height, int channels, const void* pixel_data)
 {
-    // This is broken, not sure why, but lets just not use it. Not really necessary anyways
-    glTextureSubImage2D(texture_obj_id_, 0, x_offset, y_offset, width, height, GL_RGBA, GL_FLOAT, pixel_data);
+    ActiveBind(GL_TEXTURE1);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F,
+        width, height, 0, GL_RGBA, GL_FLOAT, pixel_data);
+    //glPixelStorei(GL_UNPACK_ROW_LENGTH, 512);
+    //glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    //glTexSubImage2D(GL_TEXTURE_2D, 0, x_offset, y_offset, width, height, GL_RGBA, GL_FLOAT, pixel_data);
+    //glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+    //glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 }

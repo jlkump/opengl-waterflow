@@ -33,6 +33,34 @@ GLFWwindow* window;
 const int kWindowWidth = 1024;
 const int kWindowHeight = 768;
 
+Texture* diff_old;
+Texture* diff_new;
+
+
+void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+{
+    double xpos, ypos;
+    glfwGetCursorPos(window, &xpos, &ypos);
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) 
+    {
+        std::vector<glm::vec4> data(512 * 512);
+        glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, data.data());
+        int pix_x = (xpos / kWindowWidth) * 512;
+        int pix_y = 512 - (ypos / kWindowHeight) * 512;
+
+        for (int i = pix_x; i < pix_x + 20; i++) {
+            for (int j = pix_y; j < pix_y + 20; j++) {
+                data[i + j * 512] = glm::vec4(0.0, 1.0, 0.0, 1.0);
+            }
+        }
+
+        printf("Value of x and y in pix coords are %d, %d.\n", pix_x, pix_y);
+
+        diff_old->UpdatePixelData(pix_x, pix_y, 512, 512, 4, &data[0]);
+        diff_new->UpdatePixelData(pix_x, pix_y, 512, 512, 4, &data[0]);
+    }
+}
+
 bool Init() 
 {
     /* Initialize the library */
@@ -62,6 +90,9 @@ bool Init()
         glfwTerminate();
         return false;
     }
+
+    /* For mouse input */
+    glfwSetMouseButtonCallback(window, MouseButtonCallback);
 
     /* Set the viewport */
     glClearColor(0.6784f, 0.8f, 1.0f, 1.0f);
@@ -163,6 +194,8 @@ void UpdateLoop()
     }
     Texture diffusion_old(4, 512, &pix_data[0]);
     Texture diffusion_new(4, 512);
+    diff_old = &diffusion_old;
+    diff_new = &diffusion_new;
 
     diffusion_new.ActiveBind(GL_TEXTURE1);
     diffusion_old.ActiveBind(GL_TEXTURE2);
@@ -174,7 +207,7 @@ void UpdateLoop()
 
 
     /* Loop until the user closes the window */
-    while (!glfwWindowShouldClose(window))
+    while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && !glfwWindowShouldClose(window))
     {
         /* Update game time value */
         new_time = static_cast<float>(glfwGetTime());
