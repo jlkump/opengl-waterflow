@@ -71,45 +71,87 @@ bool Init()
     return true;
 }
 
+void QuadTextureSetup(GLuint& vert_array, GLuint& vert_buffer, GLuint& uv_buffer, GLuint& index_buffer) 
+{
+    const std::vector<glm::vec3> kQuadVerts = { glm::vec3(-1.0, -1.0, 0.0),
+                                            glm::vec3(1.0, -1.0, 0.0),
+                                            glm::vec3(-1.0, 1.0, 0.0),
+                                            glm::vec3(1.0, 1.0, 0.0) };
+
+    const std::vector<glm::vec2> kQuadUVs = { glm::vec2(0, 0),
+                                                glm::vec2(1, 0),
+                                                glm::vec2(0, 1),
+                                                glm::vec2(1, 1) };
+
+    const std::vector<unsigned short> kQuadIndices = { 0, 1, 2, 2, 1, 3 };
+
+    // VAO for the vertices
+    glGenVertexArrays(1, &vert_array);
+    glBindVertexArray(vert_array);
+
+    // Gen vert buffer
+    glGenBuffers(1, &vert_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, vert_buffer);
+    glBufferData(GL_ARRAY_BUFFER, kQuadVerts.size() * sizeof(glm::vec3), &kQuadVerts[0], GL_STATIC_DRAW);
+
+    // Gen UV buffer
+    glGenBuffers(1, &uv_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, uv_buffer);
+    glBufferData(GL_ARRAY_BUFFER, kQuadUVs.size() * sizeof(glm::vec2), &kQuadUVs[0], GL_STATIC_DRAW);
+
+    // Gen index buffer
+    glGenBuffers(1, &index_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, index_buffer);
+    glBufferData(GL_ARRAY_BUFFER, kQuadIndices.size() * sizeof(unsigned short), &kQuadIndices[0], GL_STATIC_DRAW);
+}
+
+void QuadTextureRender(GLuint vert_buffer, GLuint uv_buffer, GLuint index_buffer) 
+{
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, vert_buffer);
+    glVertexAttribPointer(
+        0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
+        3,                  // size
+        GL_FLOAT,           // type
+        GL_FALSE,           // normalized?
+        0,                  // stride
+        (void*)0            // array buffer offset
+    );
+
+    glEnableVertexAttribArray(1);
+    glBindBuffer(GL_ARRAY_BUFFER, uv_buffer);
+    glVertexAttribPointer(
+        1,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
+        2,                  // size
+        GL_FLOAT,				// type
+        GL_FALSE,           // normalized?
+        0,                  // stride
+        (void*)0            // array buffer offset
+    );
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
+    // Draw the triangles !
+    glDrawElements(
+        GL_TRIANGLES,      // mode
+        6,    // count
+        GL_UNSIGNED_SHORT, // type
+        (void*)0           // element array buffer offset
+    );
+}
+
 void UpdateLoop() 
 {
     float start_time = static_cast<float>(glfwGetTime());
     float new_time = 0.0f;
     float game_time = 0.0f; // Time the sim has been running
-    const std::vector<glm::vec3> kQuadVerts = { glm::vec3(-1.0, -1.0, 0.0), 
-                                                glm::vec3(1.0, -1.0, 0.0), 
-                                                glm::vec3(-1.0, 1.0, 0.0), 
-                                                glm::vec3(1.0, 1.0, 0.0) };
 
-    const std::vector<glm::vec2> kQuadUVs = {   glm::vec2(0, 0), 
-                                                glm::vec2(1, 0), 
-                                                glm::vec2(0, 1), 
-                                                glm::vec2(1, 1)};
-
-    const std::vector<unsigned short> kQuadIndices = { 0, 1, 2, 2, 1, 3 };
 
     Shader quad_shader("flat_quad_shader.vert", "flat_quad_shader.frag");
     Texture ink_splatter_tex("InkSplatter.png");
     GLenum ink_texture_unit = GL_TEXTURE0;
 
-    GLuint vert_array;
-    glGenVertexArrays(1, &vert_array);
-    glBindVertexArray(vert_array);
-
-    GLuint vert_buffer;
-    glGenBuffers(1, &vert_buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vert_buffer);
-    glBufferData(GL_ARRAY_BUFFER, kQuadVerts.size() * sizeof(glm::vec3), &kQuadVerts[0], GL_STATIC_DRAW);
-
-    GLuint uv_buffer;
-    glGenBuffers(1, &uv_buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, uv_buffer);
-    glBufferData(GL_ARRAY_BUFFER, kQuadUVs.size() * sizeof(glm::vec2), &kQuadUVs[0], GL_STATIC_DRAW);
-
-    GLuint index_buffer;
-    glGenBuffers(1, &index_buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, index_buffer);
-    glBufferData(GL_ARRAY_BUFFER, kQuadIndices.size() * sizeof(unsigned short), &kQuadIndices[0], GL_STATIC_DRAW);
+    GLuint vert_array, vert_buffer, uv_buffer, index_buffer;
+    QuadTextureSetup(vert_array, vert_buffer, uv_buffer, index_buffer);
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
@@ -126,37 +168,7 @@ void UpdateLoop()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         quad_shader.SetActive();
         quad_shader.SetUniformTexture("tex", ink_splatter_tex, ink_texture_unit);
-
-        glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, vert_buffer);
-        glVertexAttribPointer(
-            0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-            3,                  // size
-            GL_FLOAT,           // type
-            GL_FALSE,           // normalized?
-            0,                  // stride
-            (void*)0            // array buffer offset
-        );
-
-        glEnableVertexAttribArray(1);
-        glBindBuffer(GL_ARRAY_BUFFER, uv_buffer);
-        glVertexAttribPointer(
-            1,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-            2,                  // size
-            GL_FLOAT,				// type
-            GL_FALSE,           // normalized?
-            0,                  // stride
-            (void*)0            // array buffer offset
-        );
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
-        // Draw the triangles !
-        glDrawElements(
-            GL_TRIANGLES,      // mode
-            kQuadIndices.size(),    // count
-            GL_UNSIGNED_SHORT, // type
-            (void*)0           // element array buffer offset
-        );
+        QuadTextureRender(vert_buffer, uv_buffer, index_buffer);
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
