@@ -143,37 +143,64 @@ void QuadTextureRender(GLuint vert_buffer, GLuint uv_buffer, GLuint index_buffer
 void UpdateLoop() 
 {
     float start_time = static_cast<float>(glfwGetTime());
+    float previous_time = start_time;
     float new_time = 0.0f;
     float game_time = 0.0f; // Time the sim has been running
 
+    struct ComputeData {
+        float time;
+        float deltaTime;
+    };
+    struct ComputeData c_data;
+    c_data.time = game_time;
+    c_data.deltaTime = 0;
+
+    ComputeShader compute_shader("waterflow_shader.comp", glm::ivec3(512, 512, 1));
+    GLuint ssbo = compute_shader.GenerateAndBindSSBO(&c_data, 8, 0);
+    std::vector<float> pix_data(512 * 512 * 4, 0.0);
+    for (int i = 150000; i < 180000; i++) {
+        pix_data[i] = 1.0;
+    }
+    Texture diffusion_old(4, 512, &pix_data[0]);
+    Texture diffusion_new(4, 512);
+
+    diffusion_new.ActiveBind(GL_TEXTURE1);
+    diffusion_old.ActiveBind(GL_TEXTURE2);
 
     Shader quad_shader("flat_quad_shader.vert", "flat_quad_shader.frag");
-    ComputeShader compute_shader("waterflow_shader.comp", glm::vec3());
-    Texture flow_texture(3, 512); // This texture will have flow represented by simple colors and diffusion.
-
     GLuint vert_array, vert_buffer, uv_buffer, index_buffer;
     QuadTextureSetup(vert_array, vert_buffer, uv_buffer, index_buffer);
+
+
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
         /* Update game time value */
         new_time = static_cast<float>(glfwGetTime());
+        c_data.deltaTime = new_time - previous_time;
+        previous_time = new_time;
         game_time = new_time - start_time;
+        c_data.time = game_time;
 
-        /* Render here */
-        // glBindFramebuffer(GL_FRAMEBUFFER, texture_obj_id);
-        // TODO: Compute Shader
+        ////////////////////
+        // Compute Shader //
+        ////////////////////
         compute_shader.SetActive();
-        flow_texture.ActiveBind(GL_TEXTURE0);
+        compute_shader.UpdateSSBO(ssbo, &c_data, 8, 0);
+        diffusion_old.BindImage(1);
+        diffusion_new.BindImage(2);
         compute_shader.Dispatch();
         compute_shader.Barrier();
 
-
+        ////////////////////
+        // Flat Rendering //
+        ////////////////////
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         quad_shader.SetActive();
-        quad_shader.SetUniformTexture("tex", flow_texture, GL_TEXTURE0);
+        diffusion_new.ActiveBind(GL_TEXTURE0);
+        // quad_shader.SetUniformTexture("tex", diffusion_old, GL_TEXTURE0);
         QuadTextureRender(vert_buffer, uv_buffer, index_buffer);
 
         /* Swap front and back buffers */

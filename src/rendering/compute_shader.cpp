@@ -13,10 +13,12 @@
 ///	Public Methods ///
 //////////////////////
 
-ComputeShader::ComputeShader(const std::string& compute_shader_file_name, const glm::vec3& work_group_dim) 
+ComputeShader::ComputeShader(const std::string& compute_shader_file_name, const glm::ivec3& work_group_dim) 
     : Shader(), work_group_dim_(work_group_dim)
 {
 	const std::string shader_code = LoadFile(compute_shader_file_name);
+
+    printf("Work Group Sizes: %d, %d, %d\n", work_group_dim_.x, work_group_dim_.y, work_group_dim_.z);
 
 	program_id_ = glCreateProgram();
     if (program_id_ == 0)
@@ -34,7 +36,9 @@ ComputeShader::ComputeShader(const std::string& compute_shader_file_name, const 
         return;
     }
 
-    glShaderSource(comp_shader_obj, 1, shader_code.c_str(), nullptr);
+    const char* code[] = { shader_code.c_str() };
+
+    glShaderSource(comp_shader_obj, 1, code, nullptr);
     glCompileShader(comp_shader_obj);
 
     GLint result;
@@ -66,7 +70,7 @@ ComputeShader::ComputeShader(const std::string& compute_shader_file_name, const 
 
 void ComputeShader::Barrier()
 {
-    glMemoryBarrier(GL_ALL_BARRIER_BITS);
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 }
 
 void ComputeShader::Dispatch()

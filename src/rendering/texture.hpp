@@ -19,7 +19,8 @@ private:
 	* Constants which are used for setting up the texture
 	* with calls to glTexImage2d() and similar calls.
 	*/
-	const GLuint kTextureStorageFormat_[4] = { GL_R8, GL_RG8, GL_RGB8, GL_RGBA8 };
+	unsigned int channels_ = 0;
+	const GLuint kTextureStorageFormat_[4] = { GL_R32F, GL_RG32F, GL_RGB32F, GL_RGBA32F };
 	const GLuint kTextureChannels_[4] = { GL_RED, GL_RG, GL_RGB, GL_RGBA };
 
 public:
@@ -43,7 +44,7 @@ public:
 	* must be a power of 2, otherwise there will be problems
 	* with loading the texture into GPU memory.
 	*/
-	Texture(int desired_channels, int dimensions);
+	Texture(int desired_channels, int dimensions, const float* data = nullptr);
 
 	/*
 	* Loads in a texture with the given filename.
@@ -73,6 +74,8 @@ public:
 	*/
 	void ActiveBind(GLint texture_unit);
 
+	void BindImage(unsigned int binding);
+
 	/*
 	* Returns the texture ID associated with this texture.
 	* Useful for binding a texture to the FrameBuffer or
@@ -84,4 +87,6 @@ public:
 	* 
 	*/
 	GLuint GetTextureId();
+
+	void UpdatePixelData(GLint x_offset, GLint y_offset, GLsizei width, GLsizei height, int channels, const void* pixel_data);
 };

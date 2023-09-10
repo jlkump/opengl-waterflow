@@ -8,7 +8,7 @@ private:
 	/// Specific to compute shaders, determines the size of the global work group.
 	/// This is used in dispatching calls to the compute shader.
 	/// </summary>
-	glm::vec3 work_group_dim_;
+	glm::ivec3 work_group_dim_;
 
 public:
 	/*
@@ -25,7 +25,7 @@ public:
 	* work_group_dim: Defines the dimensions of the work group for the compute shader. For
 	* a 2D work group, we use (x, y, 1).
 	*/
-	ComputeShader(const std::string& compute_shader_file_name, const glm::vec3& work_group_dim);
+	ComputeShader(const std::string& compute_shader_file_name, const glm::ivec3& work_group_dim);
 
 	/*
 	* @brief

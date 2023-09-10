@@ -1,4 +1,5 @@
 #include "texture.hpp"
+#include "texture.hpp"
 #include <RootDir.h>
 
 #include <stb_image.h>
@@ -17,7 +18,7 @@
 ///	Public Methods ///
 //////////////////////
 
-Texture::Texture(int desired_channels, int dimensions) : texture_obj_id_(0) 
+Texture::Texture(int desired_channels, int dimensions, const float* data) : texture_obj_id_(0), channels_(desired_channels)
 {
     if (desired_channels <= 0 || desired_channels > 4) 
     {
@@ -26,13 +27,14 @@ Texture::Texture(int desired_channels, int dimensions) : texture_obj_id_(0)
     }
     glGenTextures(1, &texture_obj_id_);
     glBindTexture(GL_TEXTURE_2D, texture_obj_id_);
-    glTexImage2D(GL_TEXTURE_2D, 0, kTextureChannels_[desired_channels - 1], 
-            dimensions, dimensions, 0, kTextureChannels_[desired_channels - 1], GL_UNSIGNED_BYTE, 0);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 
+            dimensions, dimensions, 0, GL_RGBA, GL_FLOAT, data);
 }
 
 Texture::Texture(const std::string& filename) : texture_obj_id_(0)
@@ -48,13 +50,15 @@ Texture::Texture(const std::string& filename) : texture_obj_id_(0)
 
     unsigned char* pixels = stbi_load((ROOT_DIR "resources/textures/" + filename).c_str(), &width, &height, &channels, 4);
 
+    printf("Dimensions of texture image is %d %d with %d channels.\n", width, height, channels);
+    channels_ = 4;
     if (pixels != nullptr)
     {
         glGenTextures(1, &texture_obj_id_);
         glBindTexture(GL_TEXTURE_2D, texture_obj_id_);
 
-        glTexStorage2D(GL_TEXTURE_2D, 2 /* mip map levels */, kTextureStorageFormat_[3], width, height);
-        glTexSubImage2D(GL_TEXTURE_2D, 0 /* mip map level */, 0 /* xoffset */, 0 /* yoffset */, width, height, kTextureChannels_[3], GL_UNSIGNED_BYTE, pixels);
+        glTexStorage2D(GL_TEXTURE_2D, 2 /* mip map levels */, GL_RGB8, width, height);
+        glTexSubImage2D(GL_TEXTURE_2D, 0 /* mip map level */, 0 /* xoffset */, 0 /* yoffset */, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
         glGenerateMipmap(GL_TEXTURE_2D); // Replaces mipmap levels from 0 to 2 with generated mip maps
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -86,7 +90,18 @@ void Texture::ActiveBind(GLint texture_unit)
     }
 }
 
+void Texture::BindImage(unsigned int binding) 
+{
+    glBindImageTexture(binding, texture_obj_id_, 0, 0, 0, GL_READ_WRITE, GL_RGBA32F);
+}
+
 GLuint Texture::GetTextureId() 
 {
     return texture_obj_id_;
+}
+
+void Texture::UpdatePixelData(GLint x_offset, GLint y_offset, GLsizei width, GLsizei height, int channels, const void* pixel_data)
+{
+    // This is broken, not sure why, but lets just not use it. Not really necessary anyways
+    glTextureSubImage2D(texture_obj_id_, 0, x_offset, y_offset, width, height, GL_RGBA, GL_FLOAT, pixel_data);
 }

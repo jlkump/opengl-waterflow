@@ -35,8 +35,8 @@ layout (std430, binding = 0) buffer variables
 	float deltaTime;
 };
 
-layout (binding = 1, rgba32f) uniform image2D diffusion_old;
-layout (binding = 2, rgba32f) uniform image2D diffusion_new; // This will be the color displayed for now.
+layout (rgba32f, binding = 1) uniform image2D diffusion_old;
+layout (rgba32f, binding = 2) uniform image2D diffusion_new; // This will be the color displayed for now.
 
 //// Simulation based textures
 //layout (binding = 1, rgba32f) uniform image2D water_vel_old; // Previous water sim velocity values
@@ -63,29 +63,31 @@ void LinearSolve(vec3[1] v, vec3[5] v0, float coefficient, float denominator)
 void main() 
 {
 	// We will assume for now that each worker gets assigned its own pixel
-	vec3 d0 = imageLoad(diffusion_old, ivec2(gl_WorkGroupID.x, gl_WorkGroupID.y)).rgb; 
+	vec3 d0 = imageLoad(diffusion_old, ivec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y)).rgb; 
+//	imageStore(diffusion_old, ivec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y), vec4(0.5, 0.9, 0.5, 1.0));
+
 	// d = (d0 + k * s) / (1 + k)
 	// s0 is the average of the diffusion of the old surrounding cells.
 	// s is the average of the diffusion of the new surrounding cells.
-	vec3 d[1] = { d0 };
-	vec3 d_old[5] = { d0, 
-						imageLoad(diffusion_old, ivec2(gl_WorkGroupID.x + 1, gl_WorkGroupID.y)).rgb,
-						imageLoad(diffusion_old, ivec2(gl_WorkGroupID.x, gl_WorkGroupID.y + 1)).rgb,
-						imageLoad(diffusion_old, ivec2(gl_WorkGroupID.x - 1, gl_WorkGroupID.y)).rgb,
-						imageLoad(diffusion_old, ivec2(gl_WorkGroupID.x, gl_WorkGroupID.y - 1)).rgb };
+	
+	vec3 d = d0;
+	vec3 d_old[4] = {
+						imageLoad(diffusion_old, ivec2(gl_GlobalInvocationID.x + 1, gl_GlobalInvocationID.y)).rgb,
+						imageLoad(diffusion_old, ivec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y + 1)).rgb,
+						imageLoad(diffusion_old, ivec2(gl_GlobalInvocationID.x - 1, gl_GlobalInvocationID.y)).rgb,
+						imageLoad(diffusion_old, ivec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y - 1)).rgb };
 	float k = deltaTime; // The amount of change done 
-	LinearSolve(d, d_old, k, k + 1);
-	LinearSolve(d, d_old, k, k + 1);
-	LinearSolve(d, d_old, k, k + 1);
-	LinearSolve(d, d_old, k, k + 1);
+	d.xyz = d0.xyz + (k * (d_old[0].xyz + d_old[1].xyz + d_old[2].xyz + d_old[3].xyz)) / (k + 1);
+
 
 
 	// Since we have a 2D image, coordinate is a vec2
 	// and vec4 is for the data we actually want to store.
-	imageStore(diffusion_new, ivec2(gl_WorkGroupID.x, gl_WorkGroupID.y), vec4(d[0].rgb, 1.0));
+	imageStore(diffusion_new, ivec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y), vec4(d.rgb, 1.0));
 
 	// Prevents other threads from getting ahead until everyone reaches this point.
 	barrier();
 
-	imageStore(diffusion_old, ivec2(gl_WorkGroupID.x, gl_WorkGroupID.y), vec4(d[0].rgb, 1.0));
+	imageStore(diffusion_old, ivec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y), vec4(d.rgb, 1.0));
+	
 }
