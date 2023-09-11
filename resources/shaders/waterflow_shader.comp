@@ -49,50 +49,64 @@ layout (rgba32f, binding = 2) uniform image2D diffusion_new; // This will be the
 // Explanation of fluid simulation from Gonkee's youtube video "But How DO Fluid Simulations Work?"
 // https://www.youtube.com/watch?v=qsYE1wMEMPA&t=320s
 
-void LinearSolve(vec3[1] v, vec3[5] v0, float coefficient, float denominator) 
-{
-	// d0[0] == (x, y)
-	// d0[1] == (x + 1, y)
-	// d0[2] == (x, y + 1)
-	// d0[3] == (x - 1, y)
-	// d0[4] == (x, y - 1)
 
-	v[0].xyz = v0[0].xyz + (coefficient * (v0[1].xyz + v0[2].xyz + v0[3].xyz + v0[4].xyz)) / denominator;
+// Return the new value
+vec3 LinearSolve(vec3 old_val, vec3 old_neighbors[4], float numerator, float denominator) 
+{
+	vec3 new_neighbors[4] = {vec3(0, 0, 0), vec3(0,0,0), vec3(0,0,0), vec3(0,0,0)};
+	new_neighbors[0] = (old_neighbors[0] + numerator * ((new_neighbors[1] + new_neighbors[2] + new_neighbors[3]) / 4)) / denominator;
+	new_neighbors[1] = (old_neighbors[1] + numerator * ((new_neighbors[0] + new_neighbors[2] + new_neighbors[3]) / 4)) / denominator;
+	new_neighbors[2] = (old_neighbors[2] + numerator * ((new_neighbors[1] + new_neighbors[0] + new_neighbors[3]) / 4)) / denominator;
+	new_neighbors[3] = (old_neighbors[3] + numerator * ((new_neighbors[1] + new_neighbors[2] + new_neighbors[0]) / 4)) / denominator;
+	vec3 new_val = (old_val + numerator * ((new_neighbors[0] + new_neighbors[1] + new_neighbors[2] + new_neighbors[3]) / 4)) / denominator;
+
+	//  Repeat the number of solves for Gauss Seidel solver to get closer approximate. About 2 seems good for now
+	new_neighbors[0] = (old_neighbors[0] + numerator * ((new_neighbors[1] + new_neighbors[2] + new_neighbors[3]) / 4)) / denominator;
+	new_neighbors[1] = (old_neighbors[1] + numerator * ((new_neighbors[0] + new_neighbors[2] + new_neighbors[3]) / 4)) / denominator;
+	new_neighbors[2] = (old_neighbors[2] + numerator * ((new_neighbors[1] + new_neighbors[0] + new_neighbors[3]) / 4)) / denominator;
+	new_neighbors[3] = (old_neighbors[3] + numerator * ((new_neighbors[1] + new_neighbors[2] + new_neighbors[0]) / 4)) / denominator;
+	new_val = (old_val + numerator * ((new_neighbors[0] + new_neighbors[1] + new_neighbors[2] + new_neighbors[3]) / 4)) / denominator;
+
+//	new_neighbors[0] = (old_neighbors[0] + numerator * ((new_neighbors[1] + new_neighbors[2] + new_neighbors[3]) / 4)) / denominator;
+//	new_neighbors[1] = (old_neighbors[1] + numerator * ((new_neighbors[0] + new_neighbors[2] + new_neighbors[3]) / 4)) / denominator;
+//	new_neighbors[2] = (old_neighbors[2] + numerator * ((new_neighbors[1] + new_neighbors[0] + new_neighbors[3]) / 4)) / denominator;
+//	new_neighbors[3] = (old_neighbors[3] + numerator * ((new_neighbors[1] + new_neighbors[2] + new_neighbors[0]) / 4)) / denominator;
+//	new_val = (old_val + numerator * ((new_neighbors[0] + new_neighbors[1] + new_neighbors[2] + new_neighbors[3]) / 4)) / denominator;
+
+	return new_val;
 }
 
-void main() 
+void Diffuse(ivec2 pos) 
 {
-	// We will assume for now that each worker gets assigned its own pixel
-	vec3 d0 = imageLoad(diffusion_old, ivec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y)).rgb; 
-//	imageStore(diffusion_old, ivec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y), vec4(0.5, 0.9, 0.5, 1.0));
 
 	// d = (d0 + k * s) / (1 + k)
 	// s0 is the average of the diffusion of the old surrounding cells.
 	// s is the average of the diffusion of the new surrounding cells.
-	
-	vec3 d = d0;
+
+	// We will assume for now that each worker gets assigned its own pixel
+	vec3 d0 = imageLoad(diffusion_old, pos).rgb; 
+
 	vec3 d_old[4] = {
-						imageLoad(diffusion_old, ivec2(gl_GlobalInvocationID.x + 1, gl_GlobalInvocationID.y)).rgb,
-						imageLoad(diffusion_old, ivec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y + 1)).rgb,
-						imageLoad(diffusion_old, ivec2(gl_GlobalInvocationID.x - 1, gl_GlobalInvocationID.y)).rgb,
-						imageLoad(diffusion_old, ivec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y - 1)).rgb };
+						imageLoad(diffusion_old, ivec2(pos.x + 1, pos.y)).rgb,
+						imageLoad(diffusion_old, ivec2(pos.x, pos.y + 1)).rgb,
+						imageLoad(diffusion_old, ivec2(pos.x - 1, pos.y)).rgb,
+						imageLoad(diffusion_old, ivec2(pos.x, pos.y - 1)).rgb };
 	float k = deltaTime * 10; // The amount of change done 
-	vec3 d_new[4] = { vec3(0, 0, 0), vec3(0, 0, 0), vec3(0, 0, 0), vec3(0, 0, 0) };
-	d_new[0] = (d_old[0] + k * ((d_new[1] + d_new[2] + d_new[3]) / 4)) / (1 + k);
-	d_new[1] = (d_old[1] + k * ((d_new[0] + d_new[2] + d_new[3]) / 4)) / (1 + k);
-	d_new[2] = (d_old[2] + k * ((d_new[1] + d_new[0] + d_new[3]) / 4)) / (1 + k);
-	d_new[3] = (d_old[3] + k * ((d_new[1] + d_new[2] + d_new[0]) / 4)) / (1 + k);
-	d = (d0 + k * ((d_new[0].xyz + d_new[1].xyz + d_new[2].xyz + d_new[3].xyz) / 4)) / (1 + k);
-
-
-
-	// Since we have a 2D image, coordinate is a vec2
-	// and vec4 is for the data we actually want to store.
+	vec3 d = LinearSolve(d0, d_old, k, k + 1);
 	imageStore(diffusion_new, ivec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y), vec4(d.rgb, 1.0));
+}
+
+void UpdateOldValues(ivec2 pos) {
+	imageStore(diffusion_old, pos, imageLoad(diffusion_new, pos));
+}
+
+void main() 
+{
+	ivec2 pos = ivec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y);
+	Diffuse(pos);
 
 	// Prevents other threads from getting ahead until everyone reaches this point.
 	barrier();
-
-	imageStore(diffusion_old, ivec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y), vec4(d.rgb, 1.0));
+	UpdateOldValues(pos);
 	
 }
