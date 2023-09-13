@@ -38,6 +38,9 @@ layout (std430, binding = 0) buffer variables
 layout (rgba32f, binding = 1) uniform image2D diffusion_old;
 layout (rgba32f, binding = 2) uniform image2D diffusion_new; // This will be the color displayed for now.
 
+layout (rgba32f, binding = 3) uniform image2D velocity_old;
+layout (rgba32f, binding = 4) uniform image2D velocity_new;
+
 //// Simulation based textures
 //layout (binding = 1, rgba32f) uniform image2D water_vel_old; // Previous water sim velocity values
 //layout (binding = 2, rgba32f) uniform image2D water_vel_new; // Values to be updated
@@ -76,7 +79,7 @@ vec3 LinearSolve(vec3 old_val, vec3 old_neighbors[4], float numerator, float den
 	return new_val;
 }
 
-void Diffuse(ivec2 pos) 
+void DiffuseDye(ivec2 pos) 
 {
 
 	// d = (d0 + k * s) / (1 + k)
@@ -93,17 +96,45 @@ void Diffuse(ivec2 pos)
 						imageLoad(diffusion_old, ivec2(pos.x, pos.y - 1)).rgb };
 	float k = deltaTime * 10; // The amount of change done 
 	vec3 d = LinearSolve(d0, d_old, k, k + 1);
-	imageStore(diffusion_new, ivec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y), vec4(d.rgb, 1.0));
+	imageStore(diffusion_new, pos, vec4(d.rgb, 1.0));
+}
+
+void DiffuseVel(ivec2 pos) 
+{
+	vec3 v0 = imageLoad(velocity_old, pos).rgb;
+
+	vec3 v_old[4] = {
+						imageLoad(velocity_old, ivec2(pos.x + 1, pos.y)).rgb,
+						imageLoad(velocity_old, ivec2(pos.x, pos.y + 1)).rgb,
+						imageLoad(velocity_old, ivec2(pos.x - 1, pos.y)).rgb,
+						imageLoad(velocity_old, ivec2(pos.x, pos.y - 1)).rgb };
+	float k = deltaTime * 10;
+	vec3 v = LinearSolve(v0, v_old, k, k + 1);
+	imageStore(velocity_new, pos, vec4(v.rgb, 1.0));
+}
+
+// Projection ensures that the fluid remains incompressible
+void Project(ivec2 pos) 
+{
+	
+}
+
+// Advection carries what is in the fluid further along the fluid
+// This includes both velocities and dye.
+void Advect() 
+{
+	// TODO
 }
 
 void UpdateOldValues(ivec2 pos) {
 	imageStore(diffusion_old, pos, imageLoad(diffusion_new, pos));
+	imageStore(velocity_old, pos, imageLoad(velocity_new, pos));
 }
 
 void main() 
 {
 	ivec2 pos = ivec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y);
-	Diffuse(pos);
+	DiffuseDye(pos);
 
 	// Prevents other threads from getting ahead until everyone reaches this point.
 	barrier();
