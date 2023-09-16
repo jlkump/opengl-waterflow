@@ -1,5 +1,8 @@
 #version 430
 
+// Explanation of fluid simulation from Gonkee's youtube video "But How DO Fluid Simulations Work?"
+// https://www.youtube.com/watch?v=qsYE1wMEMPA&t=320s
+
 // Built-in input variables
 //	in uvec3 gl_NumWorkGroups;  This variable contains the number of work groups passed to the dispatch function.
 // 
@@ -44,19 +47,10 @@ layout (rgba32f, binding = 4) uniform image2D velocity_new;
 layout (r32f, binding = 5) uniform image2D pressure_old;
 layout (r32f, binding = 6) uniform image2D pressure_new;
 
-//// Simulation based textures
-//layout (binding = 1, rgba32f) uniform image2D water_vel_old; // Previous water sim velocity values
-//layout (binding = 2, rgba32f) uniform image2D water_vel_new; // Values to be updated
-//
-//// The actual textures we output
-//layout (binding = 3, rgba32f) uniform image2D water_normals; // The texture to actually display based on values 
-//layout (binding = 4, r32f) uniform image2D water_heightmap; // The texture to actually display based on values 
+#define VEL(a) (a - vec3(0.5, 0.5, 0.0)) * 2 // texture velocity to true velocity
+#define TEX(a) (a / 2) + vec3(0.5, 0.5, 0.0) // velocity to texture velocity 
 
-// Explanation of fluid simulation from Gonkee's youtube video "But How DO Fluid Simulations Work?"
-// https://www.youtube.com/watch?v=qsYE1wMEMPA&t=320s
-
-
-// Return the new value
+// Solve using Gaus Sidel method
 vec3 LinearSolve(vec3 old_val, vec3 old_neighbors[4], float numerator, float denominator) 
 {
 	vec3 new_neighbors[4] = {vec3(0, 0, 0), vec3(0,0,0), vec3(0,0,0), vec3(0,0,0)};
@@ -73,15 +67,10 @@ vec3 LinearSolve(vec3 old_val, vec3 old_neighbors[4], float numerator, float den
 	new_neighbors[3] = (old_neighbors[3] + numerator * ((new_neighbors[1] + new_neighbors[2] + new_neighbors[0]) / 4)) / denominator;
 	new_val = (old_val + numerator * ((new_neighbors[0] + new_neighbors[1] + new_neighbors[2] + new_neighbors[3]) / 4)) / denominator;
 
-//	new_neighbors[0] = (old_neighbors[0] + numerator * ((new_neighbors[1] + new_neighbors[2] + new_neighbors[3]) / 4)) / denominator;
-//	new_neighbors[1] = (old_neighbors[1] + numerator * ((new_neighbors[0] + new_neighbors[2] + new_neighbors[3]) / 4)) / denominator;
-//	new_neighbors[2] = (old_neighbors[2] + numerator * ((new_neighbors[1] + new_neighbors[0] + new_neighbors[3]) / 4)) / denominator;
-//	new_neighbors[3] = (old_neighbors[3] + numerator * ((new_neighbors[1] + new_neighbors[2] + new_neighbors[0]) / 4)) / denominator;
-//	new_val = (old_val + numerator * ((new_neighbors[0] + new_neighbors[1] + new_neighbors[2] + new_neighbors[3]) / 4)) / denominator;
-
 	return new_val;
 }
 
+// Solve using Gaus Sidel method
 float SolvePressure(float old_vals[5], float divergence[5])
 {
 	float new_vals[4] = {0, 0, 0, 0};
@@ -121,26 +110,32 @@ void DiffuseDye(ivec2 pos)
 
 void DiffuseVel(ivec2 pos) 
 {
-	vec3 v0 = imageLoad(velocity_old, pos).rgb;
+	if (pos.x == 511 || pos.x == 0 || pos.y == 510 || pos.y == 0) {
+		imageStore(velocity_new, pos, vec4(0.5, 0.5, 0.0, 1.0));
+	} else {
+		vec3 v0 = VEL(imageLoad(velocity_old, pos).rgb);
 
-	vec3 v_old[4] = {
-						imageLoad(velocity_old, ivec2(pos.x + 1, pos.y)).rgb,
-						imageLoad(velocity_old, ivec2(pos.x, pos.y + 1)).rgb,
-						imageLoad(velocity_old, ivec2(pos.x - 1, pos.y)).rgb,
-						imageLoad(velocity_old, ivec2(pos.x, pos.y - 1)).rgb };
-	float k = deltaTime * 10;
-	vec3 v = LinearSolve(v0, v_old, k, k + 1);
-	imageStore(velocity_new, pos, vec4(v.rgb, 1.0));
+		vec3 v_old[4] = {
+				VEL(imageLoad(velocity_old, ivec2(pos.x + 1, pos.y)).rgb),
+				VEL(imageLoad(velocity_old, ivec2(pos.x, pos.y + 1)).rgb),
+				VEL(imageLoad(velocity_old, ivec2(pos.x - 1, pos.y)).rgb),
+				VEL(imageLoad(velocity_old, ivec2(pos.x, pos.y - 1)).rgb)
+		};
+		float k = deltaTime * 10;
+		vec3 v = LinearSolve(v0, v_old, k, k + 1);
+		imageStore(velocity_new, pos, vec4(TEX(v.rgb), 1.0));
+	}
 }
 
 // Calculates the divergance of the velocity field for a given position
 float DivergenceVel(ivec2 pos)
 {
 	vec3 v[4] = {
-			imageLoad(velocity_old, ivec2(pos.x + 1, pos.y)).rgb,
-			imageLoad(velocity_old, ivec2(pos.x, pos.y + 1)).rgb,
-			imageLoad(velocity_old, ivec2(pos.x - 1, pos.y)).rgb,
-			imageLoad(velocity_old, ivec2(pos.x, pos.y - 1)).rgb };
+			VEL(imageLoad(velocity_old, ivec2(pos.x + 1, pos.y)).rgb),
+			VEL(imageLoad(velocity_old, ivec2(pos.x, pos.y + 1)).rgb),
+			VEL(imageLoad(velocity_old, ivec2(pos.x - 1, pos.y)).rgb),
+			VEL(imageLoad(velocity_old, ivec2(pos.x, pos.y - 1)).rgb) 
+	};
 	return v[0].x - v[2].x + v[1].y - v[3].y;
 }
 
@@ -186,8 +181,9 @@ void ProjectVel(ivec2 pos)
 	imageStore(pressure_new, pos, vec4(p, 0, 0, 0));
 	// Wait for all the pressure values, then calculate the gradient
 	barrier();
-	vec3 v = imageLoad(velocity_old, pos).rgb - PressureGradient(pos);
-	imageStore(velocity_new, pos, vec4(v, 1.0));
+	vec3 v = VEL(imageLoad(velocity_old, pos).rgb) - PressureGradient(pos);
+
+	imageStore(velocity_new, pos, vec4(TEX(v), 1.0));
 	imageStore(pressure_old, pos, vec4(p, 0, 0, 0)); // Update old pressure for future calles
 
 }
@@ -198,10 +194,8 @@ void ProjectVel(ivec2 pos)
 void AdvectVel(ivec2 pos, vec2 prev_pos) 
 {
 	// Simple implementation
-	if (ivec2(prev_pos) != pos) {
-		vec3 new_v = (imageLoad(velocity_new, pos) + imageLoad(velocity_old, ivec2(prev_pos))).rgb / 2;
-		imageStore(velocity_new, pos, vec4(new_v, 1.0));
-	}
+	vec3 new_v = (VEL((imageLoad(velocity_new, pos).rgb) + VEL(imageLoad(velocity_old, ivec2(prev_pos)).rgb))) / 2;
+	imageStore(velocity_new, pos, vec4(TEX(new_v), 1.0));
 
 	/*
 	// Velocity of this pixel will be equal to the velocity
@@ -228,15 +222,8 @@ void AdvectVel(ivec2 pos, vec2 prev_pos)
 
 void AdvectDye(ivec2 pos, vec2 prev_pos) 
 {
-
-	if (ivec2(prev_pos) != pos) {
-		vec3 new_d = ((
-					imageLoad(diffusion_new, pos) 
-					+ imageLoad(diffusion_old, ivec2(prev_pos))
-					) 
-					/ 2).rgb;
-		imageStore(diffusion_new, pos, vec4(new_d, 1.0));
-	}
+	vec3 new_d = ((imageLoad(diffusion_new, pos) + imageLoad(diffusion_old, ivec2(prev_pos))).rgb) / 2;
+	imageStore(diffusion_new, pos, vec4(new_d, 1.0));
 	/*
 	vec3 vals[4] = {
 		imageLoad(diffusion_old, ivec2(floor(prev_pos.x), floor(prev_pos.y))).rgb,
@@ -268,7 +255,7 @@ void main()
 
 	DiffuseVel(pos);
 	ProjectVel(pos);
-	vec2 prev_pos = vec2(pos) - imageLoad(velocity_old, pos).rg * deltaTime;
+	vec2 prev_pos = vec2(pos) - (imageLoad(velocity_old, pos).rg - vec2(0.5)) * 2 * deltaTime;
 	AdvectVel(pos, prev_pos);
 	ProjectVel(pos);
 	prev_pos = vec2(pos) - imageLoad(velocity_old, pos).rg * deltaTime;

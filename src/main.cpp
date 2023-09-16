@@ -74,7 +74,16 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 
     if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) 
     {
+        std::vector<glm::vec4> data(20 * 20, glm::vec4(1.0, 0.0, 0.0, 1.0));
+        std::vector<glm::vec4> vel_data(20 * 20, glm::vec4(0.0, 0.0, 0.0, 1.0));
+        int pix_x = (xpos / kWindowWidth) * 512;
+        int pix_y = 512 - (ypos / kWindowHeight) * 512;
 
+        v_old->UpdatePixelData(pix_x, pix_y, 20, 20, &vel_data[0]);
+        v_new->UpdatePixelData(pix_x, pix_y, 20, 20, &vel_data[0]);
+
+        diff_old->UpdatePixelData(pix_x, pix_y, 20, 20, &data[0]);
+        diff_new->UpdatePixelData(pix_x, pix_y, 20, 20, &data[0]);
         holding_right = true;
     }
     if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE) 
@@ -255,9 +264,10 @@ void UpdateLoop()
     pressure_new.ActiveBind(GL_TEXTURE6);
 
     display_texture = diff_new;
-
-    std::vector<glm::vec4> data(40 * 40, glm::vec4(0.0, 1.0, 0.0, 1.0));
-    velocity_old.UpdatePixelData(200, 200, 40, 40, &data[0]);
+    {
+        std::vector<glm::vec4> data(512 * 512, glm::vec4(0.5, 0.5, 0.0, 1.0));
+        velocity_old.UpdatePixelData(0, 0, 512, 512, &data[0]);
+    }
 
     Shader quad_shader("flat_quad_shader.vert", "flat_quad_shader.frag");
     GLuint vert_array, vert_buffer, uv_buffer, index_buffer;
