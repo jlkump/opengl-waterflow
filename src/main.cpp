@@ -33,22 +33,71 @@ GLFWwindow* window;
 const int kWindowWidth = 1024;
 const int kWindowHeight = 768;
 
+// Very poor code practice, but
+// this is just for quick and easy input
+// Maybe I'll improve it later
 Texture* diff_old;
 Texture* diff_new;
+Texture* v_old;
+Texture* v_new;
+Texture* p_old;
+Texture* p_new;
+
+Texture* display_texture;
 
 
 void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
     double xpos, ypos;
+    static bool holding_left = false;
+    static bool holding_right = false;
+
     glfwGetCursorPos(window, &xpos, &ypos);
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) 
     {
         std::vector<glm::vec4> data(20 * 20, glm::vec4(0.0, 1.0, 1.0, 1.0));
+        std::vector<glm::vec4> vel_data(20 * 20, glm::vec4(1.0, 0.0, 0.0, 0.0));
         int pix_x = (xpos / kWindowWidth) * 512;
         int pix_y = 512 - (ypos / kWindowHeight) * 512;
 
+        v_old->UpdatePixelData(pix_x, pix_y, 20, 20, &vel_data[0]);
+        v_new->UpdatePixelData(pix_x, pix_y, 20, 20, &vel_data[0]);
+
         diff_old->UpdatePixelData(pix_x, pix_y, 20, 20, &data[0]);
         diff_new->UpdatePixelData(pix_x, pix_y, 20, 20, &data[0]);
+        holding_left = true;
+    }
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) 
+    {
+        holding_left = false;
+    }
+
+    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) 
+    {
+
+        holding_right = true;
+    }
+    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE) 
+    {
+        holding_right = false;
+    }
+}
+
+void KeyButtonCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (key == GLFW_KEY_1 && action == GLFW_PRESS) {
+        display_texture = diff_new;
+    }
+    if (key == GLFW_KEY_2 && action == GLFW_PRESS) {
+        display_texture = v_old;
+    }
+    if (key == GLFW_KEY_3 && action == GLFW_PRESS) {
+        display_texture = v_new;
+    }
+    if (key == GLFW_KEY_4 && action == GLFW_PRESS) {
+        display_texture = p_old;
+    }
+    if (key == GLFW_KEY_5 && action == GLFW_PRESS) {
+        display_texture = p_new;
     }
 }
 
@@ -84,6 +133,9 @@ bool Init()
 
     /* For mouse input */
     glfwSetMouseButtonCallback(window, MouseButtonCallback);
+
+    // For keyboard input
+    glfwSetKeyCallback(window, KeyButtonCallback);
 
     /* Set the viewport */
     glClearColor(0.6784f, 0.8f, 1.0f, 1.0f);
@@ -184,8 +236,28 @@ void UpdateLoop()
     diff_old = &diffusion_old;
     diff_new = &diffusion_new;
 
+    Texture velocity_old(4, 512);
+    Texture velocity_new(4, 512);
+    v_old = &velocity_old;
+    v_new = &velocity_new;
+
+    Texture pressure_old(1, 512);
+    Texture pressure_new(1, 512);
+    p_old = &pressure_old;
+    p_new = &pressure_new;
+
+
     diffusion_new.ActiveBind(GL_TEXTURE1);
     diffusion_old.ActiveBind(GL_TEXTURE2);
+    velocity_old.ActiveBind(GL_TEXTURE3);
+    velocity_new.ActiveBind(GL_TEXTURE4);
+    pressure_old.ActiveBind(GL_TEXTURE5);
+    pressure_new.ActiveBind(GL_TEXTURE6);
+
+    display_texture = diff_new;
+
+    std::vector<glm::vec4> data(40 * 40, glm::vec4(0.0, 1.0, 0.0, 1.0));
+    velocity_old.UpdatePixelData(200, 200, 40, 40, &data[0]);
 
     Shader quad_shader("flat_quad_shader.vert", "flat_quad_shader.frag");
     GLuint vert_array, vert_buffer, uv_buffer, index_buffer;
@@ -210,6 +282,10 @@ void UpdateLoop()
         compute_shader.UpdateSSBO(ssbo, &c_data, 8, 0);
         diffusion_old.BindImage(1);
         diffusion_new.BindImage(2);
+        velocity_old.BindImage(3);
+        velocity_new.BindImage(4);
+        pressure_old.BindImage(5);
+        pressure_new.BindImage(6);
         compute_shader.Dispatch();
         compute_shader.Barrier();
 
@@ -219,7 +295,8 @@ void UpdateLoop()
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         quad_shader.SetActive();
-        diffusion_new.ActiveBind(GL_TEXTURE0);
+        display_texture->ActiveBind(GL_TEXTURE0);
+        // diffusion_new.ActiveBind(GL_TEXTURE0);
         // quad_shader.SetUniformTexture("tex", diffusion_old, GL_TEXTURE0);
         QuadTextureRender(vert_buffer, uv_buffer, index_buffer);
 

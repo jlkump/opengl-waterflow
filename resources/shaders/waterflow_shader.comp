@@ -41,6 +41,9 @@ layout (rgba32f, binding = 2) uniform image2D diffusion_new; // This will be the
 layout (rgba32f, binding = 3) uniform image2D velocity_old;
 layout (rgba32f, binding = 4) uniform image2D velocity_new;
 
+layout (r32f, binding = 5) uniform image2D pressure_old;
+layout (r32f, binding = 6) uniform image2D pressure_new;
+
 //// Simulation based textures
 //layout (binding = 1, rgba32f) uniform image2D water_vel_old; // Previous water sim velocity values
 //layout (binding = 2, rgba32f) uniform image2D water_vel_new; // Values to be updated
@@ -79,6 +82,23 @@ vec3 LinearSolve(vec3 old_val, vec3 old_neighbors[4], float numerator, float den
 	return new_val;
 }
 
+float SolvePressure(float old_vals[5], float divergence[5])
+{
+	float new_vals[4] = {0, 0, 0, 0};
+	// Iteration 1
+	new_vals[0] = (old_vals[0] + (new_vals[1] + new_vals[2] + new_vals[3] - divergence[1]) / 4);
+	new_vals[1] = (old_vals[1] + (new_vals[0] + new_vals[2] + new_vals[3] - divergence[2]) / 4);
+	new_vals[2] = (old_vals[2] + (new_vals[1] + new_vals[0] + new_vals[3] - divergence[3]) / 4);
+	new_vals[3] = (old_vals[3] + (new_vals[1] + new_vals[2] + new_vals[0] - divergence[4]) / 4);
+
+	// Iteration 2
+	new_vals[0] = (old_vals[0] + (new_vals[1] + new_vals[2] + new_vals[3] - divergence[1]) / 4);
+	new_vals[1] = (old_vals[1] + (new_vals[0] + new_vals[2] + new_vals[3] - divergence[2]) / 4);
+	new_vals[2] = (old_vals[2] + (new_vals[1] + new_vals[0] + new_vals[3] - divergence[3]) / 4);
+	new_vals[3] = (old_vals[3] + (new_vals[1] + new_vals[2] + new_vals[0] - divergence[4]) / 4);
+	return (old_vals[0] + (new_vals[0] + new_vals[1] + new_vals[2] + new_vals[3] - divergence[0]) / 4);
+}
+
 void DiffuseDye(ivec2 pos) 
 {
 
@@ -113,17 +133,128 @@ void DiffuseVel(ivec2 pos)
 	imageStore(velocity_new, pos, vec4(v.rgb, 1.0));
 }
 
-// Projection ensures that the fluid remains incompressible
-void Project(ivec2 pos) 
+// Calculates the divergance of the velocity field for a given position
+float DivergenceVel(ivec2 pos)
 {
-	
+	vec3 v[4] = {
+			imageLoad(velocity_old, ivec2(pos.x + 1, pos.y)).rgb,
+			imageLoad(velocity_old, ivec2(pos.x, pos.y + 1)).rgb,
+			imageLoad(velocity_old, ivec2(pos.x - 1, pos.y)).rgb,
+			imageLoad(velocity_old, ivec2(pos.x, pos.y - 1)).rgb };
+	return v[0].x - v[2].x + v[1].y - v[3].y;
+}
+
+vec3 PressureGradient(ivec2 pos) 
+{
+	return vec3(imageLoad(pressure_new, ivec2(pos.x + 1, pos.y)).r 
+				- imageLoad(pressure_new, ivec2(pos.x - 1, pos.y)).r,
+				imageLoad(pressure_new, ivec2(pos.x, pos.y + 1)).r
+				- imageLoad(pressure_new, ivec2(pos.x, pos.y - 1)).r, 0);
+}
+
+// Projection ensures that the fluid remains incompressible
+void ProjectVel(ivec2 pos) 
+{
+	// Caculate the divergance-free velocity and update velocity to that value
+	// This is done by calculating the divergance of our velocity field and 
+	// subtracting that from our current velocity field.
+	// Divergance of the velocity field is calculated by
+	// calculating the pressure
+
+	// We are updating velocity_new again, so store old as new values
+	barrier();
+	imageStore(velocity_old, pos, imageLoad(velocity_new, pos)); 
+
+	// This is currently may be inefficient, as we calculate each divergence value 5 times 
+	// However, using a barrier and texture might be just as bad, if not worse
+	// TODO: use a texture to store divergence instead and see if it has an impact
+	float divergence[5] = {
+			DivergenceVel(pos),
+			DivergenceVel(ivec2(pos.x + 1, pos.y)),
+			DivergenceVel(ivec2(pos.x, pos.y + 1)),
+			DivergenceVel(ivec2(pos.x - 1, pos.y)),
+			DivergenceVel(ivec2(pos.x, pos.y - 1)),
+	};
+	float p_old[5] = {
+			imageLoad(pressure_old, pos).r,
+			imageLoad(pressure_old, ivec2(pos.x + 1, pos.y)).r,
+			imageLoad(pressure_old, ivec2(pos.x, pos.y + 1)).r,
+			imageLoad(pressure_old, ivec2(pos.x - 1, pos.y)).r,
+			imageLoad(pressure_old, ivec2(pos.x, pos.y - 1)).r 
+	};
+	float p = SolvePressure(p_old, divergence);
+	imageStore(pressure_new, pos, vec4(p, 0, 0, 0));
+	// Wait for all the pressure values, then calculate the gradient
+	barrier();
+	vec3 v = imageLoad(velocity_old, pos).rgb - PressureGradient(pos);
+	imageStore(velocity_new, pos, vec4(v, 1.0));
+	imageStore(pressure_old, pos, vec4(p, 0, 0, 0)); // Update old pressure for future calles
+
 }
 
 // Advection carries what is in the fluid further along the fluid
-// This includes both velocities and dye.
-void Advect() 
+// This includes both velocities and dye. Here we calculate only
+// the velocity portion from old velocity and store it in velocity_new
+void AdvectVel(ivec2 pos, vec2 prev_pos) 
 {
-	// TODO
+	// Simple implementation
+	if (ivec2(prev_pos) != pos) {
+		vec3 new_v = (imageLoad(velocity_new, pos) + imageLoad(velocity_old, ivec2(prev_pos))).rgb / 2;
+		imageStore(velocity_new, pos, vec4(new_v, 1.0));
+	}
+
+	/*
+	// Velocity of this pixel will be equal to the velocity
+	// of each cell in the previous time step, averaged over
+	// the nearest values
+	vec3 vals[4] = {
+		imageLoad(velocity_old, ivec2(floor(prev_pos.x), floor(prev_pos.y))).rgb,
+		imageLoad(velocity_old, ivec2(ceil(prev_pos.x), floor(prev_pos.y))).rgb,
+		imageLoad(velocity_old, ivec2(floor(prev_pos.x), ceil(prev_pos.y))).rgb,
+		imageLoad(velocity_old, ivec2(ceil(prev_pos.x), ceil(prev_pos.y))).rgb,
+	};
+	vec3 interp_bot = ((ceil(prev_pos.x) - prev_pos.x) * vals[0]) 
+					+ ((prev_pos.x - floor(prev_pos.x)) * vals[1]);
+	vec3 interp_top = ((ceil(prev_pos.x) - prev_pos.x) * vals[2]) 
+					+ ((prev_pos.x - floor(prev_pos.x)) * vals[3]);
+
+	vec3 interp = ((ceil(prev_pos.y) - prev_pos.y) * interp_bot)
+				+ ((prev_pos.y - floor(prev_pos.y)) * interp_top)
+				+ imageLoad(velocity_new, pos).rgb;
+
+	imageStore(velocity_new, pos, vec4(interp, 1.0));
+	*/
+}
+
+void AdvectDye(ivec2 pos, vec2 prev_pos) 
+{
+
+	if (ivec2(prev_pos) != pos) {
+		vec3 new_d = ((
+					imageLoad(diffusion_new, pos) 
+					+ imageLoad(diffusion_old, ivec2(prev_pos))
+					) 
+					/ 2).rgb;
+		imageStore(diffusion_new, pos, vec4(new_d, 1.0));
+	}
+	/*
+	vec3 vals[4] = {
+		imageLoad(diffusion_old, ivec2(floor(prev_pos.x), floor(prev_pos.y))).rgb,
+		imageLoad(diffusion_old, ivec2(ceil(prev_pos.x), floor(prev_pos.y))).rgb,
+		imageLoad(diffusion_old, ivec2(floor(prev_pos.x), ceil(prev_pos.y))).rgb,
+		imageLoad(diffusion_old, ivec2(ceil(prev_pos.x), ceil(prev_pos.y))).rgb,
+	};
+	vec3 interp_bot = ((ceil(prev_pos.x) - prev_pos.x) * vals[0]) 
+					+ ((prev_pos.x - floor(prev_pos.x)) * vals[1]);
+	vec3 interp_top = ((ceil(prev_pos.x) - prev_pos.x) * vals[2]) 
+					+ ((prev_pos.x - floor(prev_pos.x)) * vals[3]);
+
+	vec3 interp = (((ceil(prev_pos.y) - prev_pos.y) * interp_bot)
+				+ ((prev_pos.y - floor(prev_pos.y)) * interp_top)
+				+ imageLoad(diffusion_new, pos).rgb) / 2;
+
+	imageStore(diffusion_new, pos, vec4(interp, 1.0));
+	*/
 }
 
 void UpdateOldValues(ivec2 pos) {
@@ -134,7 +265,16 @@ void UpdateOldValues(ivec2 pos) {
 void main() 
 {
 	ivec2 pos = ivec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y);
+
+	DiffuseVel(pos);
+	ProjectVel(pos);
+	vec2 prev_pos = vec2(pos) - imageLoad(velocity_old, pos).rg * deltaTime;
+	AdvectVel(pos, prev_pos);
+	ProjectVel(pos);
+	prev_pos = vec2(pos) - imageLoad(velocity_old, pos).rg * deltaTime;
+
 	DiffuseDye(pos);
+	AdvectDye(pos, prev_pos);
 
 	// Prevents other threads from getting ahead until everyone reaches this point.
 	barrier();
