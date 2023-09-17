@@ -21,7 +21,7 @@
 #include <vector>
 
 #include "Mesh.h"
-#include "helpers/RootDir.h"
+#include "RootDir.h"
 
 class Model
 {

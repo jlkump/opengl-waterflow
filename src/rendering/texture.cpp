@@ -80,7 +80,7 @@ Texture::~Texture() {
     }
 }
 
-void Texture::ActiveBind(GLint texture_unit)
+void Texture::ActiveBind(GLenum texture_unit)
 {
     if (texture_obj_id_ != 0)
     {

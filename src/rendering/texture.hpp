@@ -69,11 +69,12 @@ public:
 	* @param
 	* texture_unit: A texture_unit must be provided which is
 	* associated with the location where to bind
-	* the texture in the shader program. 
+	* the texture in the shader program. Default = GL_TEXTURE0
 	* Example: GL_TEXTURE0, GL_TEXTURE1, etc.
 	* 
+	* 
 	*/
-	void ActiveBind(GLint texture_unit);
+	void ActiveBind(GLenum texture_unit = GL_TEXTURE0);
 
 	void BindImage(unsigned int binding);
 

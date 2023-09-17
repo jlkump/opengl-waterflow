@@ -137,6 +137,9 @@ public:
 	bool SetUniformTexture(const std::string& uniform_name, Texture& texture, GLenum texture_unit);
 
 	// Other assorted SetUniforms to be added here as needed
+	bool setUniformMatrix4fv(const std::string& uniformName, const glm::mat4& matrix);
+	bool setUniformMatrix3fv(const std::string& uniformName, const glm::mat3& matrix);
+	bool setUniform3fv(const std::string& uniformName, const glm::vec3& vec);
 };
 
 #endif

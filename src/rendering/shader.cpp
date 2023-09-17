@@ -205,11 +205,38 @@ bool Shader::SetActive()
 
 bool Shader::SetUniformTexture(const std::string& uniform_name, Texture& texture, GLenum texture_unit)
 {
-    bool success = GetUniformLocation(uniform_name);
-    if (success) 
+    if (GetUniformLocation(uniform_name)) 
     {
         texture.ActiveBind(texture_unit);
         glUniform1i(uniform_ids_[uniform_name], texture_unit - GL_TEXTURE0);
+        return true;
     }
-    return success;
+    return false;
+}
+
+bool Shader::setUniformMatrix4fv(const std::string& uniform_name, const glm::mat4& matrix)
+{
+    if (GetUniformLocation(uniform_name)) {
+        glProgramUniformMatrix4fv(program_id_, uniform_ids_[uniform_name], 1, GL_FALSE, glm::value_ptr(matrix));
+        return true;
+    }
+    return false;
+}
+
+bool Shader::setUniformMatrix3fv(const std::string& uniform_name, const glm::mat3& matrix)
+{
+    if (GetUniformLocation(uniform_name)) {
+        glProgramUniformMatrix3fv(program_id_, uniform_ids_[uniform_name], 1, GL_FALSE, glm::value_ptr(matrix));
+        return true;
+    }
+    return false;
+}
+
+bool Shader::setUniform3fv(const std::string& uniform_name, const glm::vec3& vec)
+{
+    if (GetUniformLocation(uniform_name)) {
+        glProgramUniform3fv(program_id_, uniform_ids_[uniform_name], 1, glm::value_ptr(vec));
+        return true;
+    }
+    return false;
 }
