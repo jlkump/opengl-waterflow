@@ -65,6 +65,7 @@ void WindowKeyCallback(GLFWwindow* window, int key, int scancode, int action, in
 {
     static float param = 0.0f;
     static float radius = 1.0f;
+    static float height = 0.0f;
 
     // Model rotation
     if (key == GLFW_KEY_E && action == GLFW_PRESS)
@@ -81,8 +82,12 @@ void WindowKeyCallback(GLFWwindow* window, int key, int scancode, int action, in
         radius += 0.5f;
     if (key == GLFW_KEY_K && action == GLFW_PRESS)
         radius -= 0.5f;
+    if (key == GLFW_KEY_U && action == GLFW_PRESS)
+        height -= 0.5f;
+    if (key == GLFW_KEY_O && action == GLFW_PRESS)
+        height += 0.5f;
 
-    glm::vec3 cam_position = glm::vec3(sin(param + 0.5) * radius, 1.0f, cos(param + 0.5) * radius);
+    glm::vec3 cam_position = glm::vec3(sin(param + 0.5) * radius, 1.0f + height, cos(param + 0.5) * radius);
     g_shader->SetUniform3fv("ws_cam_pos", cam_position);
 
     view_matrix = glm::lookAt(cam_position, cam_look_at, cam_up);
@@ -156,7 +161,7 @@ bool loadContent()
     g_texture = new Texture("alliance.png");
     g_texture->ActiveBind();
 
-    g_model = new Model("resources/models/alliance.obj");
+    g_model = new Model("resources/models/backpack.obj");
 
     return true;
 }
