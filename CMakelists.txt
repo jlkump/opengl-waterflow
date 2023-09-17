@@ -1,3 +1,4 @@
+# For linking libraries, used the tutorial from https://shot511.github.io/2018-05-29-how-to-setup-opengl-project-with-cmake/
 cmake_minimum_required(VERSION "3.19")
 
 project("OpenglWaterFlow")
@@ -14,8 +15,6 @@ file(GLOB_RECURSE HEADER_FILES
 
 configure_file(src/RootDir.h.in src/RootDir.h)
 include_directories(${CMAKE_BINARY_DIR}/src)
-
-# For linking libraries, used the tutorial from https://shot511.github.io/2018-05-29-how-to-setup-opengl-project-with-cmake/
 
 add_executable(${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES})
 
@@ -35,9 +34,8 @@ message(STATUS "Found ASSIMP in ${ASSIMP_INCLUDE_DIR}")
 add_library(STB_IMAGE "thirdparty/stb_image.cpp")
 add_library(GLAD "thirdparty/glad.c")
 
-
-
 set(LIBS ${GLFW3_LIBRARY} ${OPENGL_LIBRARY} GLAD ${CMAKE_DL_LIBS} ${ASSIMP_LIBRARY} STB_IMAGE)
+
 include_directories(
 	"${CMAKE_SOURCE_DIR}/src"
 	"${CMAKE_SOURCE_DIR}/include"
@@ -46,3 +44,11 @@ include_directories(
 )
 
 target_link_libraries(${PROJECT_NAME} ${LIBS})
+
+# Copy dlls
+if(WIN32)
+	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_directory
+		"${PROJECT_SOURCE_DIR}/dlls"
+		$<TARGET_FILE_DIR:${PROJECT_NAME}>)
+endif()
