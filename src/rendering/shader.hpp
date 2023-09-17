@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SHADER_C
+#define SHADER_C
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
@@ -137,3 +138,5 @@ public:
 
 	// Other assorted SetUniforms to be added here as needed
 };
+
+#endif

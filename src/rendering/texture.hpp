@@ -1,4 +1,5 @@
-#pragma once
+#ifndef TEXTURE_C
+#define TEXTURE_C
 
 #include <string>
 #include <glad/glad.h>
@@ -90,3 +91,5 @@ public:
 
 	void UpdatePixelData(GLint x_offset, GLint y_offset, GLsizei width, GLsizei height, const void* pixel_data);
 };
+
+#endif
