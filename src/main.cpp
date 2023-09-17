@@ -29,6 +29,7 @@
 #include "rendering/texture.hpp"
 #include "rendering/compute_shader.hpp"
 #include "rendering/model.h"
+#include "rendering/cubemap.hpp"
 
 GLFWwindow* window;
 const int kWindowWidth = 1024;
@@ -39,11 +40,11 @@ Shader* g_shader = nullptr;
 Texture* g_texture = nullptr;
 
 /* Matrices */
-glm::vec3 cam_position = glm::vec3(0.0f, 1.0f, 1.2f);
+glm::vec3 cam_position = glm::vec3(0.0f, 1.0f, 1.0f);
 glm::vec3 cam_look_at = glm::vec3(0.0f, 0.5f, 0.0f);
 glm::vec3 cam_up = glm::vec3(0.0f, 1.0f, 0.0f);
 
-glm::mat4 world_matrix = glm::mat4(1.0f);
+glm::mat4 model_matrix = glm::mat4(1.0f);
 glm::mat4 view_matrix = glm::lookAt(cam_position, cam_look_at, cam_up);
 glm::mat4 projection_matrix = glm::perspectiveFov(glm::radians(60.0f), float(kWindowWidth), float(kWindowHeight), 0.1f, 10.0f);
 
@@ -56,8 +57,40 @@ void WindowSizeCallback(GLFWwindow* window, int width, int height)
 
     if (g_shader != nullptr)
     {
-        g_shader->setUniformMatrix4fv("viewProj", projection_matrix * view_matrix);
+        g_shader->SetUniformMatrix4fv("proj_view", projection_matrix * view_matrix);
     }
+}
+
+void WindowKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    static float param = 0.0f;
+    static float radius = 1.0f;
+
+    // Model rotation
+    if (key == GLFW_KEY_E && action == GLFW_PRESS)
+        model_matrix = glm::rotate(model_matrix, glm::radians(-45.0f), glm::vec3(0, 1, 0));
+    if (key == GLFW_KEY_Q && action == GLFW_PRESS)
+        model_matrix = glm::rotate(model_matrix, glm::radians(45.0f), glm::vec3(0, 1, 0));
+
+    // Camara controls
+    if (key == GLFW_KEY_L && action == GLFW_PRESS)
+        param += 0.5f;
+    if (key == GLFW_KEY_J && action == GLFW_PRESS)
+        param -= 0.5f;
+    if (key == GLFW_KEY_I && action == GLFW_PRESS)
+        radius += 0.5f;
+    if (key == GLFW_KEY_K && action == GLFW_PRESS)
+        radius -= 0.5f;
+
+    glm::vec3 cam_position = glm::vec3(sin(param + 0.5) * radius, 1.0f, cos(param + 0.5) * radius);
+    g_shader->SetUniform3fv("ws_cam_pos", cam_position);
+
+    view_matrix = glm::lookAt(cam_position, cam_look_at, cam_up);
+
+    g_shader->SetUniformMatrix4fv("model", model_matrix);
+    g_shader->SetUniformMatrix3fv("norm_matrix", glm::inverse(glm::transpose(glm::mat3(model_matrix))));
+    g_shader->SetUniformMatrix4fv("proj_view", projection_matrix * view_matrix);
+
 }
 
 
@@ -91,7 +124,7 @@ bool Init()
     // glfwSetMouseButtonCallback(window, MouseButtonCallback);
 
     /* For Keyboard Input */
-    // glfwSetKeyCallback(window, KeyButtonCallback);
+    glfwSetKeyCallback(window, WindowKeyCallback);
 
     /* Initialize glad */
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -113,12 +146,12 @@ bool loadContent()
 {
 
     /* Create and apply basic shader */
-    g_shader = new Shader("basic.vert", "basic.frag");
-    g_shader->setUniformMatrix4fv("model", world_matrix);
-    g_shader->setUniformMatrix3fv("norm_matrix", glm::inverse(glm::transpose(glm::mat3(world_matrix))));
-    g_shader->setUniformMatrix4fv("proj_view", projection_matrix * view_matrix);
+    g_shader = new Shader("basic.vert", "basic_reflection.frag");
+    g_shader->SetUniformMatrix4fv("model", model_matrix);
+    g_shader->SetUniformMatrix3fv("norm_matrix", glm::inverse(glm::transpose(glm::mat3(model_matrix))));
+    g_shader->SetUniformMatrix4fv("proj_view", projection_matrix * view_matrix);
 
-    g_shader->setUniform3fv("ws_cam_pos", cam_position);
+    g_shader->SetUniform3fv("ws_cam_pos", cam_position);
 
     g_texture = new Texture("alliance.png");
     g_texture->ActiveBind();
@@ -146,7 +179,15 @@ void UpdateLoop()
     //GLuint ssbo = compute_shader.GenerateAndBindSSBO(&c_data, 4, 0);
 
     // Use the position of compute data to render water
-
+    std::vector<std::string> skybox_textures = { "skybox/right.jpg", "skybox/left.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/front.jpg", "skybox/back.jpg" };
+    //std::vector<std::string> rainbow = { 
+    //    "rainbow/right.png", 
+    //    "rainbow/left.png", 
+    //    "rainbow/up.png", 
+    //    "rainbow/down.png", 
+    //    "rainbow/front.png", 
+    //    "rainbow/back.png" };
+    Skybox skybox(skybox_textures);
     /* Loop until the user closes the window or presses ESC */
     while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && !glfwWindowShouldClose(window))
     {
@@ -168,10 +209,11 @@ void UpdateLoop()
         //  3D Rendering  //
         ////////////////////
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
         g_shader->SetActive();
-        g_texture->ActiveBind();
+        skybox.ActiveBind(GL_TEXTURE0);
+        // g_texture->ActiveBind();
         g_model->Draw();
+        skybox.Draw(view_matrix, projection_matrix);
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
