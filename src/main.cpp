@@ -161,7 +161,7 @@ bool loadContent()
     g_texture = new Texture("alliance.png");
     g_texture->ActiveBind();
 
-    g_model = new Model("resources/models/backpack.obj");
+    g_model = new Model("resources/models/alliance.obj");
 
     return true;
 }

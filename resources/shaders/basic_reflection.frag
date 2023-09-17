@@ -13,5 +13,6 @@ void main()
 {             
     vec3 I = normalize(ws_pos - ws_cam_pos);
     vec3 R = reflect(I, normalize(ws_norm));
+    // vec3 R = refract(I, normalize(ws_norm), 0.658);
     FragColor = vec4(texture(skybox, R).rgb, 1.0);
 }
