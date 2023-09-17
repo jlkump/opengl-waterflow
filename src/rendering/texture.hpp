@@ -6,13 +6,13 @@
 
 class Texture 
 {
-private:
+protected:
 	/*
 	* @brief
 	* Tracks the texture created on the GPU with a texture id
 	* Manipulating the texture on the GPU will require this id
 	*/
-	GLuint texture_obj_id_;
+	GLuint texture_id_;
 
 	/*
 	* @brief
@@ -26,6 +26,16 @@ private:
 	* The storage type for this texture, whether it be 0-255 int rgbs or float 0-1.0
 	*/
 	GLenum storage_type_;
+
+	/*
+	* @brief
+	* A simple bool to check that the texture is valid or not.
+	* This prevents the texture from being used if there was a problem
+	* loading in the images.
+	*/
+	bool valid_texture_;
+
+	Texture() : texture_id_(0), channels_(GL_RGB), storage_type_(GL_RGB8), valid_texture_(true) {}
 
 public:
 	/*

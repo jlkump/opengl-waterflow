@@ -214,7 +214,7 @@ bool Shader::SetUniformTexture(const std::string& uniform_name, Texture& texture
     return false;
 }
 
-bool Shader::setUniformMatrix4fv(const std::string& uniform_name, const glm::mat4& matrix)
+bool Shader::SetUniformMatrix4fv(const std::string& uniform_name, const glm::mat4& matrix)
 {
     if (GetUniformLocation(uniform_name)) {
         glProgramUniformMatrix4fv(program_id_, uniform_ids_[uniform_name], 1, GL_FALSE, glm::value_ptr(matrix));
@@ -223,7 +223,7 @@ bool Shader::setUniformMatrix4fv(const std::string& uniform_name, const glm::mat
     return false;
 }
 
-bool Shader::setUniformMatrix3fv(const std::string& uniform_name, const glm::mat3& matrix)
+bool Shader::SetUniformMatrix3fv(const std::string& uniform_name, const glm::mat3& matrix)
 {
     if (GetUniformLocation(uniform_name)) {
         glProgramUniformMatrix3fv(program_id_, uniform_ids_[uniform_name], 1, GL_FALSE, glm::value_ptr(matrix));
@@ -232,7 +232,7 @@ bool Shader::setUniformMatrix3fv(const std::string& uniform_name, const glm::mat
     return false;
 }
 
-bool Shader::setUniform3fv(const std::string& uniform_name, const glm::vec3& vec)
+bool Shader::SetUniform3fv(const std::string& uniform_name, const glm::vec3& vec)
 {
     if (GetUniformLocation(uniform_name)) {
         glProgramUniform3fv(program_id_, uniform_ids_[uniform_name], 1, glm::value_ptr(vec));

@@ -19,15 +19,16 @@
 //////////////////////
 
 Texture::Texture(int dimensions, GLenum desired_channels, GLenum storage_type, const float* data) 
-    : texture_obj_id_(0), channels_(desired_channels), storage_type_(storage_type)
+    : texture_id_(0), channels_(desired_channels), storage_type_(storage_type), valid_texture_(true)
 {
     if (desired_channels < GL_RED || desired_channels > GL_RGBA) 
     {
+        valid_texture_ = false;
         fprintf(stderr, "Texture created with %d number of channels instead of between 1 and 4\n", desired_channels);
         return;
     }
-    glGenTextures(1, &texture_obj_id_);
-    glBindTexture(GL_TEXTURE_2D, texture_obj_id_);
+    glGenTextures(1, &texture_id_);
+    glBindTexture(GL_TEXTURE_2D, texture_id_);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -51,10 +52,11 @@ Texture::Texture(int dimensions, GLenum desired_channels, GLenum storage_type, c
 }
 
 Texture::Texture(const std::string& filename) 
-    : texture_obj_id_(0), channels_(GL_RGBA), storage_type_(GL_RGBA8)
+    : texture_id_(0), channels_(GL_RGBA), storage_type_(GL_RGBA8), valid_texture_(true)
 {
     if (filename.empty())
     {
+        valid_texture_ = false;
         fprintf(stderr, "Failure creating Texture obj, file name provided is empty.\n");
         return;
     }
@@ -66,8 +68,8 @@ Texture::Texture(const std::string& filename)
 
     if (pixels != nullptr)
     {
-        glGenTextures(1, &texture_obj_id_);
-        glBindTexture(GL_TEXTURE_2D, texture_obj_id_);
+        glGenTextures(1, &texture_id_);
+        glBindTexture(GL_TEXTURE_2D, texture_id_);
 
         glTexStorage2D(GL_TEXTURE_2D, 2 /* mip map levels */, GL_RGBA8, width, height);
         glTexSubImage2D(GL_TEXTURE_2D, 0 /* mip map level */, 0 /* xoffset */, 0 /* yoffset */, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
@@ -80,6 +82,7 @@ Texture::Texture(const std::string& filename)
     }
     else
     {
+        valid_texture_ = false;
         fprintf(stderr, "Texture \"%s\" could not be loaded. Is the texture file in \"resources/textures/\"?\n", filename.c_str());
     }
 
@@ -87,35 +90,43 @@ Texture::Texture(const std::string& filename)
 }
 
 Texture::~Texture() {
-    if (texture_obj_id_ != 0)
+    if (texture_id_ != 0)
     {
-        glDeleteTextures(1, &texture_obj_id_);
+        glDeleteTextures(1, &texture_id_);
     }
 }
 
 void Texture::ActiveBind(GLenum texture_unit)
 {
-    if (texture_obj_id_ != 0)
+    if (!valid_texture_)
     {
-        glActiveTexture(texture_unit);
-        glBindTexture(GL_TEXTURE_2D, texture_obj_id_);
+        return;
     }
+    glActiveTexture(texture_unit);
+    glBindTexture(GL_TEXTURE_2D, texture_id_);
 }
 
 void Texture::BindImage(unsigned int binding) 
 {
-    glBindImageTexture(binding, texture_obj_id_, 0, 0, 0, GL_READ_WRITE, storage_type_);
+    if (!valid_texture_) 
+    {
+        return;
+    }
+    glBindImageTexture(binding, texture_id_, 0, 0, 0, GL_READ_WRITE, storage_type_);
 }
 
 GLuint Texture::GetTextureId() 
 {
-    return texture_obj_id_;
+    return texture_id_;
 }
 
 void Texture::UpdatePixelData(GLint x_offset, GLint y_offset, GLsizei width, GLsizei height, const void* pixel_data)
 {
-
-    glBindTexture(GL_TEXTURE_2D, texture_obj_id_);
+    if (!valid_texture_) 
+    {
+        return;
+    }
+    glBindTexture(GL_TEXTURE_2D, texture_id_);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, width);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     if (storage_type_ == GL_R8 || storage_type_ == GL_RG8 || storage_type_ == GL_RGB8 || storage_type_ == GL_RGBA8) 
