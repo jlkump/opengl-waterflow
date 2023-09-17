@@ -7,24 +7,47 @@
 class Texture 
 {
 private:
-
 	/*
 	* @brief
-	* Tracks the texture created on the GPU
-	* which is associated with this Texture object.
+	* Tracks the texture created on the GPU with a texture id
+	* Manipulating the texture on the GPU will require this id
 	*/
 	GLuint texture_obj_id_;
 
 	/*
 	* @brief
-	* Constants which are used for setting up the texture
-	* with calls to glTexImage2d() and similar calls.
+	* The number of color channels for this texture,
+	* ranging from 1 to 4 (R, RG, RGB, RGBA)
 	*/
-	unsigned int channels_ = 0;
-	const GLuint kTextureStorageFormat_[4] = { GL_R32F, GL_RG32F, GL_RGB32F, GL_RGBA32F };
-	const GLuint kTextureChannels_[4] = { GL_RED, GL_RG, GL_RGB, GL_RGBA };
+	GLenum channels_;
+
+	/*
+	* @brief
+	* The storage type for this texture, whether it be 0-255 int rgbs or float 0-1.0
+	*/
+	GLenum storage_type_;
 
 public:
+	/*
+	* @brief
+	* Texture constants for channels and texture storage types
+	*/
+	//static const GLenum RED = GL_RED;
+	//static const GLenum RG = GL_RG;
+	//static const GLenum RGB = GL_RGB;
+	//static const GLenum RGBA = GL_RGBA;
+
+	//static const GLenum R_INT = GL_R8;
+	//static const GLenum RG_INT = GL_RG8;
+	//static const GLenum RGB_INT = GL_RGB8;
+	//static const GLenum RGBA_INT = GL_RGBA8;
+
+	//static const GLenum R_FLOAT = GL_R32F;
+	//static const GLenum RG_FLOAT = GL_RG32F;
+	//static const GLenum RGB_FLOAT = GL_RGB32F;
+	//static const GLenum RGBA_FLOAT = GL_RGBA32F;
+
+
 	/*
 	* @brief
 	* Creates an empty texture which can be useful for drawing
@@ -32,25 +55,37 @@ public:
 	* method will be useful in binding the texture to the
 	* frame buffer.
 	* 
-	* @param
-	* desired_channels:
-	* The desired number of RGBA channels for the texture.
-	*	1 indicates R or a black and white image
-	*	2 indicates RG or red green image
-	*	3 indicates RGB or colored image
-	*	4 indicates RGBA or a colored image with transparency
 	* 
 	* @ param 
 	* dimensions: The dimensions of the texture. Note: This
 	* must be a power of 2, otherwise there will be problems
 	* with loading the texture into GPU memory.
+	* 
+	* @param
+	* desired_channels:
+	* The desired number of RGBA channels for the texture. Defaults to RGBA
+	* Specified using: GL_RED, GL_RG, GL_RGB, or GL_RGBA
+	* 
+	* @param
+	* storage type:
+	* The way the color for this texture is represented, either as a float or as a byte (0 to 255).
+	* Specified using: GL_R32F, ... GL_RGBA32F or GL_R8 ... GL_RGBA8
+	* 
+	* @param
+	* data:
+	* The starting data for this texture to be loaded with. Must match the type of the given storage type.
+	* Ex: A choice of RGBA32F (RGBA as floats) must have data of [0.2, 0.1, 0.9, 1.0, ...] with each set of
+	* four floats representing a color.
 	*/
-	Texture(int desired_channels, int dimensions, const float* data = nullptr);
+	Texture(int dimensions, GLenum desired_channels = GL_RGBA, GLenum storage_type = GL_RGBA32F, const float* data = nullptr);
 
 	/*
 	* Loads in a texture with the given filename.
 	* The texture is assumed to be in "resources/textures/"
 	* and the call will fail if the texture is located elsewhere.
+	* 
+	* If the texture is in a subdirectory in texture, pass in
+	* as "subdirectory/texture.png"
 	* 
 	* @param
 	* filename:
