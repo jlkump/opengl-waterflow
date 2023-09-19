@@ -37,7 +37,6 @@ const int kWindowHeight = 768;
 
 Model* g_model = nullptr;
 Shader* g_shader = nullptr;
-Texture* g_texture = nullptr;
 Camera* g_camera = nullptr;
 
 glm::mat4 model_matrix = glm::mat4(1.0f);
@@ -149,35 +148,10 @@ bool LoadContent()
 
     g_shader->SetUniform3fv("ws_cam_pos", g_camera->GetPosition());
 
-    g_texture = new Texture("alliance.png");
-    g_texture->ActiveBind();
-
     g_model = new Model("resources/models/alliance.obj");
 
     return true;
 }
-
-#define NUM_PARTICLES 512 // This must match the number of particles in the pic_flip_shader.comp
-
-void InitializeParticles(std::vector<glm::vec3>& particle_positions, const glm::vec3& lower_bound, const glm::vec3& upper_bound) {
-    static const double delta = 0.125f;
-    int i = 0;
-    for (double x = lower_bound.x; x < upper_bound.x; x += delta) {
-        for (double y = lower_bound.y; y < upper_bound.y; y += delta) {
-            for (double z = lower_bound.z; z < upper_bound.z; z += delta) {
-                if (i < NUM_PARTICLES) {
-                    particle_positions[i] = glm::vec3(x, y, z);
-                    printf("Particle at: %.1f, %.1f, %.1f\n", x, y, z);
-                }
-                i++;
-            }
-        }
-    }
-}
-
-// TODO: 
-// 2. Create water particle class? Yeah, lets make a conversion between particles and simple quad. 
-//              (particle position --> 4 vertices spaced in screen-space spaced acording to plane tangent to particle position and view direction)
 
 void UpdateLoop() 
 {
@@ -195,14 +169,9 @@ void UpdateLoop()
         //c_data.deltaTime = new_time - previous_time;
         previous_time = new_time;
 
-        ////////////////////
-        // Compute Shader //
-        ////////////////////
-        //compute_shader.SetActive();
-        //compute_shader.UpdateSSBO(ssbo, &c_data, 8, 0);
-
-        //compute_shader.Dispatch();
-        //compute_shader.Barrier();
+        ////////////////
+        // Simulation //
+        ////////////////
 
         ////////////////////
         //  3D Rendering  //
@@ -210,7 +179,6 @@ void UpdateLoop()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         g_shader->SetActive();
         skybox.ActiveBind(GL_TEXTURE0);
-        // g_texture->ActiveBind();
         g_model->Draw();
         skybox.Draw(g_camera->GetViewMatrix(), g_camera->GetProjectionMatrix());
 
@@ -238,7 +206,6 @@ int main()
     glfwTerminate();
 
     delete g_shader;
-    delete g_texture;
     delete g_model;
 
 	return 0;
