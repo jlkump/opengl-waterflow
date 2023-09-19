@@ -240,3 +240,11 @@ bool Shader::SetUniform3fv(const std::string& uniform_name, const glm::vec3& vec
     }
     return false;
 }
+
+bool Shader::SetUniform1fv(const std::string& uniform_name, const float& f)
+{
+    if (GetUniformLocation(uniform_name)) {
+        glProgramUniform1fv(program_id_, uniform_ids_[uniform_name], 1, &f);
+    }
+    return false;
+}

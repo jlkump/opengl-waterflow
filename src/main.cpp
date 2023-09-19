@@ -48,8 +48,6 @@ glm::mat4 model_matrix = glm::mat4(1.0f);
 glm::mat4 view_matrix = glm::lookAt(cam_position, cam_look_at, cam_up);
 glm::mat4 projection_matrix = glm::perspectiveFov(glm::radians(60.0f), float(kWindowWidth), float(kWindowHeight), 0.1f, 10.0f);
 
-#define NUM_PARTICLES 500 // This must match the number of particles in the pic_flip_shader.comp
-
 void WindowSizeCallback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
@@ -147,7 +145,7 @@ bool Init()
     return true;
 }
 
-bool loadContent()
+bool LoadContent()
 {
 
     /* Create and apply basic shader */
@@ -166,33 +164,39 @@ bool loadContent()
     return true;
 }
 
+#define NUM_PARTICLES 512 // This must match the number of particles in the pic_flip_shader.comp
+
+void InitializeParticles(std::vector<glm::vec3>& particle_positions, const glm::vec3& lower_bound, const glm::vec3& upper_bound) {
+    static const double delta = 0.125f;
+    int i = 0;
+    for (double x = lower_bound.x; x < upper_bound.x; x += delta) {
+        for (double y = lower_bound.y; y < upper_bound.y; y += delta) {
+            for (double z = lower_bound.z; z < upper_bound.z; z += delta) {
+                if (i < NUM_PARTICLES) {
+                    particle_positions[i] = glm::vec3(x, y, z);
+                    printf("Particle at: %.1f, %.1f, %.1f\n", x, y, z);
+                }
+                i++;
+            }
+        }
+    }
+}
+
 void UpdateLoop() 
 {
-    float start_time = static_cast<float>(glfwGetTime());
-    float previous_time = start_time;
+    float previous_time = static_cast<float>(glfwGetTime());
     float new_time = 0.0f;
 
-    //struct ComputeData {
-    //    float deltaTime;
-    //    glm::vec3 position[NUM_PARTICLES];
-    //    glm::vec3 velocity[NUM_PARTICLES];
-    //};
-    //struct ComputeData c_data;
-    //c_data.deltaTime = 0;
+    // Skybox setup
+    Skybox skybox({ "skybox/right.jpg", "skybox/left.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/front.jpg", "skybox/back.jpg" });
 
-    //ComputeShader compute_shader("waterflow_shader.comp", glm::ivec3(512, 512, 1));
-    //GLuint ssbo = compute_shader.GenerateAndBindSSBO(&c_data, 4, 0);
+    // Particle setup
+    static const float particle_radius = 0.05f;
+    std::vector<glm::vec3> particle_positions(NUM_PARTICLES);
+    InitializeParticles(particle_positions, { 0.0, 0.0, 0.0 }, {1.0, 1.0, 1.0});
+    Shader water_shader("water_particle_shader.vert", "water_particle_shader.frag");
+    water_shader.SetUniform1fv("particle_radius", particle_radius);
 
-    // Use the position of compute data to render water
-    std::vector<std::string> skybox_textures = { "skybox/right.jpg", "skybox/left.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/front.jpg", "skybox/back.jpg" };
-    //std::vector<std::string> rainbow = { 
-    //    "rainbow/right.png", 
-    //    "rainbow/left.png", 
-    //    "rainbow/up.png", 
-    //    "rainbow/down.png", 
-    //    "rainbow/front.png", 
-    //    "rainbow/back.png" };
-    Skybox skybox(skybox_textures);
     /* Loop until the user closes the window or presses ESC */
     while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && !glfwWindowShouldClose(window))
     {
@@ -236,7 +240,7 @@ int main()
         return 1;
     }
 
-    if (!loadContent()) {
+    if (!LoadContent()) {
         fprintf(stderr, "Failure in loading content.");
         return 1;
     }
