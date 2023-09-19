@@ -24,12 +24,12 @@
 
 // Project Imports
 #include <RootDir.h>
-#include "FluidCube.hpp"
 #include "rendering/shader.hpp"
 #include "rendering/texture.hpp"
 #include "rendering/compute_shader.hpp"
 #include "rendering/model.h"
 #include "rendering/cubemap.hpp"
+#include "rendering/camera.hpp"
 
 GLFWwindow* window;
 const int kWindowWidth = 1024;
@@ -38,24 +38,18 @@ const int kWindowHeight = 768;
 Model* g_model = nullptr;
 Shader* g_shader = nullptr;
 Texture* g_texture = nullptr;
-
-/* Matrices */
-glm::vec3 cam_position = glm::vec3(0.0f, 1.0f, 1.0f);
-glm::vec3 cam_look_at = glm::vec3(0.0f, 0.5f, 0.0f);
-glm::vec3 cam_up = glm::vec3(0.0f, 1.0f, 0.0f);
+Camera* g_camera = nullptr;
 
 glm::mat4 model_matrix = glm::mat4(1.0f);
-glm::mat4 view_matrix = glm::lookAt(cam_position, cam_look_at, cam_up);
-glm::mat4 projection_matrix = glm::perspectiveFov(glm::radians(60.0f), float(kWindowWidth), float(kWindowHeight), 0.1f, 10.0f);
 
 void WindowSizeCallback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
-    projection_matrix = glm::perspectiveFov(glm::radians(60.0f), float(width), float(height), 0.1f, 10.0f);
 
-    if (g_shader != nullptr)
+    if (g_shader != nullptr && g_camera != nullptr)
     {
-        g_shader->SetUniformMatrix4fv("proj_view", projection_matrix * view_matrix);
+        g_camera->SetAspectRatio(width, height);
+        g_shader->SetUniformMatrix4fv("proj_view", g_camera->GetProjectionMatrix() * g_camera->GetViewMatrix());
     }
 }
 
@@ -84,15 +78,12 @@ void WindowKeyCallback(GLFWwindow* window, int key, int scancode, int action, in
         height -= 0.5f;
     if (key == GLFW_KEY_O && action == GLFW_PRESS)
         height += 0.5f;
-
-    glm::vec3 cam_position = glm::vec3(sin(param + 0.5) * radius, 1.0f + height, cos(param + 0.5) * radius);
-    g_shader->SetUniform3fv("ws_cam_pos", cam_position);
-
-    view_matrix = glm::lookAt(cam_position, cam_look_at, cam_up);
+    g_camera->SetPosition(glm::vec3(sin(param) * radius, 1.0f + height, cos(param) * radius));
+    g_shader->SetUniform3fv("ws_cam_pos", g_camera->GetPosition());
 
     g_shader->SetUniformMatrix4fv("model", model_matrix);
     g_shader->SetUniformMatrix3fv("norm_matrix", glm::inverse(glm::transpose(glm::mat3(model_matrix))));
-    g_shader->SetUniformMatrix4fv("proj_view", projection_matrix * view_matrix);
+    g_shader->SetUniformMatrix4fv("proj_view", g_camera->GetProjectionMatrix() * g_camera->GetViewMatrix());
 
 }
 
@@ -147,14 +138,16 @@ bool Init()
 
 bool LoadContent()
 {
+    /* Create camera for scene */
+    g_camera = new Camera(glm::vec3(0.0f, 1.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.5f, 0.0f));
 
     /* Create and apply basic shader */
     g_shader = new Shader("basic.vert", "basic_reflection.frag");
     g_shader->SetUniformMatrix4fv("model", model_matrix);
     g_shader->SetUniformMatrix3fv("norm_matrix", glm::inverse(glm::transpose(glm::mat3(model_matrix))));
-    g_shader->SetUniformMatrix4fv("proj_view", projection_matrix * view_matrix);
+    g_shader->SetUniformMatrix4fv("proj_view", g_camera->GetProjectionMatrix() * g_camera->GetViewMatrix());
 
-    g_shader->SetUniform3fv("ws_cam_pos", cam_position);
+    g_shader->SetUniform3fv("ws_cam_pos", g_camera->GetPosition());
 
     g_texture = new Texture("alliance.png");
     g_texture->ActiveBind();
@@ -181,6 +174,12 @@ void InitializeParticles(std::vector<glm::vec3>& particle_positions, const glm::
         }
     }
 }
+
+// TODO: 
+// 1. Create camera class and light class
+// 2. Create water particle class? Yeah, lets make a conversion between particles and simple quad. 
+//              (particle position --> 4 vertices spaced in screen-space spaced acording to plane tangent to particle position and view direction)
+// 3. 
 
 void UpdateLoop() 
 {
@@ -222,7 +221,7 @@ void UpdateLoop()
         skybox.ActiveBind(GL_TEXTURE0);
         // g_texture->ActiveBind();
         g_model->Draw();
-        skybox.Draw(view_matrix, projection_matrix);
+        skybox.Draw(g_camera->GetViewMatrix(), g_camera->GetProjectionMatrix());
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
