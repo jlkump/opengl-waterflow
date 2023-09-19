@@ -176,10 +176,8 @@ void InitializeParticles(std::vector<glm::vec3>& particle_positions, const glm::
 }
 
 // TODO: 
-// 1. Create camera class and light class
 // 2. Create water particle class? Yeah, lets make a conversion between particles and simple quad. 
 //              (particle position --> 4 vertices spaced in screen-space spaced acording to plane tangent to particle position and view direction)
-// 3. 
 
 void UpdateLoop() 
 {
@@ -188,13 +186,6 @@ void UpdateLoop()
 
     // Skybox setup
     Skybox skybox({ "skybox/right.jpg", "skybox/left.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/front.jpg", "skybox/back.jpg" });
-
-    // Particle setup
-    static const float particle_radius = 0.05f;
-    std::vector<glm::vec3> particle_positions(NUM_PARTICLES);
-    InitializeParticles(particle_positions, { 0.0, 0.0, 0.0 }, {1.0, 1.0, 1.0});
-    Shader water_shader("water_particle_shader.vert", "water_particle_shader.frag");
-    water_shader.SetUniform1fv("particle_radius", particle_radius);
 
     /* Loop until the user closes the window or presses ESC */
     while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && !glfwWindowShouldClose(window))
