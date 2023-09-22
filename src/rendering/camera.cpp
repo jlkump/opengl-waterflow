@@ -1,11 +1,14 @@
 #include "camera.hpp"
+#include "camera.hpp"
+#include "camera.hpp"
+#include "camera.hpp"
 
 #include <glad/glad.h>
 #include <glm/gtc/matrix_transform.hpp>
 
 
 Camera::Camera(glm::vec3 position, glm::vec3 up, glm::vec3 look_at, float aspect_ratio, float fov, float near_plane, float far_plane)
-	: position_(position), up_(up), look_at_(look_at), aspect_ratio_(aspect_ratio), fov_(glm::radians(fov)), near_plane_(near_plane), far_plane_(far_plane)
+	: position_(position), up_(up), look_at_(look_at), right_(glm::normalize(glm::cross(up_, look_at_))), aspect_ratio_(aspect_ratio), fov_(glm::radians(fov)), near_plane_(near_plane), far_plane_(far_plane)
 {
 	up_ = glm::normalize(up_);
 	look_at_ = glm::normalize(look_at_);
@@ -29,6 +32,23 @@ glm::vec3 Camera::GetPosition()
 {
 	return position_;
 }
+
+glm::vec3 Camera::GetLook()
+{
+	return look_at_;
+}
+
+glm::vec3 Camera::GetUp()
+{
+	return up_;
+}
+
+glm::vec3 Camera::GetRight()
+{
+	return right_;
+}
+
+
 
 void Camera::SetPosition(glm::vec3 position)
 {

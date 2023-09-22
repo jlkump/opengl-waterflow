@@ -30,6 +30,7 @@
 #include "rendering/model.h"
 #include "rendering/cubemap.hpp"
 #include "rendering/camera.hpp"
+#include "simulation/water_sim.hpp"
 
 GLFWwindow* window;
 const int kWindowWidth = 1024;
@@ -161,6 +162,10 @@ void UpdateLoop()
     // Skybox setup
     Skybox skybox({ "skybox/right.jpg", "skybox/left.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/front.jpg", "skybox/back.jpg" });
 
+    PicFlipRenderer pic_flip_renderer;
+    std::vector<glm::vec3> particle_positions = { {0.0, 0.0, 0.0} };
+    pic_flip_renderer.UpdateParticlePositions(particle_positions);
+
     /* Loop until the user closes the window or presses ESC */
     while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && !glfwWindowShouldClose(window))
     {
@@ -177,10 +182,12 @@ void UpdateLoop()
         //  3D Rendering  //
         ////////////////////
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        g_shader->SetActive();
-        skybox.ActiveBind(GL_TEXTURE0);
-        g_model->Draw();
-        skybox.Draw(g_camera->GetViewMatrix(), g_camera->GetProjectionMatrix());
+        pic_flip_renderer.Draw(*g_camera);
+        //g_shader->SetActive();
+        //skybox.ActiveBind(GL_TEXTURE0);
+        //g_model->Draw();
+        //skybox.Draw(g_camera->GetViewMatrix(), g_camera->GetProjectionMatrix());
+
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);

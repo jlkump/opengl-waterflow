@@ -21,6 +21,7 @@ private:
 	glm::vec3 position_;
 	glm::vec3 up_;
 	glm::vec3 look_at_;
+	glm::vec3 right_;
 
 	float aspect_ratio_;
 	float fov_; // Stored in radians
@@ -80,6 +81,10 @@ public:
 	glm::mat4 GetViewMatrix();
 	glm::mat4 GetProjectionMatrix();
 	glm::vec3 GetPosition();
+
+	glm::vec3 GetLook();
+	glm::vec3 GetUp();
+	glm::vec3 GetRight();
 
 	/*
 	* Setters that affect the view matrix
