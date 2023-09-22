@@ -183,9 +183,11 @@ void UpdateLoop()
         //  3D Rendering  //
         ////////////////////
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        // Enable depth test
-        // skybox.Draw(g_camera->GetViewMatrix(), g_camera->GetProjectionMatrix());
-        std::vector<glm::vec3> particle_positions = { {0.0, 0.5, -10.0}, {0.0, 0.7, -10.0} };
+        g_shader->SetActive();
+        skybox.ActiveBind(GL_TEXTURE0);
+        g_model->Draw();
+        skybox.Draw(g_camera->GetViewMatrix(), g_camera->GetProjectionMatrix());
+        std::vector<glm::vec3> particle_positions = { {0.0, 0.0, 0.0}, {0.0, 1.7, 0.0} };
         pic_flip_renderer.UpdateParticlePositions(particle_positions);
         pic_flip_renderer.Draw(*g_camera);
 

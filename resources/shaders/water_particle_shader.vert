@@ -15,7 +15,6 @@ void main() {
 	vec3 ws_vertex_pos = ws_particle_pos 
 			+ ws_camera_right * ls_particle_quad_pos.x * particle_radius 
 			+ ws_camera_up * ls_particle_quad_pos.y * particle_radius;
-
 	gl_Position = proj_view * vec4(ws_vertex_pos, 1.0);
-	uv = ls_particle_quad_pos.xy + vec2(0.5, 0.5);
+	uv = (ls_particle_quad_pos.xy + vec2(1.0, 1.0)) / 2;
 }

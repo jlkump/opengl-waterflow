@@ -80,5 +80,6 @@ void Skybox::Draw(glm::mat4 view, glm::mat4 projection)
     glBindVertexArray(VAO_);
     glBindTexture(GL_TEXTURE_CUBE_MAP, texture_id_);
     glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0);
     glDepthFunc(GL_LESS);
 }
