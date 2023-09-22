@@ -7,11 +7,10 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 
-Camera::Camera(glm::vec3 position, glm::vec3 up, glm::vec3 look_at, float aspect_ratio, float fov, float near_plane, float far_plane)
-	: position_(position), up_(up), look_at_(look_at), right_(glm::normalize(glm::cross(up_, look_at_))), aspect_ratio_(aspect_ratio), fov_(glm::radians(fov)), near_plane_(near_plane), far_plane_(far_plane)
+Camera::Camera(glm::vec3 position, glm::vec3 look_at, glm::vec3 up, float aspect_ratio, float fov, float near_plane, float far_plane)
+	: position_(position), look_at_(look_at), up_(up), aspect_ratio_(aspect_ratio), fov_(glm::radians(fov)), near_plane_(near_plane), far_plane_(far_plane)
 {
 	up_ = glm::normalize(up_);
-	look_at_ = glm::normalize(look_at_);
 }
 
 Camera::~Camera()
@@ -33,9 +32,9 @@ glm::vec3 Camera::GetPosition()
 	return position_;
 }
 
-glm::vec3 Camera::GetLook()
+glm::vec3 Camera::GetForward()
 {
-	return look_at_;
+	return look_at_ - position_;
 }
 
 glm::vec3 Camera::GetUp()
@@ -45,7 +44,7 @@ glm::vec3 Camera::GetUp()
 
 glm::vec3 Camera::GetRight()
 {
-	return right_;
+	return glm::cross(GetForward(), GetUp());
 }
 
 

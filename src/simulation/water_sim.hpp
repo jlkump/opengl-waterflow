@@ -8,7 +8,7 @@
 #include "../rendering/Camera.hpp"
 
 
-#define NUM_PARTICLES 512
+#define NUM_PARTICLES 1
 
 struct SSBO {
 	// Values for the SSBO of the particle sim
@@ -21,12 +21,13 @@ struct SSBO {
 class PicFlipRenderer {
 private:
 	std::vector<glm::vec3> kParticleQuadData_ = {
-		{ -0.5f, -0.5f, 0.0f},
-		{ 0.5f, -0.5f, 0.0f},
-		{ -0.5f, 0.5f, 0.0f},
-		{ 0.5f, 0.5f, 0.0f},
+		{ -1.0f, -1.0f, 0.0f},
+		{ 1.0f, -1.0f, 0.0f},
+		{ -1.0f, 1.0f, 0.0f},
+		{ 1.0f, 1.0f, 0.0f},
 	};
 	// Found a better solution, use instancing
+	GLuint VAO_;
 	GLuint billboard_buffer_;
 	GLuint position_buffer_;
 	Shader particle_shader_;

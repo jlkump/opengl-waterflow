@@ -4,7 +4,9 @@
 * Code taken and modified from 
 * http://www.opengl-tutorial.org/intermediate-tutorials/billboards-particles/particles-instancing/
 */
-PicFlipRenderer::PicFlipRenderer() : particle_shader_("water_particle_shader.vert", "water_particle_shader.frag")
+PicFlipRenderer::PicFlipRenderer() 
+	: particle_shader_("water_particle_shader.vert", "water_particle_shader.frag"),
+	billboard_buffer_(0), position_buffer_(0)
 {
 	glGenBuffers(1, &billboard_buffer_);
 	glBindBuffer(GL_ARRAY_BUFFER, billboard_buffer_);
@@ -13,7 +15,6 @@ PicFlipRenderer::PicFlipRenderer() : particle_shader_("water_particle_shader.ver
 	// The VBO containing the positions and sizes of the particles
 	glGenBuffers(1, &position_buffer_);
 	glBindBuffer(GL_ARRAY_BUFFER, position_buffer_);
-
 	// Initialize with empty (NULL) buffer : it will be updated later, each frame.
 	glBufferData(GL_ARRAY_BUFFER, NUM_PARTICLES * sizeof(glm::vec3), NULL, GL_STREAM_DRAW);
 
@@ -23,13 +24,9 @@ PicFlipRenderer::PicFlipRenderer() : particle_shader_("water_particle_shader.ver
 
 void PicFlipRenderer::UpdateParticlePositions(std::vector<glm::vec3>& positions)
 {
-	// Update the buffers that OpenGL uses for rendering.
-	// There are much more sophisticated means to stream data from the CPU to the GPU,
-	// but this is outside the scope of this tutorial.
-	// http://www.opengl.org/wiki/Buffer_Object_Streaming
-
 	glBindBuffer(GL_ARRAY_BUFFER, position_buffer_);
-	glBufferData(GL_ARRAY_BUFFER, NUM_PARTICLES * sizeof(glm::vec3), NULL, GL_STREAM_DRAW); // Buffer orphaning (improves streaming data performance)
+	// Buffer orphaning (improves streaming data performance)-> http://www.opengl.org/wiki/Buffer_Object_Streaming
+	glBufferData(GL_ARRAY_BUFFER, NUM_PARTICLES * sizeof(glm::vec3), NULL, GL_STREAM_DRAW); 
 	glBufferSubData(GL_ARRAY_BUFFER, 0, positions.size() * sizeof(glm::vec3), (void*) &positions[0]);
 
 	particle_count_ = positions.size();
@@ -39,7 +36,9 @@ void PicFlipRenderer::Draw(Camera& cam)
 {
 	glm::mat4 view_mat = cam.GetViewMatrix();
 	particle_shader_.SetUniform3fv("ws_camera_right", { view_mat[0][0], view_mat[1][0], view_mat[2][0] });
+	printf("ws_camera_right: {%f, %f, %f}\n", view_mat[0][0], view_mat[1][0], view_mat[2][0]);
 	particle_shader_.SetUniform3fv("ws_camera_up", { view_mat[0][1], view_mat[1][1], view_mat[2][1] });
+	printf("ws_camera_up: {%f, %f, %f}\n", view_mat[0][1], view_mat[1][1], view_mat[2][1]);
 	particle_shader_.SetUniformMatrix4fv("proj_view", cam.GetProjectionMatrix() * view_mat);
 
 	particle_shader_.SetActive();

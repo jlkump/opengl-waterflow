@@ -21,7 +21,6 @@ private:
 	glm::vec3 position_;
 	glm::vec3 up_;
 	glm::vec3 look_at_;
-	glm::vec3 right_;
 
 	float aspect_ratio_;
 	float fov_; // Stored in radians
@@ -75,14 +74,14 @@ public:
 	* Given as some distance from the view direction.
 	* Default is 10.
 	*/
-	Camera(glm::vec3 position, glm::vec3 up, glm::vec3 look_at, float aspect_ratio = 4.0f/3.0f, float fov = 60.0f, float near_plane = 0.1f, float far_plane = 10.0f);
+	Camera(glm::vec3 position, glm::vec3 look_at, glm::vec3 up, float aspect_ratio = 4.0f/3.0f, float fov = 60.0f, float near_plane = 0.1f, float far_plane = 10.0f);
 	~Camera();
 
 	glm::mat4 GetViewMatrix();
 	glm::mat4 GetProjectionMatrix();
 	glm::vec3 GetPosition();
 
-	glm::vec3 GetLook();
+	glm::vec3 GetForward();
 	glm::vec3 GetUp();
 	glm::vec3 GetRight();
 

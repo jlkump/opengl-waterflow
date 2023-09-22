@@ -1,12 +1,11 @@
 #version 430 core
 
 in vec2 uv;
-in vec3 center;
 
 out vec3 FragColor;
 
 uniform float particle_radius;
-uniform vec3 ws_light_dir;
+uniform vec3 vs_light_dir;
 
 void main() {
 	// vec3 N;

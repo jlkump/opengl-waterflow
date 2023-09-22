@@ -139,7 +139,7 @@ bool Init()
 bool LoadContent()
 {
     /* Create camera for scene */
-    g_camera = new Camera(glm::vec3(0.0f, 1.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.5f, 0.0f));
+    g_camera = new Camera(glm::vec3(0.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.5f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
     /* Create and apply basic shader */
     g_shader = new Shader("basic.vert", "basic_reflection.frag");
@@ -163,9 +163,10 @@ void UpdateLoop()
     Skybox skybox({ "skybox/right.jpg", "skybox/left.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/front.jpg", "skybox/back.jpg" });
 
     PicFlipRenderer pic_flip_renderer;
-    std::vector<glm::vec3> particle_positions = { {0.0, 0.0, 0.0} };
-    pic_flip_renderer.UpdateParticlePositions(particle_positions);
 
+    glEnable(GL_DEPTH_TEST);
+    // Accept fragment if it closer to the camera than the former one
+    glDepthFunc(GL_LESS);
     /* Loop until the user closes the window or presses ESC */
     while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && !glfwWindowShouldClose(window))
     {
@@ -182,11 +183,11 @@ void UpdateLoop()
         //  3D Rendering  //
         ////////////////////
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        // Enable depth test
+        // skybox.Draw(g_camera->GetViewMatrix(), g_camera->GetProjectionMatrix());
+        std::vector<glm::vec3> particle_positions = { {0.0, 0.5, -10.0}, {0.0, 0.7, -10.0} };
+        pic_flip_renderer.UpdateParticlePositions(particle_positions);
         pic_flip_renderer.Draw(*g_camera);
-        //g_shader->SetActive();
-        //skybox.ActiveBind(GL_TEXTURE0);
-        //g_model->Draw();
-        //skybox.Draw(g_camera->GetViewMatrix(), g_camera->GetProjectionMatrix());
 
 
         /* Swap front and back buffers */
