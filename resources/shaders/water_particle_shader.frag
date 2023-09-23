@@ -20,8 +20,8 @@ void main() {
 	N.z = -sqrt(1.0 - r);
 
 	// Depth calculation
-	// vec4 pixel_pos = vec4(vs_pos + N * particle_radius, 1.0);
-	vec4 hs_pos = proj * vec4(vs_pos, 1.0);
+	vec4 pixel_pos = vec4(vs_pos + N * particle_radius, 1.0);
+	vec4 hs_pos = proj * pixel_pos;
 	gl_FragDepth = hs_pos.z / hs_pos.w;
 	FragColor = vec3(hs_pos.z / hs_pos.w, hs_pos.z / hs_pos.w, hs_pos.z / hs_pos.w);
 
