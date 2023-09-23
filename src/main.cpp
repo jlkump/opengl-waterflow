@@ -99,6 +99,7 @@ bool Init()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    // glfwWindowHint(GLFW_RESIZABLE, GL_FALSE); // Resizing will make rendering to texture difficult
 
     window = glfwCreateWindow(kWindowWidth, kWindowHeight, "Water Flow Simulation", nullptr, nullptr);
 
@@ -181,12 +182,13 @@ void UpdateLoop()
     PicFlipRenderer pic_flip_renderer;
 
     glEnable(GL_DEPTH_TEST);
-    // Accept fragment if it closer to the camera than the former one
     glDepthFunc(GL_LESS);
-    std::vector<glm::vec3> particle_positions(NUM_PARTICLES);
-    InitializeParticles(particle_positions, {-0.5, -0.5, -0.5}, {0.5, 1.5, 0.5});
 
+
+    std::vector<glm::vec3> particle_positions(NUM_PARTICLES);
+    InitializeParticles(particle_positions, {-0.20, -0.20, -0.20}, {0.20, 0.20, 0.20});
     pic_flip_renderer.UpdateParticlePositions(particle_positions);
+
     /* Loop until the user closes the window or presses ESC */
     while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && !glfwWindowShouldClose(window))
     {
@@ -202,10 +204,10 @@ void UpdateLoop()
         ////////////////////
         //  3D Rendering  //
         ////////////////////
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         skybox.ActiveBind(GL_TEXTURE0);
         skybox.Draw(g_camera->GetViewMatrix(), g_camera->GetProjectionMatrix());
-        pic_flip_renderer.Draw(*g_camera);
+        // pic_flip_renderer.Draw(*g_camera);
 
         g_shader->SetActive();
         g_model->Draw();
