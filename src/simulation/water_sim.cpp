@@ -25,7 +25,7 @@ PicFlipRenderer::PicFlipRenderer()
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 
-	particle_shader_.SetUniform1fv("particle_radius", 0.1f);
+	particle_shader_.SetUniform1fv("particle_radius", 0.01f);
 	glBindVertexArray(0);
 }
 
@@ -47,10 +47,14 @@ void PicFlipRenderer::UpdateParticlePositions(std::vector<glm::vec3>& positions)
 void PicFlipRenderer::Draw(Camera& cam)
 {
 	glm::mat4 view_mat = cam.GetViewMatrix();
-	particle_shader_.SetUniform3fv("vs_light_dir", glm::inverse(view_mat) * glm::normalize(glm::vec4(0.0, 0.2, 0.5, 0.0)));
+	glm::mat4 proj_mat = cam.GetProjectionMatrix();
+
 	particle_shader_.SetUniform3fv("ws_camera_right", { view_mat[0][0], view_mat[1][0], view_mat[2][0] });
 	particle_shader_.SetUniform3fv("ws_camera_up", { view_mat[0][1], view_mat[1][1], view_mat[2][1] });
-	particle_shader_.SetUniformMatrix4fv("proj_view", cam.GetProjectionMatrix() * view_mat);
+	particle_shader_.SetUniformMatrix4fv("view", view_mat);
+	particle_shader_.SetUniformMatrix4fv("proj", proj_mat);
+	particle_shader_.SetUniformMatrix4fv("proj_view", proj_mat * view_mat);
+	particle_shader_.SetUniform3fv("vs_light_dir", glm::inverse(view_mat) * glm::normalize(glm::vec4(0.0, 0.2, 0.5, 0.0)));
 
 
 	particle_shader_.SetActive();

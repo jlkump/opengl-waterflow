@@ -154,6 +154,22 @@ bool LoadContent()
     return true;
 }
 
+// Temp function for initialization
+void InitializeParticles(std::vector<glm::vec3>& particle_positions, const glm::vec3& lower_bound, const glm::vec3& upper_bound) {
+    static const double delta = 0.125f / 10.0;
+    int i = 0;
+    for (double x = lower_bound.x; x < upper_bound.x; x += delta) {
+        for (double y = lower_bound.y; y < upper_bound.y; y += delta) {
+            for (double z = lower_bound.z; z < upper_bound.z; z += delta) {
+                if (i < NUM_PARTICLES) {
+                    particle_positions[i] = glm::vec3(x, y, z);
+                }
+                i++;
+            }
+        }
+    }
+}
+
 void UpdateLoop() 
 {
     float previous_time = static_cast<float>(glfwGetTime());
@@ -167,6 +183,10 @@ void UpdateLoop()
     glEnable(GL_DEPTH_TEST);
     // Accept fragment if it closer to the camera than the former one
     glDepthFunc(GL_LESS);
+    std::vector<glm::vec3> particle_positions(NUM_PARTICLES);
+    InitializeParticles(particle_positions, {-0.5, -0.5, -0.5}, {0.5, 1.5, 0.5});
+
+    pic_flip_renderer.UpdateParticlePositions(particle_positions);
     /* Loop until the user closes the window or presses ESC */
     while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && !glfwWindowShouldClose(window))
     {
@@ -183,13 +203,12 @@ void UpdateLoop()
         //  3D Rendering  //
         ////////////////////
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        g_shader->SetActive();
         skybox.ActiveBind(GL_TEXTURE0);
-        g_model->Draw();
         skybox.Draw(g_camera->GetViewMatrix(), g_camera->GetProjectionMatrix());
-        std::vector<glm::vec3> particle_positions = { {0.0, 0.0, 0.0}, {0.0, 1.7, 0.0} };
-        pic_flip_renderer.UpdateParticlePositions(particle_positions);
         pic_flip_renderer.Draw(*g_camera);
+
+        g_shader->SetActive();
+        g_model->Draw();
 
 
         /* Swap front and back buffers */

@@ -8,7 +8,7 @@
 #include "../rendering/Camera.hpp"
 
 
-#define NUM_PARTICLES 512
+#define NUM_PARTICLES 512 * 16
 
 struct SSBO {
 	// Values for the SSBO of the particle sim
