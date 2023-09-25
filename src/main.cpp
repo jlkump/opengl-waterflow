@@ -157,7 +157,7 @@ bool LoadContent()
 
 // Temp function for initialization
 void InitializeParticles(std::vector<glm::vec3>& particle_positions, const glm::vec3& lower_bound, const glm::vec3& upper_bound) {
-    static const double delta = 0.125f / 10.0;
+    static const double delta = 0.125f / 4.0;
     int i = 0;
     for (double x = lower_bound.x; x < upper_bound.x; x += delta) {
         for (double y = lower_bound.y; y < upper_bound.y; y += delta) {
@@ -179,13 +179,13 @@ void UpdateLoop()
     // Skybox setup
     Skybox skybox({ "skybox/right.jpg", "skybox/left.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/front.jpg", "skybox/back.jpg" });
 
-    PicFlipRenderer* pic_flip_renderer = new PicFlipRenderer();
+    PicFlipRenderer* pic_flip_renderer = new PicFlipRenderer(skybox);
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
 
     std::vector<glm::vec3> particle_positions(NUM_PARTICLES);
-    InitializeParticles(particle_positions, {-0.20, -0.20, -0.20}, {0.20, 0.20, 0.20});
+    InitializeParticles(particle_positions, {-0.20, 0.0, -0.20}, {0.20, 1.0, 0.20});
     pic_flip_renderer->UpdateParticlePositions(particle_positions);
 
     /* Loop until the user closes the window or presses ESC */
@@ -204,8 +204,8 @@ void UpdateLoop()
         //  3D Rendering  //
         ////////////////////
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-        // skybox.ActiveBind(GL_TEXTURE0);
-        // skybox.Draw(g_camera->GetViewMatrix(), g_camera->GetProjectionMatrix());
+        skybox.ActiveBind(GL_TEXTURE0);
+        skybox.Draw(g_camera->GetViewMatrix(), g_camera->GetProjectionMatrix());
         pic_flip_renderer->Draw(*g_camera);
 
         // g_shader->SetActive();

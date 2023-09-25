@@ -37,6 +37,7 @@ public:
 	Cubemap(std::vector<std::string> input_textures);
 	~Cubemap();
 
+    virtual void ActiveBind(GLenum texture_unit);
 };
 
 /*

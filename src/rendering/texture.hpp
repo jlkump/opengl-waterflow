@@ -105,7 +105,7 @@ public:
 	* 
 	* 
 	*/
-	void ActiveBind(GLenum texture_unit = GL_TEXTURE0);
+	virtual void ActiveBind(GLenum texture_unit = GL_TEXTURE0);
 
 	void BindImage(unsigned int binding);
 

@@ -4,8 +4,9 @@
 #include <vector>
 #include <glm/glm.hpp>
 #include <glad/glad.h>
-#include "../rendering/Shader.hpp"
-#include "../rendering/Camera.hpp"
+#include "../rendering/shader.hpp"
+#include "../rendering/camera.hpp"
+#include "../rendering/cubemap.hpp"
 
 
 #define NUM_PARTICLES 512 * 16
@@ -71,8 +72,12 @@ private:
 	// Smoothing Shader //
 	//////////////////////
 	// We now smooth the rendered textures
+	void InitializeSmoothingVariables();
 	Shader smoothing_shader_;
+	GLuint smoothing_frame_buffer_id_;
 	Texture smoothed_depth_texture_;
+
+	Skybox& skybox_;
 
 	//////////////////
 	// Water Shader //
@@ -83,12 +88,11 @@ private:
 
 
 public:
-	PicFlipRenderer();
+	PicFlipRenderer(Skybox& skybox);
 
 	void UpdateParticlePositions(std::vector<glm::vec3>& positions);
 
 	void Draw(Camera& cam);
-
 
 };
 

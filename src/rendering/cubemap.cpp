@@ -45,6 +45,16 @@ Cubemap::~Cubemap()
     }
 }
 
+void Cubemap::ActiveBind(GLenum texture_unit)
+{
+    if (!valid_texture_)
+    {
+        return;
+    }
+    glActiveTexture(texture_unit);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, texture_id_);
+}
+
 Skybox::Skybox(std::vector<std::string> input_textures) 
     : Cubemap(input_textures), skybox_shader_("skybox.vert", "skybox.frag"), VAO_(0)
 {

@@ -5,37 +5,57 @@ in vec2 uv;
 out vec3 FragColor;
 
 uniform sampler2D depth_tex;
+// uniform sampler2D bg_tex;
+uniform samplerCube skybox;
+uniform vec3 ws_cam_pos;
 
-uniform vec4 viewport; // viewport.x is max width, y is max height
 uniform mat4 inv_proj;
+uniform mat4 inv_view;
 
-vec3 GetEyePos(vec2 tex_coord) {
+vec3 GetViewPos(vec2 tex_coord) {
 	vec4 hs_pos = vec4 (
-		2.0 * (tex_coord.x - viewport.x) / viewport.x - 1.0,
-		2.0 * (tex_coord.y - viewport.y) / viewport.y - 1.0,
+		2.0 * tex_coord.x - 1.0,
+		2.0 * tex_coord.y - 1.0,
 		2.0 * texture(depth_tex, tex_coord).r - 1.0,
 		1.0);
 	vec4 vs_pos = (inv_proj * hs_pos);
 	return vs_pos.xyz / vs_pos.w;
 }
 
-void main() {
+vec3 GetWorldPos(vec2 tex_coord) {
+	return (inv_view * vec4(GetViewPos(tex_coord), 1.0)).rgb;
+}
+
+vec3 GetNormal() {
 	float depth = texture(depth_tex, uv).r;
-	// Stencil shader should discard drawing outside the water
-
-	vec3 vs_pos = GetEyePos(uv);
-
-	vec3 ddx = GetEyePos(uv + vec2(1, 0)) - vs_pos;
-	vec3 ddx2 = vs_pos - GetEyePos(uv + vec2(-1, 0));
+	
+	ivec2 texDimen = textureSize(depth_tex, 0);
+	
+	vec3 vs_pos = GetViewPos(uv);
+	
+	vec3 ddx = GetViewPos(uv + vec2(1, 0) / texDimen) - vs_pos;
+	vec3 ddx2 = vs_pos - GetViewPos(uv + vec2(-1, 0) / texDimen);
 	if (abs(ddx.z) > abs(ddx2.z)) {
 		ddx = ddx2;
 	}
-
-	vec3 ddy = GetEyePos(uv + vec2(0, 1)) - vs_pos;
-	vec3 ddy2 = vs_pos - GetEyePos(uv + vec2(0, -1));
+	
+	vec3 ddy = GetViewPos(uv + vec2(0, 1) / texDimen) - vs_pos;
+	vec3 ddy2 = vs_pos - GetViewPos(uv + vec2(0, -1) / texDimen);
 	if (abs(ddy.z) > abs(ddy2.z)) {
 		ddy = ddy2;
 	}
 	vec3 norm = normalize(cross(ddx, ddy));
-	FragColor = norm; // TODO: shading.
+	if (norm.z + 1e-7 >= 1.0) discard; // Bad culling, should use stencil mask instead, but lazy atm :P
+	return norm;
+}
+
+void main() {
+
+	vec3 N = GetNormal(); // TODO: shading.
+
+	// Use blin-phong illumination
+	// Introduce reflections
+    vec3 I = normalize(GetWorldPos(uv) - ws_cam_pos);
+	vec3 R = reflect(I, N);
+	FragColor = texture(skybox, R).rgb;
 }
