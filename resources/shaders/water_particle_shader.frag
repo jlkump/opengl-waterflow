@@ -3,7 +3,7 @@
 in vec2 uv;
 in vec3 vs_pos;
 
-layout(location = 0) float Depth; // Out output texture
+layout(location = 0) out vec3 Depth; // Out output texture  
 
 uniform vec3 vs_cam_pos;
 uniform float particle_radius;
@@ -21,5 +21,5 @@ void main() {
 	// Depth calculation
 	vec4 pixel_pos = vec4(vs_pos + N * particle_radius, 1.0);
 	vec4 hs_pos = proj * pixel_pos;
-	Depth = hs_pos.z / hs_pos.w;
+	Depth = vec3(hs_pos.z / hs_pos.w);
 }

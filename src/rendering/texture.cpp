@@ -51,6 +51,33 @@ Texture::Texture(int dimensions, GLenum desired_channels, GLenum storage_type, c
     };
 }
 
+Texture::Texture(glm::ivec2 dimensions, GLenum desired_channels, GLenum storage_type, const float* data)
+    : texture_id_(0), channels_(desired_channels), storage_type_(storage_type), valid_texture_(true)
+{
+    if (desired_channels < GL_RED || desired_channels > GL_RGBA)
+    {
+        valid_texture_ = false;
+        fprintf(stderr, "Texture created with %d number of channels instead of between GL_RED and GL_RGBA\n", desired_channels);
+        return;
+    }
+    glGenTextures(1, &texture_id_);
+    glBindTexture(GL_TEXTURE_2D, texture_id_);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+    if (storage_type == GL_R32F || storage_type == GL_RG32F || storage_type == GL_RGB32F || storage_type == GL_RGBA32F) 
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, storage_type, dimensions.x, dimensions.y, 0, desired_channels, GL_FLOAT, data);
+    }
+    else 
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, storage_type, dimensions.x, dimensions.y, 0, desired_channels, GL_UNSIGNED_BYTE, data);
+    }
+}
+
 Texture::Texture(const std::string& filename) 
     : texture_id_(0), channels_(GL_RGBA), storage_type_(GL_RGBA8), valid_texture_(true)
 {

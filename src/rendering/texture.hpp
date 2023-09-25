@@ -3,6 +3,7 @@
 
 #include <string>
 #include <glad/glad.h>
+#include <glm/glm.hpp>
 
 class Texture 
 {
@@ -40,26 +41,6 @@ protected:
 public:
 	/*
 	* @brief
-	* Texture constants for channels and texture storage types
-	*/
-	//static const GLenum RED = GL_RED;
-	//static const GLenum RG = GL_RG;
-	//static const GLenum RGB = GL_RGB;
-	//static const GLenum RGBA = GL_RGBA;
-
-	//static const GLenum R_INT = GL_R8;
-	//static const GLenum RG_INT = GL_RG8;
-	//static const GLenum RGB_INT = GL_RGB8;
-	//static const GLenum RGBA_INT = GL_RGBA8;
-
-	//static const GLenum R_FLOAT = GL_R32F;
-	//static const GLenum RG_FLOAT = GL_RG32F;
-	//static const GLenum RGB_FLOAT = GL_RGB32F;
-	//static const GLenum RGBA_FLOAT = GL_RGBA32F;
-
-
-	/*
-	* @brief
 	* Creates an empty texture which can be useful for drawing
 	* to texture with shaders. In this case, the GetTextureId()
 	* method will be useful in binding the texture to the
@@ -88,6 +69,11 @@ public:
 	* four floats representing a color.
 	*/
 	Texture(int dimensions, GLenum desired_channels = GL_RGBA, GLenum storage_type = GL_RGBA32F, const float* data = nullptr);
+	/*
+	* Same as standard texture, except dimensions defines width and height rather than
+	* just box dimensions. Must be a power of 2 for dimension sizes
+	*/
+	Texture(glm::ivec2 dimensions, GLenum desired_channels = GL_RGBA, GLenum storage_type = GL_RGBA32F, const float* data = nullptr);
 
 	/*
 	* Loads in a texture with the given filename.

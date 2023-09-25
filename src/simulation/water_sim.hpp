@@ -38,9 +38,12 @@ private:
 		{ 1.0f, 1.0f, 0.0f},
 	};
 
-	std::vector<unsigned int> kQuadIndices_ = {
+	std::vector<unsigned short> kQuadIndices_ = {
 		0, 1, 2, 2, 1, 3
 	};
+
+	int viewport_width_ = 1024;
+	int viewport_height_ = 768;
 
 	///////////////////////////////
 	// Particle Sprite Rendering //
@@ -53,8 +56,7 @@ private:
 	int particle_count_ = 0;
 	float particle_radius_ = 0.1f;
 	// We render depth to this image, nothing gets rendered to the screen on the first pass.
-	GLuint frame_buffer_id_;
-	GLuint render_texture_id_;
+	GLuint particle_frame_buffer_id_;
 	Texture depth_texture_;
 	
 	// We will be rendering using textures rather than real model vertex data, 
@@ -77,7 +79,7 @@ private:
 	//////////////////
 	Shader water_shader_;
 
-	void DrawParticlesToTexture(glm::mat4& view_mat, glm::mat4& proj_mat);
+	void DrawParticleSprites(glm::mat4& view_mat, glm::mat4& proj_mat);
 
 
 public:

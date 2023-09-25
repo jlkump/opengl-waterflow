@@ -179,15 +179,14 @@ void UpdateLoop()
     // Skybox setup
     Skybox skybox({ "skybox/right.jpg", "skybox/left.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/front.jpg", "skybox/back.jpg" });
 
-    PicFlipRenderer pic_flip_renderer;
+    PicFlipRenderer* pic_flip_renderer = new PicFlipRenderer();
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
 
-
     std::vector<glm::vec3> particle_positions(NUM_PARTICLES);
     InitializeParticles(particle_positions, {-0.20, -0.20, -0.20}, {0.20, 0.20, 0.20});
-    pic_flip_renderer.UpdateParticlePositions(particle_positions);
+    pic_flip_renderer->UpdateParticlePositions(particle_positions);
 
     /* Loop until the user closes the window or presses ESC */
     while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && !glfwWindowShouldClose(window))
@@ -205,12 +204,12 @@ void UpdateLoop()
         //  3D Rendering  //
         ////////////////////
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-        skybox.ActiveBind(GL_TEXTURE0);
-        skybox.Draw(g_camera->GetViewMatrix(), g_camera->GetProjectionMatrix());
-        // pic_flip_renderer.Draw(*g_camera);
+        // skybox.ActiveBind(GL_TEXTURE0);
+        // skybox.Draw(g_camera->GetViewMatrix(), g_camera->GetProjectionMatrix());
+        pic_flip_renderer->Draw(*g_camera);
 
-        g_shader->SetActive();
-        g_model->Draw();
+        // g_shader->SetActive();
+        // g_model->Draw();
 
 
         /* Swap front and back buffers */
@@ -219,6 +218,7 @@ void UpdateLoop()
         /* Poll for and process events */
         glfwPollEvents();
     }
+    delete pic_flip_renderer;
 }
 
 int main() 
@@ -238,6 +238,7 @@ int main()
 
     delete g_shader;
     delete g_model;
+    delete g_camera;
 
 	return 0;
 }

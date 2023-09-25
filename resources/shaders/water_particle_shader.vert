@@ -20,6 +20,6 @@ void main() {
 			+ ws_camera_up * ls_particle_quad_pos.y * particle_radius;
 
 	gl_Position = proj_view * vec4(ws_vertex_pos, 1.0);
-	vs_pos = (view * vec4(ws_vertex_pos, 1.0)).xyz;
+	vs_pos = (view * vec4(ws_vertex_pos, 1.0)).xyz; //ws_particle_pos instead?
 	uv = (ls_particle_quad_pos.xy + vec2(1.0, 1.0)) / 2;
 }
