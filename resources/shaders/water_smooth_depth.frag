@@ -29,6 +29,10 @@ void main() {
 	float frac_s = -1.0 / (2.0 * sig_s * sig_s);
 	float frac_l = -1.0 / (2.0 * sig_l * sig_l);
 
+	// For tryin gaussian, just for testing really
+	// vec4 g_sum = vec4(0);
+	// int iteration = 0;
+
 	for (float x = -filter_radius; x <= filter_radius; x += 1.0) {
 		for (float y = -filter_radius; y <= filter_radius; y += 1.0) {
 			vec2 offset = vec2(x, y);
@@ -42,6 +46,9 @@ void main() {
 			float w = w_s * w_l;
 			d_wsum += w;
 			d_sum += d_sample * w;
+
+			// iteration += 1;
+			// g_sum += d_sample;
 		}
 	}
 
@@ -49,4 +56,6 @@ void main() {
 		d_sum /= d_wsum;
 	}
 	Depth = d_sum.rgb;
+
+	// Depth = (g_sum / iteration).rgb;
 }

@@ -1,4 +1,4 @@
-#include "water_sim.hpp"
+#include "water_particle_renderer.hpp"
 /*
 * Code taken and modified from 
 * http://www.opengl-tutorial.org/intermediate-tutorials/billboards-particles/particles-instancing/
@@ -8,7 +8,7 @@
 // Initialization //
 ////////////////////
 
-void PicFlipRenderer::InitializeParticleRenderingVariables()
+void WaterParticleRenderer::InitializeParticleRenderingVariables()
 {
 	glGenVertexArrays(1, &particle_VAO_);
 	glBindVertexArray(particle_VAO_);
@@ -47,7 +47,7 @@ void PicFlipRenderer::InitializeParticleRenderingVariables()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void PicFlipRenderer::InitializeScreenQuadVariables()
+void WaterParticleRenderer::InitializeScreenQuadVariables()
 {
 	glGenVertexArrays(1, &quad_VAO_);
 	glBindVertexArray(quad_VAO_);
@@ -63,7 +63,7 @@ void PicFlipRenderer::InitializeScreenQuadVariables()
 	glBindVertexArray(0);
 }
 
-void PicFlipRenderer::InitializeSmoothingVariables()
+void WaterParticleRenderer::InitializeSmoothingVariables()
 {
 	// Smoothing shader initialization
 	glGenFramebuffers(1, &smoothing_frame_buffer_id_);
@@ -82,14 +82,17 @@ void PicFlipRenderer::InitializeSmoothingVariables()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-PicFlipRenderer::PicFlipRenderer(Skybox& skybox)
+/////////////////
+// Constructor // 
+/////////////////
+
+WaterParticleRenderer::WaterParticleRenderer()
 	: particle_shader_("water_particle_shader.vert", "water_particle_shader.frag"),
 	particle_billboard_buffer_(0), particle_position_buffer_(0), particle_VAO_(0), depth_texture_(glm::ivec2(viewport_width_, viewport_height_)),
 	quad_VAO_(0), quad_position_buffer_(0),
 	smoothing_shader_("screen_quad.vert", "water_smooth_depth.frag"),
 	smoothing_frame_buffer_id_(0), smoothed_depth_texture_(glm::ivec2(viewport_width_, viewport_height_)),
-	water_shader_("screen_quad.vert", "water_shader.frag"),
-	skybox_(skybox)
+	water_shader_("screen_quad.vert", "water_shader.frag")
 {
 	InitializeParticleRenderingVariables();
 	InitializeScreenQuadVariables();
@@ -99,12 +102,12 @@ PicFlipRenderer::PicFlipRenderer(Skybox& skybox)
 	particle_shader_.SetUniform1fv("particle_radius", 0.03f);
 
 	// Smoothing shader uniforms
-	smoothing_shader_.SetUniform1fv("blur_depth_falloff", 3000.0);
-	smoothing_shader_.SetUniform1fv("filter_radius", 7.0);
-	smoothing_shader_.SetUniform1fv("blur_scale", 300.0);
+	smoothing_shader_.SetUniform1fv("blur_depth_falloff", 1.0);
+	smoothing_shader_.SetUniform1fv("filter_radius", 8.0);
+	smoothing_shader_.SetUniform1fv("blur_scale", 10000.0);
 }
 
-void PicFlipRenderer::UpdateParticlePositions(std::vector<glm::vec3>& positions)
+void WaterParticleRenderer::UpdateParticlePositions(std::vector<glm::vec3>& positions)
 {
 	glBindVertexArray(particle_VAO_);
 
@@ -123,7 +126,7 @@ void PicFlipRenderer::UpdateParticlePositions(std::vector<glm::vec3>& positions)
 // Drawing //
 /////////////
 
-void PicFlipRenderer::DrawParticleSprites(glm::mat4& view_mat, glm::mat4& proj_mat)
+void WaterParticleRenderer::DrawParticleSprites(glm::mat4& view_mat, glm::mat4& proj_mat)
 {
 	particle_shader_.SetUniform3fv("ws_camera_right", { view_mat[0][0], view_mat[1][0], view_mat[2][0] });
 	particle_shader_.SetUniform3fv("ws_camera_up", { view_mat[0][1], view_mat[1][1], view_mat[2][1] });
@@ -161,12 +164,8 @@ void PicFlipRenderer::DrawParticleSprites(glm::mat4& view_mat, glm::mat4& proj_m
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void PicFlipRenderer::Draw(Camera& cam)
+void WaterParticleRenderer::SmoothDepthTexture()
 {
-	glm::mat4 view_mat = cam.GetViewMatrix();
-	glm::mat4 proj_mat = cam.GetProjectionMatrix();
-	DrawParticleSprites(view_mat, proj_mat);
-
 	// Smooth the depth
 	smoothing_shader_.SetActive();
 	smoothing_shader_.SetUniformTexture("depth_sampler", depth_texture_, GL_TEXTURE0);
@@ -183,13 +182,18 @@ void PicFlipRenderer::Draw(Camera& cam)
 	glDisableVertexAttribArray(0);
 	glBindVertexArray(0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
 
+void WaterParticleRenderer::DrawWater(glm::mat4& inv_view, glm::mat4& inv_proj, glm::vec3& cam_pos, glm::vec3& light_dir, Skybox& skybox)
+{
 	water_shader_.SetActive();
-	water_shader_.SetUniformMatrix4fv("inv_proj", glm::inverse(proj_mat));
-	water_shader_.SetUniformMatrix4fv("inv_view", glm::inverse(view_mat));
+	water_shader_.SetUniformMatrix4fv("inv_view", inv_view);
+	water_shader_.SetUniformMatrix4fv("inv_proj", inv_proj);
 	water_shader_.SetUniformTexture("depth_tex", smoothed_depth_texture_, GL_TEXTURE0);
-	water_shader_.SetUniformTexture("skybox", skybox_, GL_TEXTURE1);
-	water_shader_.SetUniform3fv("ws_cam_pos", cam.GetPosition());
+	water_shader_.SetUniformTexture("skybox", skybox, GL_TEXTURE1);
+	water_shader_.SetUniform3fv("ws_cam_pos", cam_pos);
+	water_shader_.SetUniform3fv("ws_light_dir",light_dir);
+	water_shader_.SetUniform3fv("diffuse_color", glm::normalize(glm::vec3(0.0, 0.4, 0.6)));
 
 	glBindVertexArray(quad_VAO_);
 	glEnableVertexAttribArray(0);
@@ -199,5 +203,14 @@ void PicFlipRenderer::Draw(Camera& cam)
 	glDrawElements(GL_TRIANGLES, kQuadIndices_.size(), GL_UNSIGNED_SHORT, 0);
 	glDisableVertexAttribArray(0);
 	glBindVertexArray(0);
+}
+
+void WaterParticleRenderer::Draw(Camera& cam, Skybox& skybox)
+{
+	glm::mat4 view_mat = cam.GetViewMatrix();
+	glm::mat4 proj_mat = cam.GetProjectionMatrix();
+	DrawParticleSprites(view_mat, proj_mat);
+	SmoothDepthTexture();
+	DrawWater(glm::inverse(view_mat), glm::inverse(proj_mat), cam.GetPosition(), glm::normalize(glm::vec3(0.4, -0.8, -0.4)), skybox);
 
 }

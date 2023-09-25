@@ -8,6 +8,8 @@ uniform sampler2D depth_tex;
 // uniform sampler2D bg_tex;
 uniform samplerCube skybox;
 uniform vec3 ws_cam_pos;
+uniform vec3 ws_light_dir;
+uniform vec3 diffuse_color;
 
 uniform mat4 inv_proj;
 uniform mat4 inv_view;
@@ -55,7 +57,13 @@ void main() {
 
 	// Use blin-phong illumination
 	// Introduce reflections
-    vec3 I = normalize(GetWorldPos(uv) - ws_cam_pos);
+    vec3 I = normalize(ws_cam_pos - GetWorldPos(uv));
 	vec3 R = reflect(I, N);
-	FragColor = texture(skybox, R).rgb;
+	float diffuse_amount = dot(N, ws_light_dir) * 0.5 + 0.5;
+
+	float base_reflectance = 0.6; // 2 * dot(N, ws_light_dir) * ws_light_dir - ;
+	float reflection_amount = base_reflectance + (1.0 - base_reflectance) * pow(1.0 - dot(N, I), 5);
+	vec3 reflection_color = texture(skybox, R).rgb;
+
+	FragColor = diffuse_color * diffuse_amount * .1 + reflection_amount * reflection_color;
 }

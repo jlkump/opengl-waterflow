@@ -30,7 +30,7 @@
 #include "rendering/model.h"
 #include "rendering/cubemap.hpp"
 #include "rendering/camera.hpp"
-#include "simulation/water_sim.hpp"
+#include "simulation/water_particle_renderer.hpp"
 
 GLFWwindow* window;
 const int kWindowWidth = 1024;
@@ -179,7 +179,7 @@ void UpdateLoop()
     // Skybox setup
     Skybox skybox({ "skybox/right.jpg", "skybox/left.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/front.jpg", "skybox/back.jpg" });
 
-    PicFlipRenderer* pic_flip_renderer = new PicFlipRenderer(skybox);
+    WaterParticleRenderer* pic_flip_renderer = new WaterParticleRenderer();
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
@@ -206,7 +206,7 @@ void UpdateLoop()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         skybox.ActiveBind(GL_TEXTURE0);
         skybox.Draw(g_camera->GetViewMatrix(), g_camera->GetProjectionMatrix());
-        pic_flip_renderer->Draw(*g_camera);
+        pic_flip_renderer->Draw(*g_camera, skybox);
 
         // g_shader->SetActive();
         // g_model->Draw();

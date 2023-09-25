@@ -8,17 +8,6 @@
 #include "../rendering/camera.hpp"
 #include "../rendering/cubemap.hpp"
 
-
-#define NUM_PARTICLES 512 * 16
-
-struct SSBO {
-	// Values for the SSBO of the particle sim
-	float delta_time_;
-	std::vector<glm::vec3> positions_;
-	std::vector<glm::vec3> velocities_;
-	std::vector<bool> solid_cells_; // True when solid
-};
-
 /*
 * 
 * The pic flip renderer uses the following steps in the rendering process.
@@ -30,7 +19,7 @@ struct SSBO {
 *	3. Find the normal from the depth texture and render the water accordingly from there.
 * 
 */
-class PicFlipRenderer {
+class WaterParticleRenderer {
 private:
 	std::vector<glm::vec3> kQuadData_ = {
 		{ -1.0f, -1.0f, 0.0f},
@@ -66,6 +55,7 @@ private:
 	GLuint quad_VAO_;
 	GLuint quad_position_buffer_;
 	GLuint quad_index_buffer_;
+	void DrawParticleSprites(glm::mat4& view_mat, glm::mat4& proj_mat);
 
 
 	//////////////////////
@@ -76,23 +66,20 @@ private:
 	Shader smoothing_shader_;
 	GLuint smoothing_frame_buffer_id_;
 	Texture smoothed_depth_texture_;
-
-	Skybox& skybox_;
+	void SmoothDepthTexture();
 
 	//////////////////
 	// Water Shader //
 	//////////////////
 	Shader water_shader_;
-
-	void DrawParticleSprites(glm::mat4& view_mat, glm::mat4& proj_mat);
-
+	void DrawWater(glm::mat4& inv_view, glm::mat4& inv_proj, glm::vec3& cam_pos, glm::vec3& light_dir, Skybox& skybox);
 
 public:
-	PicFlipRenderer(Skybox& skybox);
+	WaterParticleRenderer();
 
 	void UpdateParticlePositions(std::vector<glm::vec3>& positions);
 
-	void Draw(Camera& cam);
+	void Draw(Camera& cam, Skybox& skybox);
 
 };
 
