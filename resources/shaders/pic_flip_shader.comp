@@ -1,24 +1,21 @@
 #version 430
 
-#define NUM_PARTICLES 512
-#define GRID_X_LENGTH 100
-#define GRID_Y_LENGTH 100
-#define GRID_Z_LENGTH 100
-
 layout(local_size_x=1, local_size_y=1, local_size_z=1) in; // One local worker per worker group
 
-layout (std430, binding = 0) buffer variables 
-{
-	float delta_time;
-	vec3 position[NUM_PARTICLES];
-	vec3 velocity[NUM_PARTICLES];
-	bool solid_cells[GRID_X_LENGTH][GRID_Y_LENGTH][GRID_Z_LENGTH]; // true if solid
-//	vec3 low_bound_start; // low_bound_start is the starting position for the grid. The grid expands in positive x,y,z from there
-//	vec3 grid_cell_size; // grid_cell_size x, y, z determine the width, height, and length of a cell.
-//	ivec3 number_of_cells; // number of cells in the grid, starting from position low_bound_start.
+layout (std430, binding = 0) buffer variables {
+	float deltaTime;
+	vec3 lower_bound;
+	vec3 upper_bound;
 };
+
+layout (rgba32f, binding = 1) uniform image2D particle_pos_old;
+layout (rgba32f, binding = 2) uniform image2D particle_pos_new;
+
+layout (rgba32f, binding = 3) uniform image2D particle_vel_old;
+layout (rgba32f, binding = 4) uniform image2D particle_vel_new;
 
 void main() 
 {
+	ivec2 id = ivec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y);
 
 }

@@ -1,5 +1,5 @@
-#ifndef PARTICLE_SIM_C
-#define PARTICLE_SIM_C
+#ifndef PARTICLE_RENDERER_C
+#define PARTICLE_RENDERER_C
 
 #include <vector>
 #include <glm/glm.hpp>
@@ -7,6 +7,8 @@
 #include "../rendering/shader.hpp"
 #include "../rendering/camera.hpp"
 #include "../rendering/cubemap.hpp"
+
+#define NUM_PARTICLES 512
 
 /*
 * 
