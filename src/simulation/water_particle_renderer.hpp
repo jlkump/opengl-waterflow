@@ -8,7 +8,7 @@
 #include "../rendering/camera.hpp"
 #include "../rendering/cubemap.hpp"
 
-#define NUM_PARTICLES 512
+#define NUM_PARTICLES 512 * 8
 
 /*
 * 

@@ -18,6 +18,7 @@ void main() {
 	// Code used and modified from the GDC 2010 realtime water rendering slides
 	// (https://developer.download.nvidia.com/presentations/2010/gdc/Direct3D_Effects.pdf)
 	float d = texture(depth_sampler, uv).x; // Arbitrarly pick a coord
+	float d_lum = d;
 	ivec2 texDimen = textureSize(depth_sampler, 0);
 
 	vec4 d_sum = vec4(0);
@@ -39,7 +40,7 @@ void main() {
 			vec4 d_sample = texture(depth_sampler, uv + offset / texDimen);
 
 			float diff_dist = length(offset); // Difference in distance from current point
-			float diff_lum = length(d_sample.xyz) - 1; // Difference in luminosity
+			float diff_lum = length(d_sample.xyz) - d_lum; // Difference in luminosity
 
 			float w_s = exp(frac_s * float(diff_dist * diff_dist));
 			float w_l = exp(frac_l * float(diff_lum * diff_lum));

@@ -34,7 +34,7 @@ glm::vec3 Camera::GetPosition()
 
 glm::vec3 Camera::GetForward()
 {
-	return look_at_ - position_;
+	return glm::normalize(look_at_ - position_);
 }
 
 glm::vec3 Camera::GetUp()
@@ -44,7 +44,7 @@ glm::vec3 Camera::GetUp()
 
 glm::vec3 Camera::GetRight()
 {
-	return glm::cross(GetForward(), GetUp());
+	return glm::normalize(glm::cross(GetForward(), GetUp()));
 }
 
 

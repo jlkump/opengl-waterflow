@@ -47,16 +47,15 @@ vec3 GetNormal() {
 		ddy = ddy2;
 	}
 	vec3 norm = normalize(cross(ddx, ddy));
-	if (norm.z + 1e-7 >= 1.0) discard; // Bad culling, should use stencil mask instead, but lazy atm :P
+	if (norm.z + 1e-5 >= 1) discard;
 	return norm;
 }
 
 void main() {
 
-	vec3 N = GetNormal(); // TODO: shading.
-
-	// Use blin-phong illumination
-	// Introduce reflections
+	vec3 N = GetNormal() + vec3(0,0,0.5);
+	
+	// Simple diffuse and reflection illumination/shading
     vec3 I = normalize(ws_cam_pos - GetWorldPos(uv));
 	vec3 R = reflect(I, N);
 	float diffuse_amount = dot(N, ws_light_dir) * 0.5 + 0.5;
@@ -66,4 +65,6 @@ void main() {
 	vec3 reflection_color = texture(skybox, R).rgb;
 
 	FragColor = diffuse_color * diffuse_amount * .1 + reflection_amount * reflection_color;
+	FragColor = texture(depth_tex, uv).rgb;
+	FragColor = N;
 }

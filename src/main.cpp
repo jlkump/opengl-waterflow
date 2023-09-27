@@ -53,6 +53,17 @@ void WindowSizeCallback(GLFWwindow* window, int width, int height)
     }
 }
 
+void PrintMatrix(glm::mat4& mat) {
+    for (int x = 0; x < 4; x++) {
+        printf("[");
+        for (int y = 0; y < 4; y++) {
+            printf(" %.2f ", mat[y][x]);
+        }
+        printf("]\n");
+    }
+    printf("\n");
+}
+
 void WindowKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     static float param = 0.0f;
@@ -84,7 +95,8 @@ void WindowKeyCallback(GLFWwindow* window, int key, int scancode, int action, in
     g_shader->SetUniformMatrix4fv("model", model_matrix);
     g_shader->SetUniformMatrix3fv("norm_matrix", glm::inverse(glm::transpose(glm::mat3(model_matrix))));
     g_shader->SetUniformMatrix4fv("proj_view", g_camera->GetProjectionMatrix() * g_camera->GetViewMatrix());
-
+    if (action == GLFW_PRESS)
+        PrintMatrix(g_camera->GetViewMatrix());
 }
 
 

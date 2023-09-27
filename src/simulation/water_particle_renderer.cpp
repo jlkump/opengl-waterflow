@@ -40,8 +40,6 @@ void WaterParticleRenderer::InitializeParticleRenderingVariables()
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		fprintf(stderr, "Problem with framebuffer\n");
 
-	// We set particle radius here. TODO: Parametrizable radius
-
 	// Cleanup
 	glBindVertexArray(0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -102,9 +100,9 @@ WaterParticleRenderer::WaterParticleRenderer()
 	particle_shader_.SetUniform1fv("particle_radius", 0.03f);
 
 	// Smoothing shader uniforms
-	smoothing_shader_.SetUniform1fv("blur_depth_falloff", 1.0);
-	smoothing_shader_.SetUniform1fv("filter_radius", 8.0);
-	smoothing_shader_.SetUniform1fv("blur_scale", 10000.0);
+	smoothing_shader_.SetUniform1fv("blur_depth_falloff", 100.0);
+	smoothing_shader_.SetUniform1fv("filter_radius", 0.0);
+	smoothing_shader_.SetUniform1fv("blur_scale", 1000.0);
 }
 
 void WaterParticleRenderer::UpdateParticlePositions(std::vector<glm::vec3>& positions)
@@ -122,18 +120,18 @@ void WaterParticleRenderer::UpdateParticlePositions(std::vector<glm::vec3>& posi
 	glBindVertexArray(0);
 }
 
+
 /////////////
 // Drawing //
 /////////////
 
 void WaterParticleRenderer::DrawParticleSprites(glm::mat4& view_mat, glm::mat4& proj_mat)
 {
+	// particle_shader_.SetUniformMatrix4fv("view", view_mat);
+	particle_shader_.SetUniformMatrix4fv("proj", proj_mat);
 	particle_shader_.SetUniform3fv("ws_camera_right", { view_mat[0][0], view_mat[1][0], view_mat[2][0] });
 	particle_shader_.SetUniform3fv("ws_camera_up", { view_mat[0][1], view_mat[1][1], view_mat[2][1] });
-	particle_shader_.SetUniformMatrix4fv("view", view_mat);
-	particle_shader_.SetUniformMatrix4fv("proj", proj_mat);
 	particle_shader_.SetUniformMatrix4fv("proj_view", proj_mat * view_mat);
-
 
 	// set our depth_texture_ as the frame buffer
 	particle_shader_.SetActive();
