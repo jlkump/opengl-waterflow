@@ -47,13 +47,13 @@ vec3 GetNormal() {
 		ddy = ddy2;
 	}
 	vec3 norm = normalize(cross(ddx, ddy));
-	if (norm.z + 1e-5 >= 1) discard;
+	// if (norm.z + 1e-5 >= 1) discard;
 	return norm;
 }
 
 void main() {
 
-	vec3 N = GetNormal() + vec3(0,0,0.5);
+	vec3 N = GetNormal();
 	
 	// Simple diffuse and reflection illumination/shading
     vec3 I = normalize(ws_cam_pos - GetWorldPos(uv));
@@ -65,6 +65,6 @@ void main() {
 	vec3 reflection_color = texture(skybox, R).rgb;
 
 	FragColor = diffuse_color * diffuse_amount * .1 + reflection_amount * reflection_color;
-	FragColor = texture(depth_tex, uv).rgb;
-	FragColor = N;
+	FragColor = vec3(texture(depth_tex, uv).r);
+	// FragColor = N;
 }

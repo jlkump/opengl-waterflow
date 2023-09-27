@@ -3,7 +3,7 @@
 in vec2 uv;
 in vec3 vs_pos;
 
-layout(location = 0) out vec3 Depth; // Out output texture  
+layout(location = 0) out vec3 Depth;
 
 uniform vec3 vs_cam_pos;
 uniform float particle_radius;
@@ -15,14 +15,12 @@ void main() {
 	vec3 N;
 	N.xy = (uv.xy * 2.0 - vec2(1.0));
 	float r = dot(N.xy, N.xy);
-	if (r > 0.5) discard;
-	N.z = exp(1.0 - r);
+	if (r > 1.0) discard;
+	N.z = -sqrt(1.0 - r);
+	N = normalize(N);
 
 	// Depth calculation
-	vec4 pixel_pos = vec4(N, 1.0); // vec4(vs_pos + N * particle_radius, 1.0);
+	vec4 pixel_pos = vec4(N * particle_radius * 2, 1.0);
 	vec4 hs_pos = proj * pixel_pos;
-	// Depth = vec3(hs_pos.z / hs_pos.w);
-	
-	// just z
-	Depth = vec3(vs_pos.z + hs_pos.z);
+	Depth = vec3(vs_pos.z - hs_pos.z);
 }
