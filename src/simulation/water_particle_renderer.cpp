@@ -97,12 +97,10 @@ WaterParticleRenderer::WaterParticleRenderer()
 	InitializeSmoothingVariables();
 
 	// Particle shader uniform
-	particle_shader_.SetUniform1fv("particle_radius", 0.03f);
+	particle_shader_.SetUniform1fv("particle_radius", 0.01f);
 
 	// Smoothing shader uniforms
-	smoothing_shader_.SetUniform1fv("blur_depth_falloff", 100.0);
-	smoothing_shader_.SetUniform1fv("filter_radius", 0.0);
-	smoothing_shader_.SetUniform1fv("blur_scale", 1000.0);
+	smoothing_shader_.SetUniform1fv("filter_radius", 6.0);
 }
 
 void WaterParticleRenderer::UpdateParticlePositions(std::vector<glm::vec3>& positions)
