@@ -24,33 +24,85 @@
 
 // Project Imports
 #include <RootDir.h>
-#include "FluidCube.hpp"
 #include "rendering/shader.hpp"
 #include "rendering/texture.hpp"
 #include "rendering/compute_shader.hpp"
+#include "rendering/model.h"
+#include "rendering/cubemap.hpp"
+#include "rendering/camera.hpp"
+#include "simulation/water_particle_renderer.hpp"
 
 GLFWwindow* window;
 const int kWindowWidth = 1024;
 const int kWindowHeight = 768;
 
-Texture* diff_old;
-Texture* diff_new;
+Model* g_model = nullptr;
+Shader* g_shader = nullptr;
+Camera* g_camera = nullptr;
+bool g_simulate = false;
 
+glm::mat4 model_matrix = glm::mat4(1.0f);
 
-void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+void WindowSizeCallback(GLFWwindow* window, int width, int height)
 {
-    double xpos, ypos;
-    glfwGetCursorPos(window, &xpos, &ypos);
-    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) 
-    {
-        std::vector<glm::vec4> data(20 * 20, glm::vec4(0.0, 1.0, 1.0, 1.0));
-        int pix_x = (xpos / kWindowWidth) * 512;
-        int pix_y = 512 - (ypos / kWindowHeight) * 512;
+    glViewport(0, 0, width, height);
 
-        diff_old->UpdatePixelData(pix_x, pix_y, 20, 20, &data[0]);
-        diff_new->UpdatePixelData(pix_x, pix_y, 20, 20, &data[0]);
+    if (g_shader != nullptr && g_camera != nullptr)
+    {
+        g_camera->SetAspectRatio(width, height);
+        g_shader->SetUniformMatrix4fv("proj_view", g_camera->GetProjectionMatrix() * g_camera->GetViewMatrix());
     }
 }
+
+void PrintMatrix(glm::mat4& mat) {
+    for (int x = 0; x < 4; x++) {
+        printf("[");
+        for (int y = 0; y < 4; y++) {
+            printf(" %.2f ", mat[y][x]);
+        }
+        printf("]\n");
+    }
+    printf("\n");
+}
+
+void WindowKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    //static float param = 0.0f;
+    //static float radius = 1.0f;
+    //static float height = 0.0f;
+
+    // Model rotation
+    if (key == GLFW_KEY_E && action == GLFW_PRESS)
+        model_matrix = glm::rotate(model_matrix, glm::radians(-45.0f), glm::vec3(0, 1, 0));
+    if (key == GLFW_KEY_Q && action == GLFW_PRESS)
+        model_matrix = glm::rotate(model_matrix, glm::radians(45.0f), glm::vec3(0, 1, 0));
+
+    //// Camara controls
+    //if (key == GLFW_KEY_L && action == GLFW_PRESS)
+    //    param += 0.5f;
+    //if (key == GLFW_KEY_J && action == GLFW_PRESS)
+    //    param -= 0.5f;
+    //if (key == GLFW_KEY_I && action == GLFW_PRESS)
+    //    radius += 0.5f;
+    //if (key == GLFW_KEY_K && action == GLFW_PRESS)
+    //    radius -= 0.5f;
+    //if (key == GLFW_KEY_U && action == GLFW_PRESS)
+    //    height -= 0.5f;
+    //if (key == GLFW_KEY_O && action == GLFW_PRESS)
+    //    height += 0.5f;
+
+    if (key == GLFW_KEY_P && action == GLFW_PRESS)
+        g_simulate = !g_simulate;
+    //g_camera->SetPosition(glm::vec3(sin(param) * radius, 1.0f + height, cos(param) * radius));
+    //g_shader->SetUniform3fv("ws_cam_pos", g_camera->GetPosition());
+
+    //g_shader->SetUniformMatrix4fv("model", model_matrix);
+    //g_shader->SetUniformMatrix3fv("norm_matrix", glm::inverse(glm::transpose(glm::mat3(model_matrix))));
+    //g_shader->SetUniformMatrix4fv("proj_view", g_camera->GetProjectionMatrix() * g_camera->GetViewMatrix());
+    //if (action == GLFW_PRESS)
+    //    PrintMatrix(g_camera->GetViewMatrix());
+}
+
 
 bool Init() 
 {
@@ -63,6 +115,7 @@ bool Init()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    // glfwWindowHint(GLFW_RESIZABLE, GL_FALSE); // Resizing will make rendering to texture difficult
 
     window = glfwCreateWindow(kWindowWidth, kWindowHeight, "Water Flow Simulation", nullptr, nullptr);
 
@@ -75,15 +128,21 @@ bool Init()
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
 
+    /* Fixing fov and gl_viewport on window re-size */
+    glfwSetWindowSizeCallback(window, WindowSizeCallback);
+
+    /* For mouse input */
+    // glfwSetMouseButtonCallback(window, MouseButtonCallback);
+
+    /* For Keyboard Input */
+    glfwSetKeyCallback(window, WindowKeyCallback);
+
     /* Initialize glad */
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
         glfwTerminate();
         return false;
     }
-
-    /* For mouse input */
-    glfwSetMouseButtonCallback(window, MouseButtonCallback);
 
     /* Set the viewport */
     glClearColor(0.6784f, 0.8f, 1.0f, 1.0f);
@@ -94,134 +153,121 @@ bool Init()
     return true;
 }
 
-void QuadTextureSetup(GLuint& vert_array, GLuint& vert_buffer, GLuint& uv_buffer, GLuint& index_buffer) 
+bool LoadContent()
 {
-    const std::vector<glm::vec3> kQuadVerts = { glm::vec3(-1.0, -1.0, 0.0),
-                                            glm::vec3(1.0, -1.0, 0.0),
-                                            glm::vec3(-1.0, 1.0, 0.0),
-                                            glm::vec3(1.0, 1.0, 0.0) };
+    /* Create camera for scene */
+    g_camera = new Camera(glm::vec3(0.5f, 1.5f, 2.5f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-    const std::vector<glm::vec2> kQuadUVs = { glm::vec2(0, 0),
-                                                glm::vec2(1, 0),
-                                                glm::vec2(0, 1),
-                                                glm::vec2(1, 1) };
+    /* Create and apply basic shader */
+    g_shader = new Shader("basic.vert", "basic_reflection.frag");
+    g_shader->SetUniformMatrix4fv("model", model_matrix);
+    g_shader->SetUniformMatrix3fv("norm_matrix", glm::inverse(glm::transpose(glm::mat3(model_matrix))));
+    g_shader->SetUniformMatrix4fv("proj_view", g_camera->GetProjectionMatrix() * g_camera->GetViewMatrix());
 
-    const std::vector<unsigned short> kQuadIndices = { 0, 1, 2, 2, 1, 3 };
+    g_shader->SetUniform3fv("ws_cam_pos", g_camera->GetPosition());
 
-    // VAO for the vertices
-    glGenVertexArrays(1, &vert_array);
-    glBindVertexArray(vert_array);
+    g_model = new Model("resources/models/alliance.obj");
 
-    // Gen vert buffer
-    glGenBuffers(1, &vert_buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vert_buffer);
-    glBufferData(GL_ARRAY_BUFFER, kQuadVerts.size() * sizeof(glm::vec3), &kQuadVerts[0], GL_STATIC_DRAW);
-
-    // Gen UV buffer
-    glGenBuffers(1, &uv_buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, uv_buffer);
-    glBufferData(GL_ARRAY_BUFFER, kQuadUVs.size() * sizeof(glm::vec2), &kQuadUVs[0], GL_STATIC_DRAW);
-
-    // Gen index buffer
-    glGenBuffers(1, &index_buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, index_buffer);
-    glBufferData(GL_ARRAY_BUFFER, kQuadIndices.size() * sizeof(unsigned short), &kQuadIndices[0], GL_STATIC_DRAW);
+    return true;
 }
 
-void QuadTextureRender(GLuint vert_buffer, GLuint uv_buffer, GLuint index_buffer) 
-{
-    glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, vert_buffer);
-    glVertexAttribPointer(
-        0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-        3,                  // size
-        GL_FLOAT,           // type
-        GL_FALSE,           // normalized?
-        0,                  // stride
-        (void*)0            // array buffer offset
-    );
-
-    glEnableVertexAttribArray(1);
-    glBindBuffer(GL_ARRAY_BUFFER, uv_buffer);
-    glVertexAttribPointer(
-        1,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-        2,                  // size
-        GL_FLOAT,				// type
-        GL_FALSE,           // normalized?
-        0,                  // stride
-        (void*)0            // array buffer offset
-    );
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
-    // Draw the triangles !
-    glDrawElements(
-        GL_TRIANGLES,      // mode
-        6,    // count
-        GL_UNSIGNED_SHORT, // type
-        (void*)0           // element array buffer offset
-    );
+// Temp function for initialization
+void InitializeParticles(std::vector<glm::vec4>& particle_positions, const glm::vec3& lower_bound, const glm::vec3& upper_bound) {
+    static const double delta = 0.125f / 4.0;
+    int i = 0;
+    for (double x = lower_bound.x; x < upper_bound.x; x += delta) {
+        for (double y = lower_bound.y; y < upper_bound.y; y += delta) {
+            for (double z = lower_bound.z; z < upper_bound.z; z += delta) {
+                if (i < MAX_NUM_PARTICLES) {
+                    particle_positions[i] = glm::vec4(x, y, z, 1.0);
+                    //printf("Pos %.2f, %.2f, %.2f\n", x, y, z);
+                }
+                i++;
+            }
+        }
+    }
 }
 
 void UpdateLoop() 
 {
-    float start_time = static_cast<float>(glfwGetTime());
-    float previous_time = start_time;
+    float previous_time = static_cast<float>(glfwGetTime());
     float new_time = 0.0f;
-    float game_time = 0.0f; // Time the sim has been running
 
-    struct ComputeData {
-        float time;
-        float deltaTime;
+    // Skybox setup
+    Skybox skybox({ "skybox/right.jpg", "skybox/left.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/front.jpg", "skybox/back.jpg" });
+
+    WaterParticleRenderer* pic_flip_renderer = new WaterParticleRenderer();
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+
+    struct BOUNDS {
+        glm::vec3 upper_bound;
+        glm::vec3 lower_bound;
     };
-    struct ComputeData c_data;
-    c_data.time = game_time;
-    c_data.deltaTime = 0;
 
-    ComputeShader compute_shader("waterflow_shader.comp", glm::ivec3(512, 512, 1));
-    GLuint ssbo = compute_shader.GenerateAndBindSSBO(&c_data, 8, 0);
-    Texture diffusion_old(4, 512);
-    Texture diffusion_new(4, 512);
-    diff_old = &diffusion_old;
-    diff_new = &diffusion_new;
+    struct BOUNDS bounds;
+    bounds.upper_bound = glm::vec3(1,1,1);
+    bounds.lower_bound = glm::vec3(0, 0, 0);
+    std::vector<glm::vec4> particle_pos(512 * 512);
+    InitializeParticles(particle_pos, bounds.lower_bound, bounds.upper_bound);
+    glm::ivec2 particle_tex_dimen(512, 512);
+    Texture tex_pos_old(particle_tex_dimen, GL_RGBA, GL_RGBA32F, (const float*) &particle_pos[0]);
+    Texture tex_pos_new(particle_tex_dimen, GL_RGBA, GL_RGBA32F, (const float*) &particle_pos[0]);
+    Texture tex_vel_old(particle_tex_dimen);
+    Texture tex_vel_new(particle_tex_dimen);
 
-    diffusion_new.ActiveBind(GL_TEXTURE1);
-    diffusion_old.ActiveBind(GL_TEXTURE2);
+    GLuint lock_texture;
+    glGenTextures(1, &lock_texture);
+    glBindTexture(GL_TEXTURE_3D, lock_texture);
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_RED, 512, 512, 512, 0, GL_RED, GL_UNSIGNED_INT, 0);
 
-    Shader quad_shader("flat_quad_shader.vert", "flat_quad_shader.frag");
-    GLuint vert_array, vert_buffer, uv_buffer, index_buffer;
-    QuadTextureSetup(vert_array, vert_buffer, uv_buffer, index_buffer);
+    GLuint grid_texture;
+    glGenTextures(1, &grid_texture);
+    glBindTexture(GL_TEXTURE_3D, grid_texture);
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, 512, 512, 512, 0, GL_RGBA, GL_FLOAT, 0);
 
 
+    ComputeShader simulation("pic_flip_shader.comp", glm::ivec3(particle_tex_dimen.x, particle_tex_dimen.y, 1));
+    GLuint bound_ssbo = simulation.GenerateAndBindSSBO(&bounds, sizeof(BOUNDS), 0);
+    //simulation.SetUniform1fv("particleRadius", 0.3);
 
-    /* Loop until the user closes the window */
+    /* Loop until the user closes the window or presses ESC */
     while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && !glfwWindowShouldClose(window))
     {
         /* Update game time value */
         new_time = static_cast<float>(glfwGetTime());
-        c_data.deltaTime = new_time - previous_time;
+        float deltaTime = new_time - previous_time;
         previous_time = new_time;
-        game_time = new_time - start_time;
-        c_data.time = game_time;
+
+        ////////////////
+        // Simulation //
+        ////////////////
+        if (g_simulate) {
+            simulation.SetActive();
+            simulation.SetUniform1fv("deltaTime", deltaTime);
+            tex_pos_old.BindImage(1);
+            tex_pos_new.BindImage(2);
+            tex_vel_old.BindImage(3);
+            tex_vel_new.BindImage(4);
+            glBindImageTexture(5, grid_texture, 0, 0, 0, GL_READ_WRITE, GL_FLOAT);
+            glBindImageTexture(6, lock_texture, 0, 0, 0, GL_READ_WRITE, GL_UNSIGNED_INT);
+            simulation.Dispatch();
+            simulation.Barrier();
+        }
 
         ////////////////////
-        // Compute Shader //
+        //  3D Rendering  //
         ////////////////////
-        compute_shader.SetActive();
-        compute_shader.UpdateSSBO(ssbo, &c_data, 8, 0);
-        diffusion_old.BindImage(1);
-        diffusion_new.BindImage(2);
-        compute_shader.Dispatch();
-        compute_shader.Barrier();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+        skybox.ActiveBind(GL_TEXTURE0);
+        skybox.Draw(g_camera->GetViewMatrix(), g_camera->GetProjectionMatrix());
+        pic_flip_renderer->UpdateParticlePositionsTexture(tex_pos_old);
+        pic_flip_renderer->Draw(*g_camera, skybox);
 
-        ////////////////////
-        // Flat Rendering //
-        ////////////////////
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        quad_shader.SetActive();
-        diffusion_new.ActiveBind(GL_TEXTURE0);
-        // quad_shader.SetUniformTexture("tex", diffusion_old, GL_TEXTURE0);
-        QuadTextureRender(vert_buffer, uv_buffer, index_buffer);
+        // g_shader->SetActive();
+        // g_model->Draw();
+
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
@@ -229,6 +275,7 @@ void UpdateLoop()
         /* Poll for and process events */
         glfwPollEvents();
     }
+    delete pic_flip_renderer;
 }
 
 int main() 
@@ -236,11 +283,19 @@ int main()
     if (!Init()) 
     {
         fprintf(stderr, "Failure in initializing the window.");
-        return -1;
+        return 1;
     }
 
+    if (!LoadContent()) {
+        fprintf(stderr, "Failure in loading content.");
+        return 1;
+    }
     UpdateLoop();
     glfwTerminate();
+
+    delete g_shader;
+    delete g_model;
+    delete g_camera;
 
 	return 0;
 }

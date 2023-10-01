@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SHADER_C
+#define SHADER_C
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
@@ -136,4 +137,10 @@ public:
 	bool SetUniformTexture(const std::string& uniform_name, Texture& texture, GLenum texture_unit);
 
 	// Other assorted SetUniforms to be added here as needed
+	bool SetUniformMatrix4fv(const std::string& uniform_name, const glm::mat4& matrix);
+	bool SetUniformMatrix3fv(const std::string& uniform_name, const glm::mat3& matrix);
+	bool SetUniform3fv(const std::string& uniform_name, const glm::vec3& vec);
+	bool SetUniform1fv(const std::string& uniform_name, const float& f);
 };
+
+#endif

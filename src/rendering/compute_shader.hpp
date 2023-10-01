@@ -1,4 +1,5 @@
-#pragma once
+#ifndef COMPUTE_SHADER_C
+#define COMPUTE_SHADER_C
 
 #include "shader.hpp"
 
@@ -104,3 +105,5 @@ public:
 	// Technically, SSBO's are not linked to a specific program, but if my use-case requires shared SSBO data,
 	// I will update this class.
 };
+
+#endif
