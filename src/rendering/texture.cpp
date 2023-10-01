@@ -19,7 +19,7 @@
 //////////////////////
 
 Texture::Texture(int dimensions, GLenum desired_channels, GLenum storage_type, const float* data) 
-    : texture_id_(0), channels_(desired_channels), storage_type_(storage_type), valid_texture_(true)
+    : texture_id_(0), channels_(desired_channels), storage_type_(storage_type), valid_texture_(true), dimensions_(dimensions)
 {
     if (desired_channels < GL_RED || desired_channels > GL_RGBA) 
     {
@@ -52,7 +52,7 @@ Texture::Texture(int dimensions, GLenum desired_channels, GLenum storage_type, c
 }
 
 Texture::Texture(glm::ivec2 dimensions, GLenum desired_channels, GLenum storage_type, const float* data)
-    : texture_id_(0), channels_(desired_channels), storage_type_(storage_type), valid_texture_(true)
+    : texture_id_(0), channels_(desired_channels), storage_type_(storage_type), valid_texture_(true), dimensions_(dimensions)
 {
     if (desired_channels < GL_RED || desired_channels > GL_RGBA)
     {
@@ -79,7 +79,7 @@ Texture::Texture(glm::ivec2 dimensions, GLenum desired_channels, GLenum storage_
 }
 
 Texture::Texture(const std::string& filename) 
-    : texture_id_(0), channels_(GL_RGBA), storage_type_(GL_RGBA8), valid_texture_(true)
+    : texture_id_(0), channels_(GL_RGBA), storage_type_(GL_RGBA8), valid_texture_(true), dimensions_(0)
 {
     if (filename.empty())
     {
@@ -92,6 +92,9 @@ Texture::Texture(const std::string& filename)
     int width, height;
 
     unsigned char* pixels = stbi_load((ROOT_DIR "resources/textures/" + filename).c_str(), &width, &height, nullptr, 4);
+
+    dimensions_.x = width;
+    dimensions_.y = height;
 
     if (pixels != nullptr)
     {
@@ -166,4 +169,9 @@ void Texture::UpdatePixelData(GLint x_offset, GLint y_offset, GLsizei width, GLs
     }
     glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+}
+
+glm::ivec2 Texture::GetDimensions()
+{
+    return dimensions_;
 }

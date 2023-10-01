@@ -17,10 +17,10 @@ void WaterParticleRenderer::InitializeParticleRenderingVariables()
 	glBindBuffer(GL_ARRAY_BUFFER, particle_billboard_buffer_);
 	glBufferData(GL_ARRAY_BUFFER, kQuadData_.size() * sizeof(glm::vec3), &kQuadData_[0], GL_STATIC_DRAW);
 
-	// The VBO containing the positions of particles
-	glGenBuffers(1, &particle_position_buffer_);
-	glBindBuffer(GL_ARRAY_BUFFER, particle_position_buffer_);
-	glBufferData(GL_ARRAY_BUFFER, NUM_PARTICLES * sizeof(glm::vec3), NULL, GL_STREAM_DRAW);
+	// The VBO containing the positions of particle uvs into the texture of positions
+	glGenBuffers(1, &particle_index_buffer_);
+	glBindBuffer(GL_ARRAY_BUFFER, particle_index_buffer_);
+	glBufferData(GL_ARRAY_BUFFER, MAX_NUM_PARTICLES * sizeof(glm::vec2), NULL, GL_STREAM_DRAW);
 
 	// render to texture setup
 	glGenFramebuffers(1, &particle_frame_buffer_id_);
@@ -86,7 +86,7 @@ void WaterParticleRenderer::InitializeSmoothingVariables()
 
 WaterParticleRenderer::WaterParticleRenderer()
 	: particle_shader_("water_particle_shader.vert", "water_particle_shader.frag"),
-	particle_billboard_buffer_(0), particle_position_buffer_(0), particle_VAO_(0), depth_texture_(glm::ivec2(viewport_width_, viewport_height_)),
+	particle_billboard_buffer_(0), particle_index_buffer_(0), particle_VAO_(0), depth_texture_(glm::ivec2(viewport_width_, viewport_height_)),
 	quad_VAO_(0), quad_position_buffer_(0),
 	smoothing_shader_("screen_quad.vert", "water_smooth_depth.frag"),
 	smoothing_frame_buffer_id_(0), smoothed_depth_texture_(glm::ivec2(viewport_width_, viewport_height_)),
@@ -103,19 +103,34 @@ WaterParticleRenderer::WaterParticleRenderer()
 	smoothing_shader_.SetUniform1fv("filter_radius", 6.0);
 }
 
-void WaterParticleRenderer::UpdateParticlePositions(std::vector<glm::vec3>& positions)
+void WaterParticleRenderer::UpdateParticlePositionsTexture(Texture& positions)
 {
-	glBindVertexArray(particle_VAO_);
 
-	glBindBuffer(GL_ARRAY_BUFFER, particle_position_buffer_);
-	// Buffer orphaning (improves streaming data performance)-> http://www.opengl.org/wiki/Buffer_Object_Streaming
-	glBufferData(GL_ARRAY_BUFFER, NUM_PARTICLES * sizeof(glm::vec3), NULL, GL_STREAM_DRAW); 
-	glBufferSubData(GL_ARRAY_BUFFER, 0, positions.size() * sizeof(glm::vec3), (void*) &positions[0]);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glm::ivec2 tex_dimensions = positions.GetDimensions();
+	int current_particle_count = tex_dimensions.x * tex_dimensions.y;
+	if (current_particle_count != particle_count_)
+	{
+		// We update position indexes only when the size of the texture is different from what we had.
+		// Really, this should only happen once when we first call the method, and not again
+		std::vector<glm::vec2> uvs(current_particle_count);
+		for (int x = 0; x < tex_dimensions.x; x++) 
+		{
+			for (int y = 0; y < tex_dimensions.y; y++) 
+			{
+				uvs[x + y * tex_dimensions.x] = glm::vec2(float(x) / float(tex_dimensions.x), float(y) / float(tex_dimensions.y));
+			}
+		}
+		glBindVertexArray(particle_VAO_);
+		glBindBuffer(GL_ARRAY_BUFFER, particle_index_buffer_);
+		// Buffer orphaning (improves streaming data performance)-> http://www.opengl.org/wiki/Buffer_Object_Streaming
+		glBufferData(GL_ARRAY_BUFFER, MAX_NUM_PARTICLES * sizeof(glm::vec2), NULL, GL_STREAM_DRAW); 
+		glBufferSubData(GL_ARRAY_BUFFER, 0, current_particle_count * sizeof(glm::vec2), (void*) &uvs[0]);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindVertexArray(0);
+	}
 
-	particle_count_ = positions.size();
-
-	glBindVertexArray(0);
+	particle_shader_.SetUniformTexture("ws_particle_positions", positions, GL_TEXTURE0);
+	particle_count_ = current_particle_count;
 }
 
 
@@ -145,7 +160,7 @@ void WaterParticleRenderer::DrawParticleSprites(glm::mat4& view_mat, glm::mat4& 
 
 	// 2nd attribute buffer : positions of particles' centers
 	glEnableVertexAttribArray(1);
-	glBindBuffer(GL_ARRAY_BUFFER, particle_position_buffer_);
+	glBindBuffer(GL_ARRAY_BUFFER, particle_index_buffer_);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
 	// Instance drawing

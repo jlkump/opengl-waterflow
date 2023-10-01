@@ -36,6 +36,8 @@ protected:
 	*/
 	bool valid_texture_;
 
+	glm::ivec2 dimensions_;
+
 	Texture() : texture_id_(0), channels_(GL_RGB), storage_type_(GL_RGB8), valid_texture_(true) {}
 
 public:
@@ -122,6 +124,8 @@ public:
 	GLuint GetTextureId();
 
 	void UpdatePixelData(GLint x_offset, GLint y_offset, GLsizei width, GLsizei height, const void* pixel_data);
+
+	glm::ivec2 GetDimensions();
 };
 
 #endif

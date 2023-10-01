@@ -2,20 +2,48 @@
 
 layout(local_size_x=1, local_size_y=1, local_size_z=1) in; // One local worker per worker group
 
-layout (std430, binding = 0) buffer variables {
-	float deltaTime;
-	vec3 lower_bound;
+layout (std430, binding = 0) buffer bounds {
 	vec3 upper_bound;
+	vec3 lower_bound;
 };
 
 layout (rgba32f, binding = 1) uniform image2D particle_pos_old;
 layout (rgba32f, binding = 2) uniform image2D particle_pos_new;
 
-layout (rgba32f, binding = 3) uniform image2D particle_vel_old;
+layout (rgba32f, binding = 3) uniform image2D particle_vel_old; // Probably only need one velocity texture
 layout (rgba32f, binding = 4) uniform image2D particle_vel_new;
 
 void main() 
 {
+	
 	ivec2 id = ivec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y);
+	vec3 vel_old = imageLoad(particle_vel_old, id).xyz;
+	vec3 vel_new = vel_old + GRAVITY * deltaTime;
+	vec3 pos_new = imageLoad(particle_pos_old, id).xyz + vel_new * deltaTime *.1;
+
+	if (pos_new.x <= lower_bound.x) {
+	 	pos_new.x = lower_bound.x;
+	}
+	if (pos_new.y <= lower_bound.y) {
+		pos_new.y = lower_bound.y;
+	}
+	if (pos_new.z <= lower_bound.z) {
+		pos_new.z = lower_bound.z;
+	}
+	
+	if (pos_new.x >= upper_bound.x) {
+		pos_new.x = upper_bound.x;
+	}
+	if (pos_new.y >= upper_bound.y) {
+		pos_new.y = upper_bound.y;
+	}
+	if (pos_new.z >= upper_bound.z) {
+		pos_new.z = upper_bound.z;
+	}
+	
+	imageStore(particle_pos_old, id, vec4(pos_new, 1.0));
+	imageStore(particle_vel_old, id, vec4(vel_new, 1.0));
+	
+	write_to_grid();
 
 }

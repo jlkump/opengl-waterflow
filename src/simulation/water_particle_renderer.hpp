@@ -8,7 +8,7 @@
 #include "../rendering/camera.hpp"
 #include "../rendering/cubemap.hpp"
 
-#define NUM_PARTICLES 512 * 8
+#define MAX_NUM_PARTICLES 512 * 512
 
 /*
 * 
@@ -43,7 +43,7 @@ private:
 	void InitializeParticleRenderingVariables();
 	GLuint particle_VAO_;
 	GLuint particle_billboard_buffer_;
-	GLuint particle_position_buffer_;
+	GLuint particle_index_buffer_;
 	Shader particle_shader_;
 	int particle_count_ = 0;
 	float particle_radius_ = 0.1f;
@@ -76,10 +76,13 @@ private:
 	Shader water_shader_;
 	void DrawWater(glm::mat4& inv_view, glm::mat4& inv_proj, glm::vec3& cam_pos, glm::vec3& light_dir, Skybox& skybox);
 
+	// TODO: Add references to the scene elements (camera, skybox) and only update uniforms when they change
+	// Will be far more efficient than updating on every draw frame
+
 public:
 	WaterParticleRenderer();
 
-	void UpdateParticlePositions(std::vector<glm::vec3>& positions);
+	void UpdateParticlePositionsTexture(Texture& positions);
 
 	void Draw(Camera& cam, Skybox& skybox);
 

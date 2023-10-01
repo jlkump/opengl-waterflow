@@ -39,6 +39,7 @@ const int kWindowHeight = 768;
 Model* g_model = nullptr;
 Shader* g_shader = nullptr;
 Camera* g_camera = nullptr;
+bool g_simulate = false;
 
 glm::mat4 model_matrix = glm::mat4(1.0f);
 
@@ -66,9 +67,9 @@ void PrintMatrix(glm::mat4& mat) {
 
 void WindowKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    static float param = 0.0f;
-    static float radius = 1.0f;
-    static float height = 0.0f;
+    //static float param = 0.0f;
+    //static float radius = 1.0f;
+    //static float height = 0.0f;
 
     // Model rotation
     if (key == GLFW_KEY_E && action == GLFW_PRESS)
@@ -76,27 +77,30 @@ void WindowKeyCallback(GLFWwindow* window, int key, int scancode, int action, in
     if (key == GLFW_KEY_Q && action == GLFW_PRESS)
         model_matrix = glm::rotate(model_matrix, glm::radians(45.0f), glm::vec3(0, 1, 0));
 
-    // Camara controls
-    if (key == GLFW_KEY_L && action == GLFW_PRESS)
-        param += 0.5f;
-    if (key == GLFW_KEY_J && action == GLFW_PRESS)
-        param -= 0.5f;
-    if (key == GLFW_KEY_I && action == GLFW_PRESS)
-        radius += 0.5f;
-    if (key == GLFW_KEY_K && action == GLFW_PRESS)
-        radius -= 0.5f;
-    if (key == GLFW_KEY_U && action == GLFW_PRESS)
-        height -= 0.5f;
-    if (key == GLFW_KEY_O && action == GLFW_PRESS)
-        height += 0.5f;
-    g_camera->SetPosition(glm::vec3(sin(param) * radius, 1.0f + height, cos(param) * radius));
-    g_shader->SetUniform3fv("ws_cam_pos", g_camera->GetPosition());
+    //// Camara controls
+    //if (key == GLFW_KEY_L && action == GLFW_PRESS)
+    //    param += 0.5f;
+    //if (key == GLFW_KEY_J && action == GLFW_PRESS)
+    //    param -= 0.5f;
+    //if (key == GLFW_KEY_I && action == GLFW_PRESS)
+    //    radius += 0.5f;
+    //if (key == GLFW_KEY_K && action == GLFW_PRESS)
+    //    radius -= 0.5f;
+    //if (key == GLFW_KEY_U && action == GLFW_PRESS)
+    //    height -= 0.5f;
+    //if (key == GLFW_KEY_O && action == GLFW_PRESS)
+    //    height += 0.5f;
 
-    g_shader->SetUniformMatrix4fv("model", model_matrix);
-    g_shader->SetUniformMatrix3fv("norm_matrix", glm::inverse(glm::transpose(glm::mat3(model_matrix))));
-    g_shader->SetUniformMatrix4fv("proj_view", g_camera->GetProjectionMatrix() * g_camera->GetViewMatrix());
-    if (action == GLFW_PRESS)
-        PrintMatrix(g_camera->GetViewMatrix());
+    if (key == GLFW_KEY_P && action == GLFW_PRESS)
+        g_simulate = !g_simulate;
+    //g_camera->SetPosition(glm::vec3(sin(param) * radius, 1.0f + height, cos(param) * radius));
+    //g_shader->SetUniform3fv("ws_cam_pos", g_camera->GetPosition());
+
+    //g_shader->SetUniformMatrix4fv("model", model_matrix);
+    //g_shader->SetUniformMatrix3fv("norm_matrix", glm::inverse(glm::transpose(glm::mat3(model_matrix))));
+    //g_shader->SetUniformMatrix4fv("proj_view", g_camera->GetProjectionMatrix() * g_camera->GetViewMatrix());
+    //if (action == GLFW_PRESS)
+    //    PrintMatrix(g_camera->GetViewMatrix());
 }
 
 
@@ -152,7 +156,7 @@ bool Init()
 bool LoadContent()
 {
     /* Create camera for scene */
-    g_camera = new Camera(glm::vec3(0.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.5f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    g_camera = new Camera(glm::vec3(0.5f, 1.0f, 2.5f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
     /* Create and apply basic shader */
     g_shader = new Shader("basic.vert", "basic_reflection.frag");
@@ -168,14 +172,15 @@ bool LoadContent()
 }
 
 // Temp function for initialization
-void InitializeParticles(std::vector<glm::vec3>& particle_positions, const glm::vec3& lower_bound, const glm::vec3& upper_bound) {
+void InitializeParticles(std::vector<glm::vec4>& particle_positions, const glm::vec3& lower_bound, const glm::vec3& upper_bound) {
     static const double delta = 0.125f / 4.0;
     int i = 0;
     for (double x = lower_bound.x; x < upper_bound.x; x += delta) {
         for (double y = lower_bound.y; y < upper_bound.y; y += delta) {
             for (double z = lower_bound.z; z < upper_bound.z; z += delta) {
-                if (i < NUM_PARTICLES) {
-                    particle_positions[i] = glm::vec3(x, y, z);
+                if (i < MAX_NUM_PARTICLES) {
+                    particle_positions[i] = glm::vec4(x, y, z, 1.0);
+                    //printf("Pos %.2f, %.2f, %.2f\n", x, y, z);
                 }
                 i++;
             }
@@ -196,21 +201,48 @@ void UpdateLoop()
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
 
-    std::vector<glm::vec3> particle_positions(NUM_PARTICLES);
-    InitializeParticles(particle_positions, {-0.20, 0.0, -0.20}, {0.20, 1.0, 0.20});
-    pic_flip_renderer->UpdateParticlePositions(particle_positions);
+    struct BOUNDS {
+        glm::vec3 upper_bound;
+        glm::vec3 lower_bound;
+    };
+
+    struct BOUNDS bounds;
+    bounds.upper_bound = glm::vec3(1,1,1);
+    bounds.lower_bound = glm::vec3(0, 0, 0);
+    std::vector<glm::vec4> particle_pos(512 * 512);
+    InitializeParticles(particle_pos, bounds.lower_bound, bounds.upper_bound);
+    glm::ivec2 particle_tex_dimen(512, 512);
+    Texture tex_pos_old(particle_tex_dimen, GL_RGBA, GL_RGBA32F, (const float*) &particle_pos[0]);
+    Texture tex_pos_new(particle_tex_dimen, GL_RGBA, GL_RGBA32F, (const float*) &particle_pos[0]);
+    Texture tex_vel_old(particle_tex_dimen);
+    Texture tex_vel_new(particle_tex_dimen);
+
+    // data.tex_dimen = glm::vec2(particle_tex_dimen.x, particle_tex_dimen.y);
+
+    ComputeShader simulation("pic_flip_shader.comp", glm::ivec3(particle_tex_dimen.x, particle_tex_dimen.y, 1));
+    GLuint bound_ssbo = simulation.GenerateAndBindSSBO(&bounds, sizeof(BOUNDS), 0);
 
     /* Loop until the user closes the window or presses ESC */
     while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && !glfwWindowShouldClose(window))
     {
         /* Update game time value */
         new_time = static_cast<float>(glfwGetTime());
-        //c_data.deltaTime = new_time - previous_time;
+        float deltaTime = new_time - previous_time;
         previous_time = new_time;
 
         ////////////////
         // Simulation //
         ////////////////
+        if (g_simulate) {
+            simulation.SetActive();
+            simulation.SetUniform1fv("deltaTime", deltaTime);
+            tex_pos_old.BindImage(1);
+            tex_pos_new.BindImage(2);
+            tex_vel_old.BindImage(3);
+            tex_vel_new.BindImage(4);
+            simulation.Dispatch();
+            simulation.Barrier();
+        }
 
         ////////////////////
         //  3D Rendering  //
@@ -218,6 +250,7 @@ void UpdateLoop()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         skybox.ActiveBind(GL_TEXTURE0);
         skybox.Draw(g_camera->GetViewMatrix(), g_camera->GetProjectionMatrix());
+        pic_flip_renderer->UpdateParticlePositionsTexture(tex_pos_old);
         pic_flip_renderer->Draw(*g_camera, skybox);
 
         // g_shader->SetActive();
