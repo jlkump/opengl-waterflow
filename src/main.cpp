@@ -156,7 +156,7 @@ bool Init()
 bool LoadContent()
 {
     /* Create camera for scene */
-    g_camera = new Camera(glm::vec3(0.5f, 1.0f, 2.5f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    g_camera = new Camera(glm::vec3(0.5f, 1.5f, 2.5f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
     /* Create and apply basic shader */
     g_shader = new Shader("basic.vert", "basic_reflection.frag");

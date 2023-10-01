@@ -28,40 +28,57 @@ vec3 GetWorldPos(vec2 tex_coord) {
 	return (inv_view * vec4(GetViewPos(tex_coord), 1.0)).rgb;
 }
 
-vec3 GetNormal() {
-	float depth = texture(depth_tex, uv).r;
-	
-	ivec2 texDimen = textureSize(depth_tex, 0);
-	
-	vec3 vs_pos = GetViewPos(uv);
-	
-	vec3 ddx = GetViewPos(uv + vec2(1, 0) / texDimen) - vs_pos;
-	vec3 ddx2 = vs_pos - GetViewPos(uv + vec2(-1, 0) / texDimen);
+vec3 CalculateNorm(vec2 tex_coord, vec2 texDimen) {
+	int dd_diff = 2;
+	vec3 vs_pos = GetViewPos(tex_coord);
+	vec3 ddx = GetViewPos(tex_coord + vec2(dd_diff, 0) / texDimen) - vs_pos;
+	vec3 ddx2 = vs_pos - GetViewPos(tex_coord + vec2(-dd_diff, 0) / texDimen);
 	if (abs(ddx.z) > abs(ddx2.z)) {
 		ddx = ddx2;
 	}
 	
-	vec3 ddy = GetViewPos(uv + vec2(0, 1) / texDimen) - vs_pos;
-	vec3 ddy2 = vs_pos - GetViewPos(uv + vec2(0, -1) / texDimen);
+	vec3 ddy = GetViewPos(uv + vec2(0, dd_diff) / texDimen) - vs_pos;
+	vec3 ddy2 = vs_pos - GetViewPos(uv + vec2(0, -dd_diff) / texDimen);
 	if (abs(ddy.z) > abs(ddy2.z)) {
 		ddy = ddy2;
 	}
-	vec3 norm = normalize(cross(ddx, ddy));
-	if (norm.z + 1e-5 >= 1) discard;
+
+	return normalize(cross(ddx, ddy));
+}
+
+vec3 GetNormal() {
+	float depth = texture(depth_tex, uv).r;
+	if (depth - 1e-5 <= 0) discard;
+	ivec2 texDimen = textureSize(depth_tex, 0);
+	vec3 norm = CalculateNorm(uv, texDimen);
+			
+	// if (norm.z + 1e-5 >= 1) discard;
+	norm =	(norm 
+			+ CalculateNorm(uv + vec2(1, 0) / texDimen, texDimen) 
+			+ CalculateNorm(uv + vec2(0, 1) / texDimen, texDimen) 
+			+ CalculateNorm(uv + vec2(-1, 0) / texDimen, texDimen) 
+			+ CalculateNorm(uv + vec2(0, -1) / texDimen, texDimen))
+			/ 5;
+	// norm.y = -norm.y;
+	// norm.x = -norm.x;
 	return norm;
 }
 
 void main() {
 
-	vec3 N = GetNormal();
-	N.y = -N.y;
+	vec3 N = -GetNormal();
 	
 	// Simple diffuse and reflection illumination/shading
     vec3 I = normalize(ws_cam_pos - GetWorldPos(uv));
 	vec3 R = reflect(I, N);
-	float diffuse_amount = dot(N, ws_light_dir) * 0.5 + 0.5;
-
 	vec3 reflection_color = texture(skybox, R).rgb;
+	float default_reflection = 0.3;
+	float reflection_amount = default_reflection + ((1.0 - default_reflection) * (1 - dot(I, N)));
+	float diffuse_amount = (dot(N, ws_light_dir) * 0.5 + 0.5) * 0.1;
 
-	FragColor = reflection_color + diffuse_color * diffuse_amount;
+	vec3 refraction_color = texture(skybox, refract(I, -N, 1.33)).rgb;
+
+	FragColor = reflection_color * reflection_amount 
+			+ diffuse_color * diffuse_amount
+			+ refraction_color * (1 - reflection_amount);
 }

@@ -30,7 +30,7 @@ void WaterParticleRenderer::InitializeParticleRenderingVariables()
 	GLuint depthrenderbuffer;
 	glGenRenderbuffers(1, &depthrenderbuffer);
 	glBindRenderbuffer(GL_RENDERBUFFER, depthrenderbuffer);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, viewport_width_, viewport_height_);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, viewport_width_ / reduce_resolution_factor_, viewport_height_ / reduce_resolution_factor_);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthrenderbuffer);
 
 	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, depth_texture_.GetTextureId(), 0);
@@ -70,7 +70,7 @@ void WaterParticleRenderer::InitializeSmoothingVariables()
 	GLuint depthrenderbuffer;
 	glGenRenderbuffers(1, &depthrenderbuffer);
 	glBindRenderbuffer(GL_RENDERBUFFER, depthrenderbuffer);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, viewport_width_, viewport_height_);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, viewport_width_ / reduce_resolution_factor_, viewport_height_ / reduce_resolution_factor_);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthrenderbuffer);
 
 	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, smoothed_depth_texture_.GetTextureId(), 0);
@@ -86,10 +86,12 @@ void WaterParticleRenderer::InitializeSmoothingVariables()
 
 WaterParticleRenderer::WaterParticleRenderer()
 	: particle_shader_("water_particle_shader.vert", "water_particle_shader.frag"),
-	particle_billboard_buffer_(0), particle_index_buffer_(0), particle_VAO_(0), depth_texture_(glm::ivec2(viewport_width_, viewport_height_)),
+	particle_billboard_buffer_(0), particle_index_buffer_(0), particle_VAO_(0), 
+	depth_texture_(glm::ivec2(viewport_width_ / reduce_resolution_factor_, viewport_height_ / reduce_resolution_factor_)),
 	quad_VAO_(0), quad_position_buffer_(0),
 	smoothing_shader_("screen_quad.vert", "water_smooth_depth.frag"),
-	smoothing_frame_buffer_id_(0), smoothed_depth_texture_(glm::ivec2(viewport_width_, viewport_height_)),
+	smoothing_frame_buffer_id_(0), 
+	smoothed_depth_texture_(glm::ivec2(viewport_width_ / reduce_resolution_factor_, viewport_height_ / reduce_resolution_factor_)),
 	water_shader_("screen_quad.vert", "water_shader.frag")
 {
 	InitializeParticleRenderingVariables();
@@ -97,10 +99,10 @@ WaterParticleRenderer::WaterParticleRenderer()
 	InitializeSmoothingVariables();
 
 	// Particle shader uniform
-	particle_shader_.SetUniform1fv("particle_radius", 0.01f);
+	particle_shader_.SetUniform1fv("particle_radius", 0.05f);
 
 	// Smoothing shader uniforms
-	smoothing_shader_.SetUniform1fv("filter_radius", 6.0);
+	smoothing_shader_.SetUniform1fv("filter_radius", 9.0);
 }
 
 void WaterParticleRenderer::UpdateParticlePositionsTexture(Texture& positions)
@@ -150,7 +152,8 @@ void WaterParticleRenderer::DrawParticleSprites(glm::mat4& view_mat, glm::mat4& 
 	particle_shader_.SetActive();
 	glBindFramebuffer(GL_FRAMEBUFFER, particle_frame_buffer_id_);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glViewport(0, 0, viewport_width_, viewport_height_);
+	glClearColor(0, 0, 0, 1.0);
+	glViewport(0, 0, viewport_width_ / reduce_resolution_factor_, viewport_height_ / reduce_resolution_factor_);
 	
 	glBindVertexArray(particle_VAO_);
 	// 1st attribute buffer : vertices
@@ -182,6 +185,8 @@ void WaterParticleRenderer::SmoothDepthTexture()
 	smoothing_shader_.SetUniformTexture("depth_sampler", depth_texture_, GL_TEXTURE0);
 	glBindFramebuffer(GL_FRAMEBUFFER, smoothing_frame_buffer_id_);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glViewport(0, 0, viewport_width_ / reduce_resolution_factor_, viewport_height_ / reduce_resolution_factor_);
+
 
 	glBindVertexArray(quad_VAO_);
 	glEnableVertexAttribArray(0);
@@ -204,7 +209,9 @@ void WaterParticleRenderer::DrawWater(glm::mat4& inv_view, glm::mat4& inv_proj, 
 	water_shader_.SetUniformTexture("skybox", skybox, GL_TEXTURE1);
 	water_shader_.SetUniform3fv("ws_cam_pos", cam_pos);
 	water_shader_.SetUniform3fv("ws_light_dir",light_dir);
-	water_shader_.SetUniform3fv("diffuse_color", glm::normalize(glm::vec3(0.0, 0.4, 0.6)));
+	water_shader_.SetUniform3fv("diffuse_color", glm::normalize(glm::vec3(-0.1, 0.1, 0.2)));
+
+	glViewport(0, 0, viewport_width_, viewport_height_);
 
 	glBindVertexArray(quad_VAO_);
 	glEnableVertexAttribArray(0);

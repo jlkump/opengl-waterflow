@@ -18,7 +18,7 @@ void main() {
 	if (r > 1.0) discard;
 	N.z = -sqrt(1.0 - r);
 	N = normalize(N);
-
+	
 	// Depth calculation
 	vec4 pixel_pos = vec4(N * particle_radius * 2, 1.0);
 	vec4 hs_pos = proj * pixel_pos;

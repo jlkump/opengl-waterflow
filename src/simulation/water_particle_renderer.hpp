@@ -36,6 +36,7 @@ private:
 
 	int viewport_width_ = 1024;
 	int viewport_height_ = 768;
+	int reduce_resolution_factor_ = 2;
 
 	///////////////////////////////
 	// Particle Sprite Rendering //
