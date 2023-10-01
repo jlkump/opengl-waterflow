@@ -217,10 +217,13 @@ void UpdateLoop()
     Texture tex_vel_old(particle_tex_dimen);
     Texture tex_vel_new(particle_tex_dimen);
 
-    // data.tex_dimen = glm::vec2(particle_tex_dimen.x, particle_tex_dimen.y);
+    Texture3D lock_texture(512, GL_RED);
+    Texture3D grid_texture(512);
+
 
     ComputeShader simulation("pic_flip_shader.comp", glm::ivec3(particle_tex_dimen.x, particle_tex_dimen.y, 1));
     GLuint bound_ssbo = simulation.GenerateAndBindSSBO(&bounds, sizeof(BOUNDS), 0);
+    //simulation.SetUniform1fv("particleRadius", 0.3);
 
     /* Loop until the user closes the window or presses ESC */
     while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && !glfwWindowShouldClose(window))
@@ -240,6 +243,8 @@ void UpdateLoop()
             tex_pos_new.BindImage(2);
             tex_vel_old.BindImage(3);
             tex_vel_new.BindImage(4);
+            grid_texture.BindImage(5);
+            lock_texture.BindImage(6);
             simulation.Dispatch();
             simulation.Barrier();
         }

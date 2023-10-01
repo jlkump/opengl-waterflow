@@ -38,7 +38,7 @@ protected:
 
 	glm::ivec2 dimensions_;
 
-	Texture() : texture_id_(0), channels_(GL_RGB), storage_type_(GL_RGB8), valid_texture_(true) {}
+	Texture() : texture_id_(0), channels_(GL_RGB), storage_type_(GL_RGB8), valid_texture_(true), dimensions_(glm::ivec2(0)) {}
 
 public:
 	/*
@@ -126,6 +126,15 @@ public:
 	void UpdatePixelData(GLint x_offset, GLint y_offset, GLsizei width, GLsizei height, const void* pixel_data);
 
 	glm::ivec2 GetDimensions();
+};
+
+
+class Texture3D : public Texture
+{
+private:
+
+public:
+	Texture3D(int dimensions, GLenum desired_channels = GL_RGBA, GLenum storage_type = GL_RGBA32F, const float* data = nullptr);
 };
 
 #endif

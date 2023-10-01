@@ -175,3 +175,21 @@ glm::ivec2 Texture::GetDimensions()
 {
     return dimensions_;
 }
+
+Texture3D::Texture3D(int dimensions, GLenum desired_channels, GLenum storage_type, const float* data)
+{
+    // Very poor code, will crash outside this usecase.
+    if (desired_channels == GL_RED) 
+    {
+        glGenTextures(1, &texture_id_);
+        glBindTexture(GL_TEXTURE_3D, texture_id_);
+        glTexImage3D(GL_TEXTURE_3D, 0, GL_RED, dimensions, dimensions, dimensions, 0, GL_RED, GL_UNSIGNED_INT, 0);
+    }
+    else 
+    {
+        glGenTextures(1, &texture_id_);
+        glBindTexture(GL_TEXTURE_3D, texture_id_);
+        glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, dimensions, dimensions, dimensions, 0, GL_RGBA, GL_FLOAT, 0);
+    }
+
+}

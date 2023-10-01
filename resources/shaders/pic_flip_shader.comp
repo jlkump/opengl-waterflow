@@ -13,14 +13,18 @@ layout (rgba32f, binding = 2) uniform image2D particle_pos_new;
 layout (rgba32f, binding = 3) uniform image2D particle_vel_old; // Probably only need one velocity texture
 layout (rgba32f, binding = 4) uniform image2D particle_vel_new;
 
-layout(r32ui) uniform uimage3D locks; // The locks for accessing the data of grid_vel
+// layout(r32ui) uniform uimage3D non_solid; // 1 when not solid
 layout (rgba32f, binding = 5) uniform image3D grid_vel; // Id by position rather than work group. Will require atomic access to the same positions
+layout (r32ui, binding = 6) uniform uimage3D locks; // The locks for accessing the data of grid_vel
+//layout (rgba32f, binding = 6) uniform image3D change_in_vel;
 
 uniform float deltaTime;
-uniform float particleRadius;
+// uniform float particleRadius;
 // uniform vec2 texBounds;
 
+#define TEXTURE_DIM 512
 #define GRAVITY vec3(0.0, -9.8, 0.0)
+#define ID_FROM_POS(pos) pos * TEXTURE_DIM
 
 void aquire_lock(ivec3 pos) {
 	while (imageAtomicExchange(locks, pos, 1) == 1) {
@@ -32,12 +36,51 @@ void release_lock(ivec3 pos) {
 	imageAtomicExchange(locks, pos, 0); // This should always return 1, since we only call when we hold the lock
 }
 
-void write_to_grid(ivec3 pos, vec3 vel) 
+void add_to_grid(ivec3 pos, vec3 vel) 
 {
 	aquire_lock(pos);
 	vec3 previous = imageLoad(grid_vel, pos).xyz;
 	imageStore(grid_vel, pos, vec4(previous + vel, 1.0));
 	release_lock(pos);
+}
+
+void clear_grid(ivec3 pos) {
+	imageStore(grid_vel, pos, vec4(0));
+	// release_lock(pos);
+}
+
+//vec3 update_velocities(ivec3 pos, vec3 old) {
+//	return imageLoad(change_in_vel, pos).xyz + old;
+//}
+
+vec3 get_bounded_vel(ivec3 id) {
+	if (id.x < 0 || id.y < 0 || id.z < 0 || id.x >= TEXTURE_DIM || id.y >= TEXTURE_DIM || id.z >= TEXTURE_DIM) {
+		return vec3(0);
+	}
+	return imageLoad(grid_vel, id);
+}
+
+float get_divergance(ivec3 id) {
+	// check divergence in each 3 axises
+	return get_bounded_vel(id + ivec3(1, 0, 0)).x - get_bounded_vel(id + ivec3(-1, 0, 0)).x
+			+ get_bounded_vel(id + ivec3(0, 1, 0)).y - get_bounded_vel(id + ivec3(0, -1, 0)).y
+			+ get_bounded_vel(id + ivec3(0, 0, 1)).z - get_bounded_vel(id + ivec3(0, 0, -1)).z;
+}
+
+uint solid_value(ivec3 id) 
+{
+	if (id.x <= 0 || id.y <= 0 || id.z <= 0 || id.x + 1 >= TEXTURE_DIM || id.y + 1 >= TEXTURE_DIM || id.z + 1 >= TEXTURE_DIM) 
+	{
+		return 0;
+	}
+	return 1;
+	// return imageLoad(non_solid, id);
+}
+
+uint get_surrounding_solidity(ivec3 id) {
+	return solid_value(id + ivec3(1, 0, 0)) - solid_value(id + ivec3(-1, 0, 0))
+			+ solid_value(id + ivec3(0, 1, 0)) - solid_value(id + ivec3(0, -1, 0))
+			+ solid_value(id + ivec3(0, 0, 1)) - solid_value(id + ivec3(0, 0, -1));
 }
 
 void main() 
@@ -48,29 +91,62 @@ void main()
 	vec3 vel_new = vel_old + GRAVITY * deltaTime;
 	vec3 pos_new = imageLoad(particle_pos_old, id).xyz + vel_new * deltaTime *.1;
 
-	if (pos_new.x <= lower_bound.x) {
-	 	pos_new.x = lower_bound.x;
+	if (pos_new.x < 0) {
+	 	pos_new.x = 0;
 	}
-	if (pos_new.y <= lower_bound.y) {
-		pos_new.y = lower_bound.y;
+	if (pos_new.y < 0) {
+		pos_new.y = 0;
 	}
-	if (pos_new.z <= lower_bound.z) {
-		pos_new.z = lower_bound.z;
-	}
-	
-	if (pos_new.x >= upper_bound.x) {
-		pos_new.x = upper_bound.x;
-	}
-	if (pos_new.y >= upper_bound.y) {
-		pos_new.y = upper_bound.y;
-	}
-	if (pos_new.z >= upper_bound.z) {
-		pos_new.z = upper_bound.z;
+	if (pos_new.z < 0) {
+		pos_new.z = 0;
 	}
 	
+	if (pos_new.x >= 1) {
+		pos_new.x = 0.9999;
+	}
+	if (pos_new.y >= 1) {
+		pos_new.y = 0.9999;
+	}
+	if (pos_new.z >= 1) {
+		pos_new.z = 0.9999;
+	}
+	
+	add_to_grid(ivec3(ID_FROM_POS(pos_new)), vel_new);
+	barrier(); // Wait for everyone to add to grid
+	// Calculate velocities for every layer of the grid, ignore empty values
+	for (int depth = 0; depth < gl_GlobalInvocationID.x; depth++) 
+	{
+		ivec3 iteration_id = ivec3(id, depth);
+		vec3 vel = imageLoad(grid_vel, iteration_id).xyz;
+		// Perform grid incompressablility
+		float divergance = get_divergance(iteration_id);
+		uint surrounding = get_surrounding_solidity(iteration_id);
+		if (vel.x > 0) {
+			vel.x = vel.x + divergance * (float(solid_value(iteration_id + ivec3(1, 0, 0))) / 4.0);
+		} else {
+			vel.x = vel.x + divergance * (float(solid_value(iteration_id + ivec3(-1, 0, 0))) / 4.0);
+		}
+		if (vel.y > 0) {
+			vel.y = vel.y + divergance * (float(solid_value(iteration_id + ivec3(0, 1, 0))) / 4.0);
+		} else {
+			vel.y = vel.y + divergance * (float(solid_value(iteration_id + ivec3(0, -1, 0))) / 4.0);
+		}
+		if (vel.z > 0) {
+			vel.z = vel.z + divergance * (float(solid_value(iteration_id + ivec3(0, 0, 1))) / 4.0);
+		} else {
+			vel.z = vel.z + divergance * (float(solid_value(iteration_id + ivec3(0, 0, -1))) / 4.0);
+		}
+		imageStore(grid_vel, iteration_id, vec4(vel, 1.0));
+	}
+	// for (int i = 0; i < 3; i++) 
+	// {
+	// 	barrier();
+	// }
+	// Update velocities
+	vel_new = imageLoad(grid_vel, (ivec3(ID_FROM_POS(pos_new)))).xyz;
+	// prevent compressability?
 	imageStore(particle_pos_old, id, vec4(pos_new, 1.0));
 	imageStore(particle_vel_old, id, vec4(vel_new, 1.0));
 	
-	write_to_grid();
 
 }
