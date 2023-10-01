@@ -217,8 +217,15 @@ void UpdateLoop()
     Texture tex_vel_old(particle_tex_dimen);
     Texture tex_vel_new(particle_tex_dimen);
 
-    Texture3D lock_texture(512, GL_RED);
-    Texture3D grid_texture(512);
+    GLuint lock_texture;
+    glGenTextures(1, &lock_texture);
+    glBindTexture(GL_TEXTURE_3D, lock_texture);
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_RED, 512, 512, 512, 0, GL_RED, GL_UNSIGNED_INT, 0);
+
+    GLuint grid_texture;
+    glGenTextures(1, &grid_texture);
+    glBindTexture(GL_TEXTURE_3D, grid_texture);
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, 512, 512, 512, 0, GL_RGBA, GL_FLOAT, 0);
 
 
     ComputeShader simulation("pic_flip_shader.comp", glm::ivec3(particle_tex_dimen.x, particle_tex_dimen.y, 1));
@@ -243,8 +250,8 @@ void UpdateLoop()
             tex_pos_new.BindImage(2);
             tex_vel_old.BindImage(3);
             tex_vel_new.BindImage(4);
-            grid_texture.BindImage(5);
-            lock_texture.BindImage(6);
+            glBindImageTexture(5, grid_texture, 0, 0, 0, GL_READ_WRITE, GL_FLOAT);
+            glBindImageTexture(6, lock_texture, 0, 0, 0, GL_READ_WRITE, GL_UNSIGNED_INT);
             simulation.Dispatch();
             simulation.Barrier();
         }

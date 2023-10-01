@@ -128,13 +128,4 @@ public:
 	glm::ivec2 GetDimensions();
 };
 
-
-class Texture3D : public Texture
-{
-private:
-
-public:
-	Texture3D(int dimensions, GLenum desired_channels = GL_RGBA, GLenum storage_type = GL_RGBA32F, const float* data = nullptr);
-};
-
 #endif
