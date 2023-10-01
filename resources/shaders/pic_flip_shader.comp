@@ -111,35 +111,35 @@ void main()
 		pos_new.z = 0.9999;
 	}
 	
-	add_to_grid(ivec3(ID_FROM_POS(pos_new)), vel_new);
-	barrier(); // Wait for everyone to add to grid
+	// add_to_grid(ivec3(ID_FROM_POS(pos_new)), vel_new);
+	// barrier(); // Wait for everyone to add to grid
 	// Calculate velocities for every layer of the grid, ignore empty values
 
-	// Problem child >:(
-	for (int depth = 0; depth < gl_GlobalInvocationID.x; depth++) 
-	{
-		ivec3 iteration_id = ivec3(id, depth);
-		vec3 vel = imageLoad(grid_vel, iteration_id).xyz;
-		// Perform grid incompressablility
-		float divergance = get_divergance(iteration_id);
-		float surrounding = float(get_surrounding_solidity(iteration_id));
-		if (vel.x > 0) {
-			vel.x = vel.x + divergance * (float(solid_value(iteration_id + ivec3(1, 0, 0))) * (solid_value(iteration_id + ivec3(1, 0, 0))) / surrounding);
-		} else {
-			vel.x = vel.x + divergance * (float(solid_value(iteration_id + ivec3(-1, 0, 0))) * (solid_value(iteration_id + ivec3(-1, 0, 0))) / surrounding);
-		}
-		if (vel.y > 0) {
-			vel.y = vel.y + divergance * (float(solid_value(iteration_id + ivec3(0, 1, 0))) * (solid_value(iteration_id + ivec3(0, 1, 0))) / surrounding);
-		} else {
-			vel.y = vel.y + divergance * (float(solid_value(iteration_id + ivec3(0, -1, 0))) * (solid_value(iteration_id + ivec3(0, -1, 0))) / surrounding);
-		}
-		if (vel.z > 0) {
-			vel.z = vel.z + divergance * (float(solid_value(iteration_id + ivec3(0, 0, 1))) * (solid_value(iteration_id + ivec3(0, 0, 1))) / surrounding);
-		} else {
-			vel.z = vel.z + divergance * (float(solid_value(iteration_id + ivec3(0, 0, -1))) * (solid_value(iteration_id + ivec3(0, 0, -1))) / surrounding);
-		}
-		imageStore(grid_vel, iteration_id, vec4(vel, 1.0));
-	}
+	// // Problem child >:(
+	// for (int depth = 0; depth < gl_GlobalInvocationID.x; depth++) 
+	// {
+	// 	ivec3 iteration_id = ivec3(id, depth);
+	// 	vec3 vel = imageLoad(grid_vel, iteration_id).xyz;
+	// 	// Perform grid incompressablility
+	// 	float divergance = get_divergance(iteration_id);
+	// 	float surrounding = float(get_surrounding_solidity(iteration_id));
+	// 	if (vel.x > 0) {
+	// 		vel.x = vel.x + divergance * (float(solid_value(iteration_id + ivec3(1, 0, 0))) * (solid_value(iteration_id + ivec3(1, 0, 0))) / surrounding);
+	// 	} else {
+	// 		vel.x = vel.x + divergance * (float(solid_value(iteration_id + ivec3(-1, 0, 0))) * (solid_value(iteration_id + ivec3(-1, 0, 0))) / surrounding);
+	// 	}
+	// 	if (vel.y > 0) {
+	// 		vel.y = vel.y + divergance * (float(solid_value(iteration_id + ivec3(0, 1, 0))) * (solid_value(iteration_id + ivec3(0, 1, 0))) / surrounding);
+	// 	} else {
+	// 		vel.y = vel.y + divergance * (float(solid_value(iteration_id + ivec3(0, -1, 0))) * (solid_value(iteration_id + ivec3(0, -1, 0))) / surrounding);
+	// 	}
+	// 	if (vel.z > 0) {
+	// 		vel.z = vel.z + divergance * (float(solid_value(iteration_id + ivec3(0, 0, 1))) * (solid_value(iteration_id + ivec3(0, 0, 1))) / surrounding);
+	// 	} else {
+	// 		vel.z = vel.z + divergance * (float(solid_value(iteration_id + ivec3(0, 0, -1))) * (solid_value(iteration_id + ivec3(0, 0, -1))) / surrounding);
+	// 	}
+	// 	imageStore(grid_vel, iteration_id, vec4(vel, 1.0));
+	// }
 
 
 
@@ -148,7 +148,7 @@ void main()
 	// 	barrier();
 	// }
 	// Update velocities
-	vel_new = imageLoad(grid_vel, (ivec3(ID_FROM_POS(pos_new)))).xyz;
+	// vel_new = imageLoad(grid_vel, (ivec3(ID_FROM_POS(pos_new)))).xyz;
 	// prevent compressability?
 	imageStore(particle_pos_old, id, vec4(pos_new, 1.0));
 	imageStore(particle_vel_old, id, vec4(vel_new, 1.0));

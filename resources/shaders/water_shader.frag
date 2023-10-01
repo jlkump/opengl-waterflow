@@ -71,6 +71,7 @@ void main() {
 	// Simple diffuse and reflection illumination/shading
     vec3 I = normalize(ws_cam_pos - GetWorldPos(uv));
 	vec3 R = reflect(I, N);
+	R.y = -R.y;
 	vec3 reflection_color = texture(skybox, R).rgb;
 	float default_reflection = 0.3;
 	float reflection_amount = default_reflection + ((1.0 - default_reflection) * (1 - dot(I, N)));
