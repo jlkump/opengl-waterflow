@@ -4,9 +4,15 @@ This is a project on the rendering and simulation of water in real-time using pa
 ## References and Resources
 ### Simulation and Rendering
 [Fluid Simulation for Dummies](https://mikeash.com/pyblog/fluid-simulation-for-dummies.html), by Mike Ash.
+
 [Ten Minute Physics](https://www.youtube.com/@TenMinutePhysics) YouTube channel
+
 [Animating Sand As a Fluid](https://www.cs.ubc.ca/~rbridson/docs/zhu-siggraph05-sandfluid.pdf), by Yongning Zhu and Robert Bridson
+
 [GDC 2010 - Screen Space Fluid Rendering for Games](https://developer.download.nvidia.com/presentations/2010/gdc/Direct3D_Effects.pdf), by Simon Green
+
 [A Gentle Introduction to Realtime Fluid Simulation](https://shahriyarshahrabi.medium.com/gentle-introduction-to-fluid-simulation-for-programmers-and-technical-artists-7c0045c40bac), by Shahriar Shahrabi
+
+
 ### Setup for CMake with Opengl and other libraries: 
 [How to setup OpenGL project with CMake](https://shot511.github.io/2018-05-29-how-to-setup-opengl-project-with-cmake/), by Tomasz Galaj
