@@ -48,10 +48,14 @@ void WindowSizeCallback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
 
-    if (g_shader != nullptr && g_camera != nullptr)
+    if (g_camera != nullptr)
     {
         g_camera->SetAspectRatio(width, height);
-        g_shader->SetUniformMatrix4fv("proj_view", g_camera->GetProjectionMatrix() * g_camera->GetViewMatrix());
+        if (g_shader_vel != nullptr)
+            g_shader_vel->SetUniformMatrix4fv("proj_view", g_camera->GetProjectionMatrix() * g_camera->GetViewMatrix());
+
+        if (g_shader_dye != nullptr)
+            g_shader_dye->SetUniformMatrix4fv("proj_view", g_camera->GetProjectionMatrix() * g_camera->GetViewMatrix());
     }
 }
 
@@ -156,7 +160,7 @@ void UpdateLoop()
         float deltaTime = new_time - previous_time;
         previous_time = new_time;
 
-        if (new_time - last_time_updated >= time_step) {
+        if (new_time - last_time_updated >= time_step && g_simulate) {
             // Perform new step in simulation
             last_time_updated = new_time;
         }
@@ -195,7 +199,8 @@ int main()
     UpdateLoop();
     glfwTerminate();
 
-    delete g_shader;
+    delete g_shader_vel;
+    delete g_shader_dye;
     delete g_model;
     delete g_camera;
 
