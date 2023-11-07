@@ -33,7 +33,7 @@ void aquire_lock(ivec3 pos) {
 }
 
 void release_lock(ivec3 pos) {
-	imageAtomicExchange(locks, pos, 0); // This should always return 1, since we only call when we hold the lock
+	imageAtomicExchange(locks, pos, 0);
 }
 
 void add_to_grid(ivec3 pos, vec3 vel) 
@@ -46,7 +46,6 @@ void add_to_grid(ivec3 pos, vec3 vel)
 
 void clear_grid(ivec3 pos) {
 	imageStore(grid_vel, pos, vec4(0));
-	// release_lock(pos);
 }
 
 //vec3 update_velocities(ivec3 pos, vec3 old) {
