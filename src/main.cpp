@@ -24,11 +24,10 @@
 
 // Project Imports
 #include <RootDir.h>
-#include "rendering/shader.hpp"
 #include "rendering/texture.hpp"
+#include "rendering/shader.hpp"
 #include "rendering/compute_shader.hpp"
 #include "rendering/model.h"
-#include "rendering/cubemap.hpp"
 #include "rendering/camera.hpp"
 #include "simulation/water_particle_renderer.hpp"
 
@@ -42,6 +41,11 @@ Shader* g_shader_dye = nullptr;
 Camera* g_camera = nullptr;
 bool g_simulate = false;
 
+Skybox* g_skybox = nullptr;
+
+// TODO: Defined a scene renderer class that makes it so we don't need all these global variables
+// SceneRenderer g_scene_renderer; // Holds camera, models, skybox, etc.
+
 glm::mat4 model_matrix = glm::mat4(1.0f);
 
 void WindowSizeCallback(GLFWwindow* window, int width, int height)
@@ -50,17 +54,29 @@ void WindowSizeCallback(GLFWwindow* window, int width, int height)
 
     if (g_camera != nullptr)
     {
+        // TODO: Move this to a scene renderer where we just call a method
+        // g_scene_renderer->SetAspectRatio()
         g_camera->SetAspectRatio(width, height);
         if (g_shader_vel != nullptr)
             g_shader_vel->SetUniformMatrix4fv("proj_view", g_camera->GetProjectionMatrix() * g_camera->GetViewMatrix());
 
         if (g_shader_dye != nullptr)
             g_shader_dye->SetUniformMatrix4fv("proj_view", g_camera->GetProjectionMatrix() * g_camera->GetViewMatrix());
+        if (g_skybox != nullptr) {
+            g_skybox->SetProjection(g_camera->GetProjectionMatrix());
+            g_skybox->SetView(g_camera->GetViewMatrix());
+        }
     }
 }
 
 void WindowKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+    // TODO: Use scene renderer to get camera and manipulate for debugging
+    // g_scene_renderer->GetActiveCamera();
+    // Then manipulate the camera based on key input
+    // After done, call g_scene_renderer->UpdateActiveCamera(cam); to modify the camera data
+    // Possibly have g_scene_renderer->SetActiveCamera(); to allow for multiple camera views?
+    
     // Model rotation
     if (key == GLFW_KEY_E && action == GLFW_PRESS)
         model_matrix = glm::rotate(model_matrix, glm::radians(-45.0f), glm::vec3(0, 1, 0));
@@ -125,7 +141,9 @@ bool LoadContent()
     g_camera = new Camera(glm::vec3(0.5f, 1.5f, 2.5f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     g_shader_vel = new Shader("viz_velocity_grid.vert", "viz_velocity_grid.frag");
     g_shader_dye = new Shader("viz_dye_grid.vert", "viz_dye_grid.frag");
-
+    g_skybox = new Skybox({ "skybox/right.jpg", "skybox/left.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/front.jpg", "skybox/back.jpg" });
+    g_skybox->SetProjection(g_camera->GetProjectionMatrix());
+    g_skybox->SetView(g_camera->GetViewMatrix());
     return true;
 }
 
@@ -135,9 +153,6 @@ void UpdateLoop()
     float new_time = 0.0f;
     float last_time_updated = 0.0f;
     float time_step = 1.0f;
-
-    // Skybox setup
-    Skybox skybox({ "skybox/right.jpg", "skybox/left.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/front.jpg", "skybox/back.jpg" });
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
@@ -169,8 +184,7 @@ void UpdateLoop()
         //  3D Rendering  //
         ////////////////////
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-        skybox.ActiveBind(GL_TEXTURE0);
-        skybox.Draw(g_camera->GetViewMatrix(), g_camera->GetProjectionMatrix());
+        g_skybox->Draw();
 
         // g_shader->SetActive();
         // g_model->Draw();

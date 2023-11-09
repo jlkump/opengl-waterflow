@@ -6,7 +6,6 @@
 #include <glad/glad.h>
 #include "../rendering/shader.hpp"
 #include "../rendering/camera.hpp"
-#include "../rendering/cubemap.hpp"
 
 #define MAX_NUM_PARTICLES 512 * 512
 
@@ -50,7 +49,7 @@ private:
 	float particle_radius_ = 0.1f;
 	// We render depth to this image, nothing gets rendered to the screen on the first pass.
 	GLuint particle_frame_buffer_id_;
-	Texture depth_texture_;
+	Texture2D depth_texture_;
 	
 	// We will be rendering using textures rather than real model vertex data, 
 	// so use a simple screen-space quad for future passes
@@ -68,7 +67,7 @@ private:
 	void InitializeSmoothingVariables();
 	Shader smoothing_shader_;
 	GLuint smoothing_frame_buffer_id_;
-	Texture smoothed_depth_texture_;
+	Texture2D smoothed_depth_texture_;
 	void SmoothDepthTexture();
 
 	//////////////////
@@ -83,7 +82,7 @@ private:
 public:
 	WaterParticleRenderer();
 
-	void UpdateParticlePositionsTexture(Texture& positions);
+	void UpdateParticlePositionsTexture(Texture2D& positions);
 
 	void Draw(Camera& cam, Skybox& skybox);
 

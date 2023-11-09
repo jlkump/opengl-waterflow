@@ -9,6 +9,8 @@
 
 #include "texture.hpp"
 
+class Texture2D;
+
 class Shader {
 protected:
 	/// <summary>
@@ -134,7 +136,7 @@ public:
 	* Returns true if the uniform could be set, false otherwise.
 	* (False usually means the uniform_name is incorrect)
 	*/
-	bool SetUniformTexture(const std::string& uniform_name, Texture& texture, GLenum texture_unit);
+	bool SetUniformTexture2D(const std::string& uniform_name, Texture2D& texture, GLenum texture_unit);
 
 	// Other assorted SetUniforms to be added here as needed
 	bool SetUniformMatrix4fv(const std::string& uniform_name, const glm::mat4& matrix);

@@ -203,7 +203,7 @@ bool Shader::SetActive()
     return valid_program;
 }
 
-bool Shader::SetUniformTexture(const std::string& uniform_name, Texture& texture, GLenum texture_unit)
+bool Shader::SetUniformTexture2D(const std::string& uniform_name, Texture2D& texture, GLenum texture_unit)
 {
     if (GetUniformLocation(uniform_name)) 
     {

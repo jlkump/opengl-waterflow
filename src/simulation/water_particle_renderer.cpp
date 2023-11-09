@@ -105,7 +105,7 @@ WaterParticleRenderer::WaterParticleRenderer()
 	smoothing_shader_.SetUniform1fv("filter_radius", 9.0);
 }
 
-void WaterParticleRenderer::UpdateParticlePositionsTexture(Texture& positions)
+void WaterParticleRenderer::UpdateParticlePositionsTexture(Texture2D& positions)
 {
 
 	glm::ivec2 tex_dimensions = positions.GetDimensions();
@@ -131,7 +131,7 @@ void WaterParticleRenderer::UpdateParticlePositionsTexture(Texture& positions)
 		glBindVertexArray(0);
 	}
 
-	particle_shader_.SetUniformTexture("ws_particle_positions", positions, GL_TEXTURE0);
+	particle_shader_.SetUniformTexture2D("ws_particle_positions", positions, GL_TEXTURE0);
 	particle_count_ = current_particle_count;
 }
 
@@ -182,7 +182,7 @@ void WaterParticleRenderer::SmoothDepthTexture()
 {
 	// Smooth the depth
 	smoothing_shader_.SetActive();
-	smoothing_shader_.SetUniformTexture("depth_sampler", depth_texture_, GL_TEXTURE0);
+	smoothing_shader_.SetUniformTexture2D("depth_sampler", depth_texture_, GL_TEXTURE0);
 	glBindFramebuffer(GL_FRAMEBUFFER, smoothing_frame_buffer_id_);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, viewport_width_ / reduce_resolution_factor_, viewport_height_ / reduce_resolution_factor_);
@@ -205,8 +205,8 @@ void WaterParticleRenderer::DrawWater(glm::mat4& inv_view, glm::mat4& inv_proj, 
 	water_shader_.SetActive();
 	water_shader_.SetUniformMatrix4fv("inv_view", inv_view);
 	water_shader_.SetUniformMatrix4fv("inv_proj", inv_proj);
-	water_shader_.SetUniformTexture("depth_tex", smoothed_depth_texture_, GL_TEXTURE0);
-	water_shader_.SetUniformTexture("skybox", skybox, GL_TEXTURE1);
+	water_shader_.SetUniformTexture2D("depth_tex", smoothed_depth_texture_, GL_TEXTURE0);
+	water_shader_.SetUniformTexture2D("skybox", skybox, GL_TEXTURE1);
 	water_shader_.SetUniform3fv("ws_cam_pos", cam_pos);
 	water_shader_.SetUniform3fv("ws_light_dir",light_dir);
 	water_shader_.SetUniform3fv("diffuse_color", glm::normalize(glm::vec3(-0.1, 0.1, 0.2)));
