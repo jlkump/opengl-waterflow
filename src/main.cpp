@@ -32,6 +32,7 @@
 #include "simulation/water_particle_renderer.hpp"
 #include "rendering/skybox.hpp"
 #include "rendering/display_text.hpp"
+#include "simulation/debug_renderer.hpp"
 
 GLFWwindow* window;
 const int kWindowWidth = 1024;
@@ -133,6 +134,7 @@ bool Init() {
     glViewport(0, 0, kWindowWidth, kWindowHeight);
 
     glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
 
     return true;
 }
@@ -155,13 +157,14 @@ void UpdateLoop()
     float new_time = 0.0f;
     float last_time_updated = 0.0f;
     float time_step = 1.0f;
-
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
-
     
     DisplayText frame_time_display = DisplayText("0.0 ms/frame");
+    DebugRenderer debug = DebugRenderer();
 
+    debug.SetViewMat(g_camera->GetViewMatrix());
+    debug.SetProjectionMat(g_camera->GetProjectionMatrix());
+    debug.SetGridBoundaries(glm::vec3(-0.5, -0.5, -0.5), glm::vec3(0.5, 0.5, 0.5));
+    debug.SetGridCellInterval(0.5);
     /* Loop until the user closes the window or presses ESC */
     double lastTime = glfwGetTime();
     int nbFrames = 0;
@@ -170,7 +173,7 @@ void UpdateLoop()
         double currentTime = glfwGetTime();
         nbFrames++;
         if (currentTime - lastTime >= 1.0) {
-            printf("%f ms/frame\n", 1000.0 / double(nbFrames));
+            // printf("%f ms/frame\n", 1000.0 / double(nbFrames));
             frame_time_display.SetText(std::to_string(1000.0 / double(nbFrames)) + " ms/frame");
             nbFrames = 0;
             lastTime += 1.0;
@@ -191,6 +194,7 @@ void UpdateLoop()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         g_skybox->Draw();
         frame_time_display.Draw();
+        debug.Draw();
 
 
         /* Swap front and back buffers */

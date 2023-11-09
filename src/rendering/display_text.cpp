@@ -15,7 +15,7 @@ DisplayText::DisplayText(const std::string& text)
 		text_texture_singleton = new Texture2D("text.png");
 	}
 	if (text_shader_singleton == nullptr) {
-		text_shader_singleton = new Shader("text_shader.vert", "text_shader.frag");
+		text_shader_singleton = new Shader("debug/text_shader.vert", "debug/text_shader.frag");
 		text_shader_singleton->SetUniformTexture2D("textureSampler", *text_texture_singleton, GL_TEXTURE0);
 	}
 	glGenVertexArrays(1, &VAO_);

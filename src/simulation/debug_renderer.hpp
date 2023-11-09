@@ -1,14 +1,11 @@
 #ifndef DEBUG_RENDERER_H
 #define DEBUG_RENDERER_H
 
-#include <unordered_set>
+#include <set>
+#include <vector>
 
 #include "../rendering/shader.hpp"
 #include "../rendering/texture.hpp"
-
-class DebugArrow {
-
-};
 
 class DebugRenderer {
 public:
@@ -21,19 +18,41 @@ public:
 		PARTICLE_VELOCITIES,
 	};
 private:
-	Shader origin_shader_;
+	struct DebugLineVert {
+		glm::vec3 pos_;
+		glm::vec3 color_;
+		DebugLineVert(const glm::vec3& pos, const glm::vec3& color) : pos_(pos), color_(color) {}
+	};
+	struct DebugArrowVert {
+		glm::vec3 pos_;
+		glm::vec3 color_;
+		DebugArrowVert(const glm::vec3& pos, const glm::vec3& color) : pos_(pos), color_(color) {}
+	};
+	glm::vec3 ws_grid_lower_bound_;
+	glm::vec3 ws_grid_upper_bound_;
+	float ws_grid_cell_size_;
 
-	Shader grid_shader_;
-	Shader grid_velocity_shader_;
-	Shader grid_dye_shader_;
 
-	Shader particle_shader_;
-	Shader particle_velocity_shader_;
+	Shader debug_line_shader_;
+	GLuint VAO_grid_lines_;
+	GLuint VBO_grid_lines_;
+	GLuint EBO_grid_lines_;
+	std::vector<DebugLineVert> grid_line_vertices_;
+	std::vector<unsigned int> grid_line_indices_;
 
-	std::unordered_set<DebugView> active_shaders_; // If contained in the set, the shader is active
+	GLuint VAO_grid_arrows_;
+	GLuint VBO_grid_arrows_;
+	GLuint EBO_grid_arrows_;
+
+	Shader debug_particle_shader_;
+
+
+	std::set<DebugView> active_views_; // If contained in the set, the view is active
 
 	glm::mat4 cached_view_;
 	glm::mat4 cached_proj_;
+
+	bool UpdateGridLines();
 
 public:
 	DebugRenderer();
