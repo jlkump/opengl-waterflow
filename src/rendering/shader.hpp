@@ -9,8 +9,6 @@
 
 #include "texture.hpp"
 
-class Texture2D;
-
 class Shader {
 protected:
 	/// <summary>

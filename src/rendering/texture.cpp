@@ -3,7 +3,6 @@
 #include <RootDir.h>
 #include <stb_image.h>
 
-
 ///////////////////////
 ///	Private Methods ///
 ///////////////////////
@@ -14,6 +13,7 @@
 // of empty textures and the future modification of those textures.
 
 Texture2D::Texture2D(glm::ivec2 dimensions, StorageType storage_type, ChannelType channel_type, const void* initial_data) :
+	dimensions_(dimensions), storage_type_(storage_type), channel_type_(channel_type),
 	gl_storage_type_(GL_NONE), gl_channel_type_(GL_NONE), valid_texture_(false), texture_id_(0)
 {
 	// Generate handle for texture on GPU
@@ -62,30 +62,25 @@ Texture2D::Texture2D(glm::ivec2 dimensions, StorageType storage_type, ChannelTyp
 	valid_texture_ = true;
 }
 
-Texture2D::Texture2D(const std::string& texture_filename)
+Texture2D::Texture2D(const std::string& texture_filename) : 
+	dimensions_(glm::ivec2(0,0)), storage_type_(StorageType::TEX_BYTE), channel_type_(ChannelType::RGBA),
+	gl_storage_type_(GL_BYTE), gl_channel_type_(GL_RGBA), valid_texture_(false), texture_id_(0)
 {
 	if (texture_filename.empty())
 	{
-		valid_texture_ = false;
 		fprintf(stderr, "Failure creating Texture obj, file name provided is empty.\n");
 		return;
 	}
 
-	bool is_loaded = false;
-	int width, height;
-
-	unsigned char* pixels = stbi_load((ROOT_DIR "resources/textures/" + texture_filename).c_str(), &width, &height, nullptr, 4);
-
-	dimensions_.x = width;
-	dimensions_.y = height;
+	unsigned char* pixels = stbi_load((ROOT_DIR "resources/textures/" + texture_filename).c_str(), &dimensions_.x, &dimensions_.y, nullptr, 4);
 
 	if (pixels != nullptr)
 	{
 		glGenTextures(1, &texture_id_);
 		glBindTexture(GL_TEXTURE_2D, texture_id_);
 
-		glTexStorage2D(GL_TEXTURE_2D, 2 /* mip map levels */, GL_RGBA8, width, height);
-		glTexSubImage2D(GL_TEXTURE_2D, 0 /* mip map level */, 0 /* xoffset */, 0 /* yoffset */, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+		glTexStorage2D(GL_TEXTURE_2D, 2 /* mip map levels */, GL_RGBA8, dimensions_.x, dimensions_.y);
+		glTexSubImage2D(GL_TEXTURE_2D, 0 /* mip map level */, 0 /* xoffset */, 0 /* yoffset */, dimensions_.x, dimensions_.y, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 		glGenerateMipmap(GL_TEXTURE_2D); // Replaces mipmap levels from 0 to 2 with generated mip maps
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -95,9 +90,11 @@ Texture2D::Texture2D(const std::string& texture_filename)
 	}
 	else
 	{
-		valid_texture_ = false;
 		fprintf(stderr, "Texture \"%s\" could not be loaded. Is the texture file in \"resources/textures/\"?\n", texture_filename.c_str());
+		return;
 	}
+
+	valid_texture_ = true;
 
 	stbi_image_free(pixels);
 }
@@ -327,68 +324,5 @@ bool Cubemap::ActiveBind(GLenum texture_unit)
 	}
 	glActiveTexture(texture_unit);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, texture_id_);
-	return true;
-}
-
-Skybox::Skybox(std::vector<std::string> input_textures)
-	: Cubemap(input_textures), skybox_shader_(nullptr), VAO_(0)
-{
-	unsigned int VBO;
-
-	glGenVertexArrays(1, &VAO_);
-	glGenBuffers(1, &VBO);
-
-	glBindVertexArray(VAO_);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, 108 * sizeof(float), &kSkyboxVertices_[0], GL_STATIC_DRAW);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-	glBindVertexArray(0); // Unbind this vertex array
-
-	skybox_shader_ = new Shader("skybox.vert", "skybox.frag");
-	skybox_shader_->SetUniformTexture2D("skybox", *this, GL_TEXTURE0);
-}
-
-bool Skybox::Draw()
-{
-	if (!valid_texture_) {
-		return false;
-	}
-	glDepthFunc(GL_LEQUAL);
-	skybox_shader_->SetActive();
-	glBindVertexArray(VAO_);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, texture_id_);
-	glDrawArrays(GL_TRIANGLES, 0, 36);
-	glBindVertexArray(0);
-	glDepthFunc(GL_LESS);
-	return true;
-}
-
-bool Skybox::SetShader(Shader& s) {
-	if (!valid_texture_) {
-		return false;
-	}
-	skybox_shader_ = &s;
-	return true;
-}
-
-bool Skybox::SetProjection(const glm::mat4& projection)
-{
-	if (!valid_texture_) {
-		return false;
-	}
-	cached_proj_ = projection;
-	skybox_shader_->SetUniformMatrix4fv("proj_view", cached_proj_ * cached_view_);
-	return true;
-}
-
-bool Skybox::SetView(const glm::mat4& view)
-{
-	if (!valid_texture_) {
-		return false;
-	}
-	cached_view_ = glm::mat4(glm::mat3(view));
-	skybox_shader_->SetUniformMatrix4fv("proj_view", cached_proj_ * cached_view_);
 	return true;
 }

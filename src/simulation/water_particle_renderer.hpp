@@ -4,8 +4,10 @@
 #include <vector>
 #include <glm/glm.hpp>
 #include <glad/glad.h>
+#include "../rendering/texture.hpp"
 #include "../rendering/shader.hpp"
 #include "../rendering/camera.hpp"
+#include "../rendering/skybox.hpp"
 
 #define MAX_NUM_PARTICLES 512 * 512
 

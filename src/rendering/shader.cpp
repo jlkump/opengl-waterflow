@@ -1,10 +1,11 @@
 #include "shader.hpp"
-#include "shader.hpp"
 #include <RootDir.h>
 
 #include <glm/gtc/type_ptr.hpp>
 #include <fstream>
 #include <string>
+
+#include "texture.hpp"
 
 ///////////////////////
 ///	Private Methods ///

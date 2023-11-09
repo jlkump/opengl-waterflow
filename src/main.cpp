@@ -30,6 +30,8 @@
 #include "rendering/model.h"
 #include "rendering/camera.hpp"
 #include "simulation/water_particle_renderer.hpp"
+#include "rendering/skybox.hpp"
+#include "rendering/display_text.hpp"
 
 GLFWwindow* window;
 const int kWindowWidth = 1024;
@@ -139,8 +141,8 @@ bool LoadContent()
 {
     /* Create camera for scene */
     g_camera = new Camera(glm::vec3(0.5f, 1.5f, 2.5f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    g_shader_vel = new Shader("viz_velocity_grid.vert", "viz_velocity_grid.frag");
-    g_shader_dye = new Shader("viz_dye_grid.vert", "viz_dye_grid.frag");
+    // g_shader_vel = new Shader("viz_velocity_grid.vert", "viz_velocity_grid.frag");
+    // g_shader_dye = new Shader("viz_dye_grid.vert", "viz_dye_grid.frag");
     g_skybox = new Skybox({ "skybox/right.jpg", "skybox/left.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/front.jpg", "skybox/back.jpg" });
     g_skybox->SetProjection(g_camera->GetProjectionMatrix());
     g_skybox->SetView(g_camera->GetViewMatrix());
@@ -158,6 +160,8 @@ void UpdateLoop()
     glDepthFunc(GL_LESS);
 
     
+    DisplayText frame_time_display = DisplayText("0.0 ms/frame");
+
     /* Loop until the user closes the window or presses ESC */
     double lastTime = glfwGetTime();
     int nbFrames = 0;
@@ -167,6 +171,7 @@ void UpdateLoop()
         nbFrames++;
         if (currentTime - lastTime >= 1.0) {
             printf("%f ms/frame\n", 1000.0 / double(nbFrames));
+            frame_time_display.SetText(std::to_string(1000.0 / double(nbFrames)) + " ms/frame");
             nbFrames = 0;
             lastTime += 1.0;
         }
@@ -185,9 +190,7 @@ void UpdateLoop()
         ////////////////////
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         g_skybox->Draw();
-
-        // g_shader->SetActive();
-        // g_model->Draw();
+        frame_time_display.Draw();
 
 
         /* Swap front and back buffers */
@@ -217,6 +220,7 @@ int main()
     delete g_shader_dye;
     delete g_model;
     delete g_camera;
+    delete g_skybox;
 
 	return 0;
 }
