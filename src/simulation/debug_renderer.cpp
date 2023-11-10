@@ -29,7 +29,8 @@ bool DebugRenderer::MakeArrow(std::vector<glm::vec3>& verts, std::vector<unsigne
 	glm::vec3 start_pos = glm::vec3(0, 0, 0);
 	glm::vec3 end_pos = glm::vec3(0, 1, 0);
 	glm::vec3 thickness_dir = glm::normalize(glm::cross((end_pos - start_pos), norm)) * thickness;
-	glm::vec3 arrow_head_start = glm::vec3(0, 0.75, 0.0);
+	glm::vec3 arrow_head_start = glm::vec3(0, 0.95, 0.0);
+	float arrow_wideness = 0.05f;
 
 	verts.push_back(start_pos - thickness_dir);
 	verts.push_back(start_pos + thickness_dir);
@@ -48,13 +49,13 @@ bool DebugRenderer::MakeArrow(std::vector<glm::vec3>& verts, std::vector<unsigne
 	//indices.push_back(index + 1);
 	//index += 4;
 
+	verts.push_back(end_pos + glm::vec3(0, 1, 0) * thickness*2.0f);
 	verts.push_back(end_pos);
-	verts.push_back(end_pos + glm::vec3(0, 1, 0) * thickness);
-	verts.push_back(arrow_head_start + glm::normalize(thickness_dir) * 0.4f);
-	verts.push_back(arrow_head_start + glm::normalize(thickness_dir) * 0.4f + thickness_dir);
+	verts.push_back(arrow_head_start + glm::normalize(thickness_dir) * arrow_wideness);
+	verts.push_back(arrow_head_start + glm::normalize(thickness_dir) * arrow_wideness + thickness_dir*2.0f);
 	// inefficent slightly
-	verts.push_back(arrow_head_start + glm::normalize(thickness_dir) * 0.4f);
-	verts.push_back(end_pos + glm::vec3(0, 1, 0) * thickness);
+	verts.push_back(arrow_head_start + glm::normalize(thickness_dir) * arrow_wideness);
+	verts.push_back(end_pos + glm::vec3(0, 1, 0) * thickness*2.0f);
 
 	//indices.push_back(index);
 	//indices.push_back(index + 1);
@@ -64,13 +65,13 @@ bool DebugRenderer::MakeArrow(std::vector<glm::vec3>& verts, std::vector<unsigne
 	//indices.push_back(index + 1);
 	//index += 4;
 
+	verts.push_back(end_pos + glm::vec3(0, 1, 0) * thickness*2.0f);
 	verts.push_back(end_pos);
-	verts.push_back(end_pos + glm::vec3(0, 1, 0) * thickness);
-	verts.push_back(arrow_head_start - glm::normalize(thickness_dir) * 0.4f);
-	verts.push_back(arrow_head_start - glm::normalize(thickness_dir) * 0.4f - thickness_dir);
+	verts.push_back(arrow_head_start - glm::normalize(thickness_dir) * arrow_wideness);
+	verts.push_back(arrow_head_start - glm::normalize(thickness_dir) * arrow_wideness - thickness_dir*2.0f);
 	// Inefficent slightly
-	verts.push_back(arrow_head_start - glm::normalize(thickness_dir) * 0.4f);
-	verts.push_back(end_pos + glm::vec3(0, 1, 0) * thickness);
+	verts.push_back(arrow_head_start - glm::normalize(thickness_dir) * arrow_wideness);
+	verts.push_back(end_pos + glm::vec3(0, 1, 0) * thickness*2.0f);
 
 	//indices.push_back(index);
 	//indices.push_back(index + 1);
@@ -79,10 +80,7 @@ bool DebugRenderer::MakeArrow(std::vector<glm::vec3>& verts, std::vector<unsigne
 	//indices.push_back(index + 2);
 	//indices.push_back(index + 1);
 	//index += 4;
-	printf("Arrow verts:\n");
-	for (auto& v : verts) {
-		printf("(%4.4f, %4.4f, %4.4f)\n", v.x, v.y, v.z);
-	}
+
 	return false;
 }
 
@@ -168,7 +166,7 @@ bool DebugRenderer::UpdateArrowPositions()
 						(z - ws_grid_lower_bound_.z) / grid_side_size));
 				}
 				if (y_idx + 1 < grid_size) {
-					arrow_positions_.push_back(glm::vec3(x, y + offset, z));
+					arrow_positions_.push_back(glm::vec3(x, y, z));
 					arrow_colors_.push_back(glm::vec3(0, 1, 0));
 					arrow_indexes_.push_back(glm::vec3(
 						(x - ws_grid_lower_bound_.x) / grid_side_size,
@@ -188,6 +186,10 @@ bool DebugRenderer::UpdateArrowPositions()
 			y_idx++;
 		}
 		z_idx++;
+	}
+	printf("Arrow verts:\n");
+	for (auto& v : arrow_positions_) {
+		printf("(%4.4f, %4.4f, %4.4f)\n", v.x, v.y, v.z);
 	}
 	glBindVertexArray(VAO_grid_arrows_);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_arrow_pos_);
@@ -315,7 +317,6 @@ bool DebugRenderer::SetGridVelocities(Texture3D& grid_velocities)
 	vel_texture_dimensions_ = grid_velocities.GetDimensions();
 	debug_grid_vel_shader_.SetUniformTexture3D("velocities", grid_velocities, GL_TEXTURE0);
 	UpdateArrowPositions();
-	InitializeDebugArrow();
 	return true;
 }
 
