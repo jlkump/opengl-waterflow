@@ -7,15 +7,23 @@
 
 class FPSCamera {
 private:
-	bool is_forward_pressed_;
-	bool is_back_pressed_;
-	bool is_left_pressed_;
-	bool is_right_pressed_;
-	bool is_up_pressed_;
-	bool is_down_pressed_;
+	enum Action {
+		MOVE_FORWARD,
+		MOVE_BACK,
+		MOVE_LEFT,
+		MOVE_RIGHT,
+		MOVE_UP,
+		MOVE_DOWN,
+		ROTATE_CW,
+		ROTATE_CCW,
+		LOOK_DOWN,
+		LOOK_UP,
+	};
+
+	std::unordered_set<Action> active_actions_;
 
 	float move_speed_;
-
+	float rotate_speed_;
 	Camera* cam_;
 
 public:
@@ -36,6 +44,10 @@ public:
 	void LeftReleased();
 	void RightPressed();
 	void RightReleased();
+	void RotateCwPressed();
+	void RotateCwReleased();
+	void RotateCCwPressed();
+	void RotateCCwReleased();
 
 	void SetMovespeed(float speed);
 

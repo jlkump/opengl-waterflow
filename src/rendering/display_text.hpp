@@ -23,8 +23,7 @@ private:
 		TextVert(const glm::vec2& pos, const glm::vec2& uv) : pos_(pos), uv_(uv) {}
 	};
 
-	std::vector<TextVert> text_vertices_;
-	std::vector<unsigned int> text_indices_;
+	int draw_amount_;
 
 	GLuint VAO_;
 	GLuint VBO_;

@@ -43,6 +43,8 @@ FPSCamera* g_cam = nullptr;
 Skybox* g_skybox = nullptr;
 DebugRenderer* g_debug_renderer = nullptr;
 bool g_simulate = false;
+std::set<int> g_keys_pressed;
+
 
 // TODO: Defined a scene renderer class that makes it so we don't need all these global variables
 // SceneRenderer g_scene_renderer; // Holds camera, models, skybox, etc.
@@ -51,7 +53,7 @@ bool UpdateView(const glm::mat4& view) {
     if (g_skybox)
         g_skybox->SetView(view);
     if (g_debug_renderer)
-        g_debug_renderer->SetViewMat(view);
+        g_debug_renderer->SetView(view);
     return true;
 }
 
@@ -59,7 +61,7 @@ bool UpdateProjection(const glm::mat4& proj) {
     if (g_skybox)
         g_skybox->SetProjection(proj);
     if (g_debug_renderer)
-        g_debug_renderer->SetProjectionMat(proj);
+        g_debug_renderer->SetProjection(proj);
     return true;
 }
 
@@ -75,58 +77,78 @@ void WindowSizeCallback(GLFWwindow* window, int width, int height)
 
 void WindowKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    if (g_cam == nullptr) {
+    if (g_cam == nullptr || g_debug_renderer == nullptr) {
         return;
     }
 
     if (key == GLFW_KEY_W) {
         if (action == GLFW_PRESS) {
+            g_keys_pressed.insert(GLFW_KEY_W);
             g_cam->ForwardPressed();
-        } else if (action == GLFW_RELEASE) {
+        }
+        else if (action == GLFW_RELEASE) {
+            g_keys_pressed.erase(GLFW_KEY_W);
             g_cam->ForwardReleased();
         }
     }
     if (key == GLFW_KEY_S) {
         if (action == GLFW_PRESS) {
+            g_keys_pressed.insert(GLFW_KEY_S);
             g_cam->BackPressed();
         }
         else if (action == GLFW_RELEASE) {
+            g_keys_pressed.erase(GLFW_KEY_S);
             g_cam->BackReleased();
         }
     }
     if (key == GLFW_KEY_A) {
         if (action == GLFW_PRESS) {
+            g_keys_pressed.insert(GLFW_KEY_A);
             g_cam->LeftPressed();
         }
         else if (action == GLFW_RELEASE) {
+            g_keys_pressed.erase(GLFW_KEY_A);
             g_cam->LeftReleased();
         }
     }
     if (key == GLFW_KEY_D) {
         if (action == GLFW_PRESS) {
+            g_keys_pressed.insert(GLFW_KEY_D);
             g_cam->RightPressed();
         }
         else if (action == GLFW_RELEASE) {
+            g_keys_pressed.erase(GLFW_KEY_D);
             g_cam->RightReleased();
         }
     }
-    if (key == GLFW_KEY_I) {
+    if (key == GLFW_KEY_SPACE) {
         if (action == GLFW_PRESS) {
+            g_keys_pressed.insert(GLFW_KEY_SPACE);
             g_cam->UpPressed();
         }
         else if (action == GLFW_RELEASE) {
+            g_keys_pressed.erase(GLFW_KEY_SPACE);
             g_cam->UpReleased();
         }
     }
-    if (key == GLFW_KEY_K) {
+    if (key == GLFW_KEY_LEFT_SHIFT) {
         if (action == GLFW_PRESS) {
+            g_keys_pressed.insert(GLFW_KEY_LEFT_SHIFT);
             g_cam->DownPressed();
         }
         else if (action == GLFW_RELEASE) {
+            g_keys_pressed.erase(GLFW_KEY_LEFT_SHIFT);
             g_cam->DownReleased();
         }
     }
-    UpdateView(g_cam->GetCam()->GetViewMatrix());
+
+    if (key == GLFW_KEY_T) {
+        if (action == GLFW_PRESS) {
+            g_debug_renderer->ToggleDebugView(DebugRenderer::FRAME_TIME);
+        } else if (action == GLFW_RELEASE) {
+            g_debug_renderer->ToggleDebugView(DebugRenderer::FRAME_TIME);
+        }
+    }
 }
 
 bool Init() {
@@ -207,9 +229,9 @@ bool LoadContent()
     g_debug_renderer = new DebugRenderer();
     g_debug_renderer->SetGridBoundaries(glm::vec3(-0.5, -0.5, -0.5), glm::vec3(0.5, 0.5, 0.5));
     g_debug_renderer->SetGridCellInterval(0.5);
-    // g_debug_renderer->SetGridVelocities(temp_grid_vel);
-    g_debug_renderer->SetViewMat(g_cam->GetCam()->GetViewMatrix());
-    g_debug_renderer->SetProjectionMat(g_cam->GetCam()->GetProjectionMatrix());
+    g_debug_renderer->SetGridVelocities(temp_grid_vel);
+    g_debug_renderer->SetView(g_cam->GetCam()->GetViewMatrix());
+    g_debug_renderer->SetProjection(g_cam->GetCam()->GetProjectionMatrix());
 
     return true;
 }
@@ -221,17 +243,7 @@ void UpdateLoop()
     float last_time_updated = 0.0f;
     float time_step = 1.0f;
     
-    DisplayText frame_time_display = DisplayText("0.0 ms/frame");
-    DebugRenderer debug = DebugRenderer();
-    Texture3D temp_grid_vel = Texture3D(glm::ivec3(4, 4, 4));
-    InitializeDummyGridVel(temp_grid_vel);
 
-    debug.SetViewMat(g_camera->GetViewMatrix());
-    debug.SetProjectionMat(g_camera->GetProjectionMatrix());
-    printf("Camera view direction is (%f %f %f)\n", g_camera->GetForward().x, g_camera->GetForward().y, g_camera->GetForward().z);
-    debug.SetGridBoundaries(glm::vec3(-0.5, -0.5, -0.5), glm::vec3(0.5, 0.5, 0.5));
-    debug.SetGridCellInterval(0.5);
-    debug.SetGridVelocities(temp_grid_vel);
     /* Loop until the user closes the window or presses ESC */
     double lastTime = glfwGetTime();
     int nbFrames = 0;
@@ -241,7 +253,9 @@ void UpdateLoop()
         nbFrames++;
         if (currentTime - lastTime >= 1.0) {
             // printf("%f ms/frame\n", 1000.0 / double(nbFrames));
-            frame_time_display.SetText(std::to_string(1000.0 / double(nbFrames)) + " ms/frame");
+            if (g_debug_renderer != nullptr) {
+                g_debug_renderer->UpdateFrameTime(1000.0 / double(nbFrames));
+            }
             nbFrames = 0;
             lastTime += 1.0;
         }
@@ -250,7 +264,9 @@ void UpdateLoop()
         float deltaTime = new_time - previous_time;
         previous_time = new_time;
         g_cam->Process(deltaTime);
-
+        if (g_keys_pressed.size() != 0) {
+            UpdateView(g_cam->GetCam()->GetViewMatrix());
+        }
         if (new_time - last_time_updated >= time_step && g_simulate) {
             // Perform new step in simulation
             last_time_updated = new_time;
@@ -260,8 +276,7 @@ void UpdateLoop()
         //  3D Rendering  //
         ////////////////////
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-        // g_skybox->Draw();
-        frame_time_display.Draw();
+        g_skybox->Draw();
         g_debug_renderer->Draw();
 
 

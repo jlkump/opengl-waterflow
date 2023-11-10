@@ -1,25 +1,15 @@
 #include "fps_camera.hpp"
 
 FPSCamera::FPSCamera(Camera* cam) :
-	is_forward_pressed_(false),
-	is_back_pressed_(false),
-	is_left_pressed_(false),
-	is_right_pressed_(false),
-	is_up_pressed_(false),
-	is_down_pressed_(false),
-	move_speed_(0.01f),
+	move_speed_(0.002f),
+	rotate_speed_(0.001f),
 	cam_(cam)
 {
 }
 
 FPSCamera::FPSCamera(glm::vec3 start_pos, glm::vec3 look_pos, glm::vec3 up) : 
-	is_forward_pressed_(false),
-	is_back_pressed_(false),
-	is_left_pressed_(false),
-	is_right_pressed_(false),
-	is_up_pressed_(false),
-	is_down_pressed_(false),
-	move_speed_(0.2f),
+	move_speed_(0.002f),
+	rotate_speed_(0.001f),
 	cam_(nullptr)
 {
 	cam_ = new Camera(start_pos, look_pos, up);
@@ -30,104 +20,124 @@ void FPSCamera::Process(float delta)
 	if (cam_ == nullptr) {
 		return;
 	}
-
+	
 	glm::vec3 input_vector = glm::vec3(0, 0, 0);
-	if (is_forward_pressed_) {
-		input_vector += glm::vec3(0.0, 0.0, 1.0);
+	float rotate_angle = 0.0f;
+	for (Action a : active_actions_) {
+		switch (a) {
+		case MOVE_FORWARD:
+			input_vector += glm::vec3(0.0, 0.0, 1.0);
+			break;
+		case MOVE_BACK:
+			input_vector += glm::vec3(0.0, 0.0, -1.0);
+			break;
+		case MOVE_UP:
+			input_vector += glm::vec3(0.0, 1.0, 0.0);
+			break;
+		case MOVE_DOWN:
+			input_vector += glm::vec3(0.0, -1.0, 0.0);
+			break;
+		case MOVE_LEFT:
+			input_vector += glm::vec3(-1.0, 0.0, 0.0);
+			break;
+		case MOVE_RIGHT:
+			input_vector += glm::vec3(1.0, 0.0, 0.0);
+			break;
+		case ROTATE_CW:
+			rotate_angle += rotate_angle;
+			break;
+		case ROTATE_CCW:
+			rotate_angle -= rotate_angle;
+			break;
+		}
 	}
-	if (is_back_pressed_) {
-		input_vector += glm::vec3(0.0, 0.0, -1.0);
-	}
-	if (is_left_pressed_) {
-		input_vector += glm::vec3(-1.0, 0.0, 0.0);
-	}
-	if (is_right_pressed_) {
-		input_vector += glm::vec3(1.0, 0.0, 0.0);
-	}
-	if (is_up_pressed_) {
-		input_vector += glm::vec3(0.0, 1.0, 0.0);
-	}
-	if (is_down_pressed_) {
-		input_vector += glm::vec3(0.0, -1.0, 0.0);
-	}
-
 	glm::vec3 new_pos = cam_->GetPosition() 
 		+ cam_->GetForward() * move_speed_ * input_vector.z 
 		+ cam_->GetRight() * move_speed_ * input_vector.x 
 		+ cam_->GetUp() * move_speed_ * input_vector.y;
+	glm::vec3 new_lookat = cam_->GetForward() + new_pos;
 	cam_->SetPosition(new_pos);
+	cam_->SetLookat(new_lookat);
 }
 
 void FPSCamera::UpPressed()
 {
-	printf("Up pressed\n");
-	is_up_pressed_ = true;
+	active_actions_.insert(MOVE_UP);
 }
 
 void FPSCamera::UpReleased()
 {
-	printf("Up released\n");
-	is_up_pressed_ = false;
+	active_actions_.erase(MOVE_UP);
 }
 
 void FPSCamera::DownPressed()
 {
-	printf("Down pressed\n");
-	is_down_pressed_ = true;
+	active_actions_.insert(MOVE_DOWN);
 }
 
 void FPSCamera::DownReleased()
 {
-	printf("Down released\n");
-	is_down_pressed_ = false;
+	active_actions_.erase(MOVE_DOWN);
 }
 
 void FPSCamera::ForwardPressed()
 {
-	printf("Forward pressed\n");
-	is_forward_pressed_ = true;
+	active_actions_.insert(MOVE_FORWARD);
 }
 
 void FPSCamera::ForwardReleased()
 {
-	printf("Forward released\n");
-	is_forward_pressed_ = false;
+	active_actions_.erase(MOVE_FORWARD);
 }
 
 void FPSCamera::BackPressed()
 {
-	printf("Back pressed\n");
-	is_back_pressed_ = true;
+	active_actions_.insert(MOVE_BACK);
 }
 
 void FPSCamera::BackReleased()
 {
-	printf("Back released\n");
-	is_back_pressed_ = false;
+	active_actions_.erase(MOVE_BACK);
 }
 
 void FPSCamera::LeftPressed()
 {
-	printf("left pressed\n");
-	is_left_pressed_ = true;
+	active_actions_.insert(MOVE_LEFT);
 }
 
 void FPSCamera::LeftReleased()
 {
-	printf("left released\n");
-	is_left_pressed_ = false;
+	active_actions_.erase(MOVE_LEFT);
 }
 
 void FPSCamera::RightPressed()
 {
-	printf("right pressed\n");
-	is_right_pressed_ = true;
+	active_actions_.insert(MOVE_RIGHT);
 }
 
 void FPSCamera::RightReleased()
 {
-	printf("right released\n");
-	is_right_pressed_ = false;
+	active_actions_.erase(MOVE_RIGHT);
+}
+
+void FPSCamera::RotateCwPressed()
+{
+	active_actions_.insert(ROTATE_CW);
+}
+
+void FPSCamera::RotateCwReleased()
+{
+	active_actions_.erase(ROTATE_CW);
+}
+
+void FPSCamera::RotateCCwPressed()
+{
+	active_actions_.insert(ROTATE_CCW);
+}
+
+void FPSCamera::RotateCCwReleased()
+{
+	active_actions_.erase(ROTATE_CCW);
 }
 
 void FPSCamera::SetMovespeed(float speed)

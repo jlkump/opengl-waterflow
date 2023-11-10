@@ -22,7 +22,7 @@ bool DebugRenderer::MakeLine(std::vector<DebugLineVert>& verts, std::vector<unsi
 }
 
 // Only called once really since we instance multiple of a single arrow's vertices
-bool DebugRenderer::MakeArrow(std::vector<glm::vec3>& verts, std::vector<unsigned int>& indices, float thickness)
+bool DebugRenderer::MakeArrow(std::vector<glm::vec3>& verts, float thickness)
 {
 	int index;
 	glm::vec3 norm = glm::vec3(0, 0, 1);
@@ -84,17 +84,16 @@ bool DebugRenderer::MakeArrow(std::vector<glm::vec3>& verts, std::vector<unsigne
 	return false;
 }
 
-bool DebugRenderer::UpdateGridLines()
+void DebugRenderer::UpdateGridLines()
 {
 	int grid_size = (ws_grid_upper_bound_.x - ws_grid_lower_bound_.x) / ws_grid_cell_size_ + 1;
 	glm::vec3 grid_line_color = glm::vec3(156.0 / 256.0, 158.0 / 256.0, 136.0 / 256.0);
 	glm::vec3 cam_view_dir_ = cached_view_[2];
-	printf("Camera view direction is assumed as (%f %f %f)\n", cam_view_dir_.x, cam_view_dir_.y, cam_view_dir_.z);
+	//printf("Camera view direction is assumed as (%f %f %f)\n", cam_view_dir_.x, cam_view_dir_.y, cam_view_dir_.z);
 	float line_thickness = 0.01;
 
-	grid_line_vertices_.clear();
-	grid_line_indices_.clear();
-
+	std::vector<DebugLineVert> grid_line_vertices;
+	std::vector<unsigned int> grid_line_indices;
 	int z_idx = 0;
 	int index = 0;
 	for (float z = ws_grid_lower_bound_.z; z <= ws_grid_upper_bound_.z; z += ws_grid_cell_size_) {
@@ -103,15 +102,15 @@ bool DebugRenderer::UpdateGridLines()
 			int x_idx = 0;
 			for (float x = ws_grid_lower_bound_.x; x <= ws_grid_upper_bound_.x; x += ws_grid_cell_size_) {
 				if (x_idx + 1 < grid_size) {
-					MakeLine(grid_line_vertices_, grid_line_indices_, index, 
+					MakeLine(grid_line_vertices, grid_line_indices, index, 
 						glm::vec3(x, y, z), glm::vec3(x + ws_grid_cell_size_, y, z), grid_line_color, line_thickness, cam_view_dir_);
 				}
 				if (y_idx + 1 < grid_size) {
-					MakeLine(grid_line_vertices_, grid_line_indices_, index,
+					MakeLine(grid_line_vertices, grid_line_indices, index,
 						glm::vec3(x, y, z), glm::vec3(x, y + ws_grid_cell_size_, z), grid_line_color, line_thickness, cam_view_dir_);
 				}
 				if (z_idx + 1 < grid_size) {
-					MakeLine(grid_line_vertices_, grid_line_indices_, index,
+					MakeLine(grid_line_vertices, grid_line_indices, index,
 						glm::vec3(x, y, z), glm::vec3(x, y, z + ws_grid_cell_size_), grid_line_color, line_thickness, cam_view_dir_);
 				}
 				x_idx++;
@@ -123,11 +122,12 @@ bool DebugRenderer::UpdateGridLines()
 
 	glBindVertexArray(VAO_grid_lines_);
 	// load data into vertex buffers
+	grid_line_elements_ = grid_line_indices.size();
 	glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_lines_);
-	glBufferData(GL_ARRAY_BUFFER, grid_line_vertices_.size() * sizeof(DebugLineVert), &grid_line_vertices_[0], GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, grid_line_vertices.size() * sizeof(DebugLineVert), &grid_line_vertices[0], GL_DYNAMIC_DRAW);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_grid_lines_);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, grid_line_indices_.size() * sizeof(unsigned int), &grid_line_indices_[0], GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, grid_line_indices.size() * sizeof(unsigned int), &grid_line_indices[0], GL_STATIC_DRAW);
 
 	// vertex position
 	glEnableVertexAttribArray(0);
@@ -137,15 +137,13 @@ bool DebugRenderer::UpdateGridLines()
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(DebugLineVert), (void*)offsetof(DebugLineVert, color_));
 
 	glBindVertexArray(0);
-
-	return true;
 }
 
-bool DebugRenderer::UpdateArrowPositions()
+void DebugRenderer::UpdateArrowPositions()
 {
-	arrow_positions_.clear();
-	arrow_colors_.clear();
-	arrow_indexes_.clear();
+	std::vector<glm::vec3> arrow_positions;
+	std::vector<glm::vec3> arrow_colors;
+	std::vector<glm::vec3> arrow_indexes;
 
 	float offset = ws_grid_cell_size_ / 2.0;
 	float grid_side_size = ws_grid_upper_bound_.x - ws_grid_lower_bound_.x;
@@ -158,25 +156,25 @@ bool DebugRenderer::UpdateArrowPositions()
 			int x_idx = 0;
 			for (float x = ws_grid_lower_bound_.x; x <= ws_grid_upper_bound_.x; x += ws_grid_cell_size_) {
 				if (x_idx + 1 < grid_size) {
-					arrow_positions_.push_back(glm::vec3(x + offset, y, z));
-					arrow_colors_.push_back(glm::vec3(1, 0, 0));
-					arrow_indexes_.push_back(glm::vec3(
+					arrow_positions.push_back(glm::vec3(x + offset, y, z));
+					arrow_colors.push_back(glm::vec3(1, 0, 0));
+					arrow_indexes.push_back(glm::vec3(
 						(x - ws_grid_lower_bound_.x) / grid_side_size, 
 						(y - ws_grid_lower_bound_.y) / grid_side_size, 
 						(z - ws_grid_lower_bound_.z) / grid_side_size));
 				}
 				if (y_idx + 1 < grid_size) {
-					arrow_positions_.push_back(glm::vec3(x, y + offset, z));
-					arrow_colors_.push_back(glm::vec3(0, 1, 0));
-					arrow_indexes_.push_back(glm::vec3(
+					arrow_positions.push_back(glm::vec3(x, y + offset, z));
+					arrow_colors.push_back(glm::vec3(0, 1, 0));
+					arrow_indexes.push_back(glm::vec3(
 						(x - ws_grid_lower_bound_.x) / grid_side_size,
 						(y - ws_grid_lower_bound_.y) / grid_side_size, 
 						(z - ws_grid_lower_bound_.z) / grid_side_size));
 				}
 				if (z_idx + 1 < grid_size) {
-					arrow_positions_.push_back(glm::vec3(x, y, z + offset));
-					arrow_colors_.push_back(glm::vec3(0, 0, 1));
-					arrow_indexes_.push_back(glm::vec3(
+					arrow_positions.push_back(glm::vec3(x, y, z + offset));
+					arrow_colors.push_back(glm::vec3(0, 0, 1));
+					arrow_indexes.push_back(glm::vec3(
 						(x - ws_grid_lower_bound_.x) / grid_side_size,
 						(y - ws_grid_lower_bound_.y) / grid_side_size, 
 						(z - ws_grid_lower_bound_.z) / grid_side_size));
@@ -187,55 +185,55 @@ bool DebugRenderer::UpdateArrowPositions()
 		}
 		z_idx++;
 	}
-	printf("Arrow verts:\n");
-	for (auto& v : arrow_positions_) {
-		printf("(%4.4f, %4.4f, %4.4f)\n", v.x, v.y, v.z);
-	}
+	//printf("Arrow verts:\n");
+	//for (auto& v : arrow_positions_) {
+	//	printf("(%4.4f, %4.4f, %4.4f)\n", v.x, v.y, v.z);
+	//}
+
+	grid_arrow_elements_ = arrow_positions.size();
 	glBindVertexArray(VAO_grid_arrows_);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_arrow_pos_);
 	glBufferData(GL_ARRAY_BUFFER, MAX_DEBUG_GRID_ARROWS * sizeof(glm::vec3), NULL, GL_STREAM_DRAW);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, arrow_positions_.size() * sizeof(glm::vec3), (void*)&arrow_positions_[0]);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, arrow_positions.size() * sizeof(glm::vec3), (void*)&arrow_positions[0]);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_arrow_colors_);
 	glBufferData(GL_ARRAY_BUFFER, MAX_DEBUG_GRID_ARROWS * sizeof(glm::vec3), NULL, GL_STREAM_DRAW);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, arrow_colors_.size() * sizeof(glm::vec3), (void*)&arrow_colors_[0]);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, arrow_colors.size() * sizeof(glm::vec3), (void*)&arrow_colors[0]);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_arrow_indices_);
 	glBufferData(GL_ARRAY_BUFFER, MAX_DEBUG_GRID_ARROWS * sizeof(glm::vec3), NULL, GL_STREAM_DRAW);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, arrow_indexes_.size() * sizeof(glm::vec3), (void*)&arrow_indexes_[0]);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
-
-	return true;
-}
-
-void DebugRenderer::InitializeDebugArrow()
-{
-	arrow_positions_.clear();
-	arrow_colors_.clear();
-	arrow_indexes_.clear();
-
-	arrow_positions_.push_back(glm::vec3(-0.5, -1, -1));
-	arrow_colors_.push_back(glm::vec3(0.1, 0.4, 0.5));
-	arrow_indexes_.push_back(glm::vec3(0, 0, 0));
-
-	glBindVertexArray(VAO_grid_arrows_);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_arrow_pos_);
-	glBufferData(GL_ARRAY_BUFFER, MAX_DEBUG_GRID_ARROWS * sizeof(glm::vec3), NULL, GL_STREAM_DRAW);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, arrow_positions_.size() * sizeof(glm::vec3), (void*)&arrow_positions_[0]);
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_arrow_colors_);
-	glBufferData(GL_ARRAY_BUFFER, MAX_DEBUG_GRID_ARROWS * sizeof(glm::vec3), NULL, GL_STREAM_DRAW);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, arrow_colors_.size() * sizeof(glm::vec3), (void*)&arrow_colors_[0]);
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_arrow_indices_);
-	glBufferData(GL_ARRAY_BUFFER, MAX_DEBUG_GRID_ARROWS * sizeof(glm::vec3), NULL, GL_STREAM_DRAW);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, arrow_indexes_.size() * sizeof(glm::vec3), (void*)&arrow_indexes_[0]);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, arrow_indexes.size() * sizeof(glm::vec3), (void*)&arrow_indexes[0]);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 }
+//
+//void DebugRenderer::InitializeDebugArrow()
+//{
+//	arrow_positions_.clear();
+//	arrow_colors_.clear();
+//	arrow_indexes_.clear();
+//
+//	arrow_positions_.push_back(glm::vec3(-0.5, -1, -1));
+//	arrow_colors_.push_back(glm::vec3(0.1, 0.4, 0.5));
+//	arrow_indexes_.push_back(glm::vec3(0, 0, 0));
+//
+//	glBindVertexArray(VAO_grid_arrows_);
+//	glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_arrow_pos_);
+//	glBufferData(GL_ARRAY_BUFFER, MAX_DEBUG_GRID_ARROWS * sizeof(glm::vec3), NULL, GL_STREAM_DRAW);
+//	glBufferSubData(GL_ARRAY_BUFFER, 0, arrow_positions_.size() * sizeof(glm::vec3), (void*)&arrow_positions_[0]);
+//
+//	glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_arrow_colors_);
+//	glBufferData(GL_ARRAY_BUFFER, MAX_DEBUG_GRID_ARROWS * sizeof(glm::vec3), NULL, GL_STREAM_DRAW);
+//	glBufferSubData(GL_ARRAY_BUFFER, 0, arrow_colors_.size() * sizeof(glm::vec3), (void*)&arrow_colors_[0]);
+//
+//	glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_arrow_indices_);
+//	glBufferData(GL_ARRAY_BUFFER, MAX_DEBUG_GRID_ARROWS * sizeof(glm::vec3), NULL, GL_STREAM_DRAW);
+//	glBufferSubData(GL_ARRAY_BUFFER, 0, arrow_indexes_.size() * sizeof(glm::vec3), (void*)&arrow_indexes_[0]);
+//
+//	glBindBuffer(GL_ARRAY_BUFFER, 0);
+//	glBindVertexArray(0);
+//}
 
 DebugRenderer::DebugRenderer() :
 	debug_line_shader_("debug/line.vert", "debug/line.frag"),
@@ -249,10 +247,13 @@ DebugRenderer::DebugRenderer() :
 	VAO_grid_lines_(0),
 	VBO_grid_lines_(0),
 	EBO_grid_lines_(0),
+	grid_line_elements_(0),
 	VBO_grid_arrow_instances_(0),
 	VBO_grid_arrow_indices_(0),
 	VBO_grid_arrow_pos_(0),
-	VBO_grid_arrow_colors_(0)
+	VBO_grid_arrow_colors_(0),
+	grid_arrow_elements_(0),
+	frame_time_display_("0.0 ms/frame")
 {
 	// Setup for the grid lines
 	glGenVertexArrays(1, &VAO_grid_lines_);
@@ -268,11 +269,12 @@ DebugRenderer::DebugRenderer() :
 	glGenBuffers(1, &VBO_grid_arrow_colors_);
 	glGenBuffers(1, &VBO_grid_arrow_indices_);
 
-	MakeArrow(instance_arrow_verts_, instance_arrow_indices_, 0.01);
+	std::vector<glm::vec3> instance_arrow_verts;
+	MakeArrow(instance_arrow_verts, 0.01);
 
 	glBindVertexArray(VAO_grid_arrows_);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_arrow_instances_);
-	glBufferData(GL_ARRAY_BUFFER, instance_arrow_verts_.size() * sizeof(glm::vec3), &instance_arrow_verts_[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, instance_arrow_verts.size() * sizeof(glm::vec3), &instance_arrow_verts[0], GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_arrow_pos_);
 	glBufferData(GL_ARRAY_BUFFER, MAX_DEBUG_GRID_ARROWS * sizeof(glm::vec3), NULL, GL_STREAM_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_arrow_colors_);
@@ -335,7 +337,7 @@ bool DebugRenderer::SetParticleVelocities(const Texture2D& particle_velocities)
 	return false;
 }
 
-bool DebugRenderer::SetViewMat(const glm::mat4& view)
+bool DebugRenderer::SetView(const glm::mat4& view)
 {
 	cached_view_ = view;
 	// Update the uniforms for shaders
@@ -345,7 +347,7 @@ bool DebugRenderer::SetViewMat(const glm::mat4& view)
 	return true;
 }
 
-bool DebugRenderer::SetProjectionMat(const glm::mat4 proj)
+bool DebugRenderer::SetProjection(const glm::mat4 proj)
 {
 	cached_proj_ = proj;
 	// Update the uniforms for shaders
@@ -354,67 +356,63 @@ bool DebugRenderer::SetProjectionMat(const glm::mat4 proj)
 	return true;
 }
 
-bool DebugRenderer::ToggleDebugView(DebugView view_toggle)
+void DebugRenderer::ToggleDebugView(DebugView view_toggle)
 {
 	if (active_views_.count(view_toggle) != 0) {
 		active_views_.erase(view_toggle);
 	} else {
 		active_views_.insert(view_toggle);
 	}
-	return true;
 }
 
 bool DebugRenderer::Draw()
 {
-	// Draw Grid Lines
-	debug_line_shader_.SetActive();
-	glDisable(GL_CULL_FACE);
-	glBindVertexArray(VAO_grid_lines_);
-	glDrawElements(GL_TRIANGLES, grid_line_indices_.size(), GL_UNSIGNED_INT, 0);
-	glBindVertexArray(0);
-	glEnable(GL_CULL_FACE);
-
-	// Draw Grid Arrows
-	debug_grid_vel_shader_.SetActive();
-	glDisable(GL_CULL_FACE);
-	glBindVertexArray(VAO_grid_arrows_);
-	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_arrow_instances_);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-	glVertexAttribDivisor(0, 0); // Reuse these on each instance
-
-	glEnableVertexAttribArray(1);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_arrow_pos_);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-	glVertexAttribDivisor(1, 1); // Unique to each instance
-
-	glEnableVertexAttribArray(2);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_arrow_colors_);
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-	glVertexAttribDivisor(2, 1); // Unique to each instance
-
-	glEnableVertexAttribArray(3);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_arrow_indices_);
-	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-	glVertexAttribDivisor(3, 1); // Unique to each instance
-
-	glDrawArraysInstanced(GL_TRIANGLES, 0, instance_arrow_verts_.size(), arrow_positions_.size());
-	glDisableVertexAttribArray(0);
-	glDisableVertexAttribArray(1);	
-	glDisableVertexAttribArray(2);
-	glDisableVertexAttribArray(3);
-	glBindVertexArray(0);
-	glEnable(GL_CULL_FACE);
-
-
 	for (auto& view : active_views_) {
 		switch (view) {
 		case ORIGIN:
 
 			break;
 		case GRID:
+			// Draw Grid Lines
+			debug_line_shader_.SetActive();
+			glDisable(GL_CULL_FACE);
+			glBindVertexArray(VAO_grid_lines_);
+			glDrawElements(GL_TRIANGLES, grid_line_elements_, GL_UNSIGNED_INT, 0);
+			glBindVertexArray(0);
+			glEnable(GL_CULL_FACE);
 			break;
 		case GRID_VELOCITIES:
+			// Draw Grid Arrows
+			debug_grid_vel_shader_.SetActive();
+			glDisable(GL_CULL_FACE);
+			glBindVertexArray(VAO_grid_arrows_);
+			glEnableVertexAttribArray(0);
+			glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_arrow_instances_);
+			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+			glVertexAttribDivisor(0, 0); // Reuse these on each instance
+
+			glEnableVertexAttribArray(1);
+			glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_arrow_pos_);
+			glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+			glVertexAttribDivisor(1, 1); // Unique to each instance
+
+			glEnableVertexAttribArray(2);
+			glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_arrow_colors_);
+			glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+			glVertexAttribDivisor(2, 1); // Unique to each instance
+
+			glEnableVertexAttribArray(3);
+			glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_arrow_indices_);
+			glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+			glVertexAttribDivisor(3, 1); // Unique to each instance
+
+			glDrawArraysInstanced(GL_TRIANGLES, 0, 18, grid_arrow_elements_);
+			glDisableVertexAttribArray(0);
+			glDisableVertexAttribArray(1);
+			glDisableVertexAttribArray(2);
+			glDisableVertexAttribArray(3);
+			glBindVertexArray(0);
+			glEnable(GL_CULL_FACE);
 			break;
 		case GRID_DYE:
 			break;
@@ -422,8 +420,15 @@ bool DebugRenderer::Draw()
 			break;
 		case PARTICLE_VELOCITIES:
 			break;
+		case FRAME_TIME:
+			frame_time_display_.Draw();
+			break;
 		}
 	}
 
 	return true;
+}
+
+void DebugRenderer::UpdateFrameTime(float frame_time) {
+	frame_time_display_.SetText(std::to_string(frame_time) + " ms/frame");
 }

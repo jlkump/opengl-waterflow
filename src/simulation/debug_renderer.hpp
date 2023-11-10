@@ -6,6 +6,7 @@
 
 #include "../rendering/shader.hpp"
 #include "../rendering/texture.hpp"
+#include "../rendering/display_text.hpp"
 
 #define MAX_DEBUG_GRID_ARROWS 40
 
@@ -18,6 +19,7 @@ public:
 		GRID_DYE,
 		PARTICLES,
 		PARTICLE_VELOCITIES,
+		FRAME_TIME,
 	};
 private:
 	struct DebugLineVert {
@@ -39,8 +41,9 @@ private:
 	GLuint VAO_grid_lines_;
 	GLuint VBO_grid_lines_;
 	GLuint EBO_grid_lines_;
-	std::vector<DebugLineVert> grid_line_vertices_;
-	std::vector<unsigned int> grid_line_indices_;
+	int grid_line_elements_;
+	//std::vector<DebugLineVert> grid_line_vertices_;
+	//std::vector<unsigned int> grid_line_indices_;
 
 	// Instance an arrow for each velocity
 	Shader debug_grid_vel_shader_;
@@ -49,11 +52,12 @@ private:
 	GLuint VBO_grid_arrow_pos_;
 	GLuint VBO_grid_arrow_colors_;
 	GLuint VBO_grid_arrow_indices_;
-	std::vector<glm::vec3> instance_arrow_verts_;
-	std::vector<unsigned int> instance_arrow_indices_; 
-	std::vector<glm::vec3> arrow_positions_;
-	std::vector<glm::vec3> arrow_colors_;
-	std::vector<glm::vec3> arrow_indexes_;
+	int grid_arrow_elements_;
+	//std::vector<glm::vec3> instance_arrow_verts_;
+	//std::vector<unsigned int> instance_arrow_indices_; 
+	//std::vector<glm::vec3> arrow_positions_;
+	//std::vector<glm::vec3> arrow_colors_;
+	//std::vector<glm::vec3> arrow_indexes_;
 	glm::ivec3 vel_texture_dimensions_;
 
 	Shader debug_particle_shader_;
@@ -64,16 +68,16 @@ private:
 	glm::mat4 cached_view_;
 	glm::mat4 cached_proj_;
 
+	DisplayText frame_time_display_;
+
+
 	bool MakeLine(std::vector<DebugLineVert>& verts, std::vector<unsigned int>& indices, 
 		int& index, glm::vec3 start_pos, glm::vec3 end_pos, glm::vec3 color, float thickness, glm::vec3 view_direction);
 
-	bool MakeArrow(std::vector<glm::vec3>& verts, std::vector<unsigned int>& indices, float thickness);
+	bool MakeArrow(std::vector<glm::vec3>& verts, float thickness);
 
-	bool UpdateGridLines();
-
-	bool UpdateArrowPositions();
-
-	void InitializeDebugArrow();
+	void UpdateGridLines();
+	void UpdateArrowPositions();
 
 public:
 	DebugRenderer();
@@ -87,10 +91,11 @@ public:
 	bool SetParticlePositions(const Texture2D& particle_positions);
 	bool SetParticleVelocities(const Texture2D& particle_velocities);
 
-	bool SetViewMat(const glm::mat4& view);
-	bool SetProjectionMat(const glm::mat4 proj);
+	bool SetView(const glm::mat4& view);
+	bool SetProjection(const glm::mat4 proj);
 
-	bool ToggleDebugView(DebugView view_toggle);
+	void ToggleDebugView(DebugView view_toggle);
+	void UpdateFrameTime(float frame_time);
 
 	bool Draw();
 };

@@ -9,7 +9,7 @@ static Shader* text_shader_singleton;
 
 DisplayText::DisplayText(const std::string& text)
 	: text_(text), character_scale_(0.1), text_pos_(glm::vec2(-1.0, -0.8)),
-	VAO_(0), VBO_(0), EBO_(0)
+	VAO_(0), VBO_(0), EBO_(0), draw_amount_(0)
 {
 	if (text_texture_singleton == nullptr) {
 		text_texture_singleton = new Texture2D("text.png");
@@ -35,8 +35,8 @@ bool DisplayText::SetText(const std::string& text)
 {
 	text_ = text;
 
-	text_vertices_.clear();
-	text_indices_.clear();
+	std::vector<TextVert> verts;
+	std::vector<unsigned char> indices;
 
 	for (int i = 0; i < text_.size(); i++) {
 		char current_char = text_[i];
@@ -66,17 +66,17 @@ bool DisplayText::SetText(const std::string& text)
 		glm::vec2 uv_low_right = glm::vec2(uv_x + 1.0f / 16.0f, (uv_y + 1.0f / 16.0f));
 		glm::vec2 uv_low_left = glm::vec2(uv_x, (uv_y + 1.0f / 16.0f));
 
-		text_vertices_.push_back(TextVert(v_upper_left, uv_up_left));
-		text_vertices_.push_back(TextVert(v_lower_left, uv_low_left));
-		text_vertices_.push_back(TextVert(v_upper_right, uv_up_right));
-		text_vertices_.push_back(TextVert(v_lower_right, uv_low_right));
+		verts.push_back(TextVert(v_upper_left, uv_up_left));
+		verts.push_back(TextVert(v_lower_left, uv_low_left));
+		verts.push_back(TextVert(v_upper_right, uv_up_right));
+		verts.push_back(TextVert(v_lower_right, uv_low_right));
 
-		text_indices_.push_back(i * 4);
-		text_indices_.push_back(i * 4 + 1);
-		text_indices_.push_back(i * 4 + 2);
-		text_indices_.push_back(i * 4 + 3);
-		text_indices_.push_back(i * 4 + 2);
-		text_indices_.push_back(i * 4 + 1);
+		indices.push_back(i * 4);
+		indices.push_back(i * 4 + 1);
+		indices.push_back(i * 4 + 2);
+		indices.push_back(i * 4 + 3);
+		indices.push_back(i * 4 + 2);
+		indices.push_back(i * 4 + 1);
 
 		/*
 		printf("Char has indices:\n"
@@ -88,11 +88,11 @@ bool DisplayText::SetText(const std::string& text)
 	glBindVertexArray(VAO_);
 	// load data into vertex buffers
 	glBindBuffer(GL_ARRAY_BUFFER, VBO_);
-	glBufferData(GL_ARRAY_BUFFER, text_vertices_.size() * sizeof(TextVert), &text_vertices_[0], GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(TextVert), &verts[0], GL_DYNAMIC_DRAW);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, text_indices_.size() * sizeof(unsigned int), &text_indices_[0], GL_STATIC_DRAW);
-
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned char), &indices[0], GL_STATIC_DRAW);
+	draw_amount_ = indices.size();
 	// vertex position
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(TextVert), (void*)0);
@@ -127,7 +127,7 @@ bool DisplayText::Draw()
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glBindVertexArray(VAO_);
-	glDrawElements(GL_TRIANGLES, text_indices_.size(), GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, draw_amount_, GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
 	glDisable(GL_BLEND);
 	return true;
