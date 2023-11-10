@@ -215,6 +215,17 @@ bool Shader::SetUniformTexture2D(const std::string& uniform_name, Texture2D& tex
     return false;
 }
 
+bool Shader::SetUniformTexture3D(const std::string& uniform_name, Texture3D& texture, GLenum texture_unit)
+{
+    if (GetUniformLocation(uniform_name)) 
+    {
+        texture.BindImageTexture(texture_unit);
+        glUniform1i(uniform_ids_[uniform_name], texture_unit - GL_TEXTURE0);
+        return true;
+    }
+    return false;
+}
+
 bool Shader::SetUniformMatrix4fv(const std::string& uniform_name, const glm::mat4& matrix)
 {
     if (GetUniformLocation(uniform_name)) {

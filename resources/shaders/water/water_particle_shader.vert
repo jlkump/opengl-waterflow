@@ -15,7 +15,6 @@ uniform vec3 ws_camera_right;
 uniform float particle_radius;
 
 uniform mat4 proj_view;
-uniform mat4 view;
 
 void main() {
 	

@@ -107,7 +107,7 @@ Texture2D::~Texture2D()
     }
 }
 
-GLuint Texture2D::GetTextureId()
+GLuint Texture2D::GetTextureId() const
 {
 	return texture_id_;
 }
@@ -119,23 +119,34 @@ bool Texture2D::ModifyTextureData(glm::ivec2 top_left_start, glm::ivec2 data_dim
 	}
     glBindTexture(GL_TEXTURE_2D, texture_id_);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, data_dimensions.x);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	switch (storage_type_) {
+	case TEX_BYTE:
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+		break;
+	case TEX_SHORT:
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 2);
+		break;
+	case TEX_INT:
+	case TEX_FLOAT:
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+		break;
+	}
 	glTexSubImage2D(GL_TEXTURE_2D, 0, top_left_start.x, top_left_start.y, data_dimensions.x, data_dimensions.y, gl_channel_type_, gl_storage_type_, texture_data);
 
 	return true;
 }
 
-glm::ivec2 Texture2D::GetDimensions()
+glm::ivec2 Texture2D::GetDimensions() const
 {
 	return dimensions_;
 }
 
-GLenum Texture2D::GetGLStorageType()
+GLenum Texture2D::GetGLStorageType() const
 {
 	return storage_type_;
 }
 
-GLenum Texture2D::GetGLChannelType()
+GLenum Texture2D::GetGLChannelType() const
 {
 	return channel_type_;
 }
@@ -215,31 +226,47 @@ Texture3D::~Texture3D()
 	}
 }
 
-GLuint Texture3D::GetTextureId()
+GLuint Texture3D::GetTextureId() const
 {
 	return texture_id_;
 }
 
-bool Texture3D::ModifyTextureData(glm::ivec2 top_left_start, glm::ivec2 data_dimensions, const void* texture_data)
+bool Texture3D::ModifyTextureData(glm::ivec3 top_left_start, glm::ivec3 data_dimensions, const void* texture_data)
 {
 	if (!valid_texture_) {
 		return false;
 	}
-
+	glBindTexture(GL_TEXTURE_3D, texture_id_);
+	glPixelStorei(GL_UNPACK_ROW_LENGTH, data_dimensions.x);
+	glPixelStorei(GL_UNPACK_IMAGE_HEIGHT, data_dimensions.y);
+	switch (storage_type_) {
+	case TEX_BYTE:
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+		break;
+	case TEX_SHORT:
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 2);
+		break;
+	case TEX_INT:
+	case TEX_FLOAT:
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+		break;
+	}
+	glTexSubImage3D(GL_TEXTURE_3D, 0, top_left_start.x, top_left_start.y, top_left_start.z, 
+		data_dimensions.x, data_dimensions.y, data_dimensions.z, gl_channel_type_, gl_storage_type_, texture_data);
 	return true;
 }
 
-glm::ivec3 Texture3D::GetTextureDimensions()
+glm::ivec3 Texture3D::GetDimensions() const
 {
 	return dimensions_;
 }
 
-GLenum Texture3D::GetGLStorageType()
+GLenum Texture3D::GetGLStorageType() const
 {
 	return storage_type_;
 }
 
-GLenum Texture3D::GetGLChannelType()
+GLenum Texture3D::GetGLChannelType() const
 {
 	return channel_type_;
 }

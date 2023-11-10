@@ -103,12 +103,12 @@ public:
 	* > glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, Texture.GetTextureId(), 0);
 	*
 	*/
-	GLuint GetTextureId();
+	GLuint GetTextureId() const;
 
 	bool ModifyTextureData(glm::ivec2 top_left_start, glm::ivec2 data_dimensions, const void* texture_data);
-	glm::ivec2 GetDimensions();
-	GLenum GetGLStorageType();
-	GLenum GetGLChannelType();
+	glm::ivec2 GetDimensions() const;
+	GLenum GetGLStorageType() const;
+	GLenum GetGLChannelType() const;
 
 	/*
 	* @brief
@@ -184,12 +184,12 @@ public:
 	* > glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, Texture.GetTextureId(), 0);
 	* 
 	*/
-	GLuint GetTextureId();
+	GLuint GetTextureId() const;
 
-	bool ModifyTextureData(glm::ivec2 top_left_start, glm::ivec2 data_dimensions, const void* texture_data);
-	glm::ivec3 GetTextureDimensions();
-	GLenum GetGLStorageType();
-	GLenum GetGLChannelType();
+	bool ModifyTextureData(glm::ivec3 top_left_start, glm::ivec3 data_dimensions, const void* texture_data);
+	glm::ivec3 GetDimensions() const;
+	GLenum GetGLStorageType() const;
+	GLenum GetGLChannelType() const;
 
 	/*
 	* @brief

@@ -142,13 +142,27 @@ bool Init() {
 bool LoadContent()
 {
     /* Create camera for scene */
-    g_camera = new Camera(glm::vec3(0.5f, 1.5f, 2.5f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    //g_camera = new Camera(glm::vec3(0.5f, 1.5f, 2.5f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    g_camera = new Camera(glm::vec3(0.0f, 0.0f, 2.5f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     // g_shader_vel = new Shader("viz_velocity_grid.vert", "viz_velocity_grid.frag");
     // g_shader_dye = new Shader("viz_dye_grid.vert", "viz_dye_grid.frag");
     g_skybox = new Skybox({ "skybox/right.jpg", "skybox/left.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/front.jpg", "skybox/back.jpg" });
     g_skybox->SetProjection(g_camera->GetProjectionMatrix());
     g_skybox->SetView(g_camera->GetViewMatrix());
     return true;
+}
+
+void InitializeDummyGridVel(Texture3D& tex) {
+    glm::vec3 dim = tex.GetDimensions();
+    std::vector<glm::vec4> new_data;
+    for (int i = 0; i < dim.x; i++) {
+        for (int j = 0; j < dim.y; j++) {
+            for (int k = 0; k < dim.z; k++) {
+                new_data.push_back(glm::vec4(0, 1, 0, 0));
+            }
+        }
+    }
+    tex.ModifyTextureData(glm::ivec3(0, 0, 0), dim, (void*) &new_data[0]);
 }
 
 void UpdateLoop() 
@@ -160,11 +174,15 @@ void UpdateLoop()
     
     DisplayText frame_time_display = DisplayText("0.0 ms/frame");
     DebugRenderer debug = DebugRenderer();
+    Texture3D temp_grid_vel = Texture3D(glm::ivec3(3, 3, 3));
+
 
     debug.SetViewMat(g_camera->GetViewMatrix());
     debug.SetProjectionMat(g_camera->GetProjectionMatrix());
+    printf("Camera view direction is (%f %f %f)\n", g_camera->GetForward().x, g_camera->GetForward().y, g_camera->GetForward().z);
     debug.SetGridBoundaries(glm::vec3(-0.5, -0.5, -0.5), glm::vec3(0.5, 0.5, 0.5));
     debug.SetGridCellInterval(0.5);
+    debug.SetGridVelocities(temp_grid_vel);
     /* Loop until the user closes the window or presses ESC */
     double lastTime = glfwGetTime();
     int nbFrames = 0;
@@ -192,7 +210,7 @@ void UpdateLoop()
         //  3D Rendering  //
         ////////////////////
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-        g_skybox->Draw();
+        // g_skybox->Draw();
         frame_time_display.Draw();
         debug.Draw();
 
