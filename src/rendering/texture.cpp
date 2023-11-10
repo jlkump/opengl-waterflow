@@ -119,6 +119,7 @@ bool Texture2D::ModifyTextureData(glm::ivec2 top_left_start, glm::ivec2 data_dim
 	}
     glBindTexture(GL_TEXTURE_2D, texture_id_);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, data_dimensions.x);
+	//glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	switch (storage_type_) {
 	case TEX_BYTE:
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -131,7 +132,10 @@ bool Texture2D::ModifyTextureData(glm::ivec2 top_left_start, glm::ivec2 data_dim
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 		break;
 	}
-	glTexSubImage2D(GL_TEXTURE_2D, 0, top_left_start.x, top_left_start.y, data_dimensions.x, data_dimensions.y, gl_channel_type_, gl_storage_type_, texture_data);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 
+		top_left_start.x, top_left_start.y, 
+		data_dimensions.x, data_dimensions.y, 
+		gl_channel_type_, gl_storage_type_, texture_data);
 
 	return true;
 }
@@ -239,6 +243,7 @@ bool Texture3D::ModifyTextureData(glm::ivec3 top_left_start, glm::ivec3 data_dim
 	glBindTexture(GL_TEXTURE_3D, texture_id_);
 	glPixelStorei(GL_UNPACK_ROW_LENGTH, data_dimensions.x);
 	glPixelStorei(GL_UNPACK_IMAGE_HEIGHT, data_dimensions.y);
+	//glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 	switch (storage_type_) {
 	case TEX_BYTE:
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -251,8 +256,10 @@ bool Texture3D::ModifyTextureData(glm::ivec3 top_left_start, glm::ivec3 data_dim
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 		break;
 	}
-	glTexSubImage3D(GL_TEXTURE_3D, 0, top_left_start.x, top_left_start.y, top_left_start.z, 
-		data_dimensions.x, data_dimensions.y, data_dimensions.z, gl_channel_type_, gl_storage_type_, texture_data);
+	glTexSubImage3D(GL_TEXTURE_3D, 0, 
+		top_left_start.x, top_left_start.y, top_left_start.z, 
+		data_dimensions.x, data_dimensions.y, data_dimensions.z, 
+		gl_channel_type_, gl_storage_type_, texture_data);
 	return true;
 }
 

@@ -10,5 +10,11 @@ uniform mat4 proj_view;
 void main()
 {
 	color = in_color;
-	gl_Position = proj_view * vec4(ws_pos, 1.0);
+	mat4 model = mat4(
+		1.0, 0.0, 0.0, 0.0,
+		0.0, 1.0, 0.0, 0.0,
+		0.0, 0.0, 0.999, 0.0,
+		0.0, 0.0, 0.0, 1.0
+	);
+	gl_Position = proj_view * model * vec4(ws_pos, 1.0);
 }

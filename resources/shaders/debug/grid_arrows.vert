@@ -16,22 +16,20 @@ void main() {
 	vec3 up = texture(velocities, grid_index).xyz;
 	vec3 right = cross(view_dir, up);
 
-	view_dir = vec3(0, 0, 0.5);
-	up = vec3(0, 0.5, 0);
-	right = vec3(0.5, 0, 0);
-
 //	model[2] = vec4(view_dir, 0.0);
 //	model[1] = vec4(up, 0.0);
 //	model[0] = vec4(right, 0.0);
 //	model[3] = vec4(ws_arrow_position, 1.0);
 	mat4 model = mat4( 
 			1.0, 0.0, 0.0, 0.0,
+//			right.x, right.y, right.z, 0.0,
+//			up.x, up.y, up.z, 0.0,
 			0.0, 1.0, 0.0, 0.0,
-			0.0, 0.0, 1.0, 0.0,
+			view_dir.x, view_dir.y, view_dir.z, 0.0,
 			ws_arrow_position.x, ws_arrow_position.y, ws_arrow_position.z, 1.0);
 
 	gl_Position = proj_view * model * vec4(ls_arrow_vert, 1.0);
 	// gl_Position = vec4(ls_arrow_vert, 1.0);
 
-	arrow_color = color;
+	arrow_color = up;
 }

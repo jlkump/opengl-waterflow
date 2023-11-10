@@ -166,7 +166,7 @@ bool DebugRenderer::UpdateArrowPositions()
 						(z - ws_grid_lower_bound_.z) / grid_side_size));
 				}
 				if (y_idx + 1 < grid_size) {
-					arrow_positions_.push_back(glm::vec3(x, y, z));
+					arrow_positions_.push_back(glm::vec3(x, y + offset, z));
 					arrow_colors_.push_back(glm::vec3(0, 1, 0));
 					arrow_indexes_.push_back(glm::vec3(
 						(x - ws_grid_lower_bound_.x) / grid_side_size,

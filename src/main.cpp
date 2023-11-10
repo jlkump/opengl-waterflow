@@ -153,7 +153,7 @@ bool LoadContent()
 }
 
 void InitializeDummyGridVel(Texture3D& tex) {
-    glm::vec3 dim = tex.GetDimensions();
+    glm::ivec3 dim = tex.GetDimensions();
     std::vector<glm::vec4> new_data;
     for (int i = 0; i < dim.x; i++) {
         for (int j = 0; j < dim.y; j++) {
@@ -174,8 +174,8 @@ void UpdateLoop()
     
     DisplayText frame_time_display = DisplayText("0.0 ms/frame");
     DebugRenderer debug = DebugRenderer();
-    Texture3D temp_grid_vel = Texture3D(glm::ivec3(3, 3, 3));
-
+    Texture3D temp_grid_vel = Texture3D(glm::ivec3(4, 4, 4));
+    InitializeDummyGridVel(temp_grid_vel);
 
     debug.SetViewMat(g_camera->GetViewMatrix());
     debug.SetProjectionMat(g_camera->GetProjectionMatrix());

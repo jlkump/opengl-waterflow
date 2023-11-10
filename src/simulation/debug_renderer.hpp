@@ -7,7 +7,7 @@
 #include "../rendering/shader.hpp"
 #include "../rendering/texture.hpp"
 
-#define MAX_DEBUG_GRID_ARROWS 800
+#define MAX_DEBUG_GRID_ARROWS 40
 
 class DebugRenderer {
 public:
