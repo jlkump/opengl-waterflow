@@ -33,61 +33,100 @@
 #include "rendering/skybox.hpp"
 #include "rendering/display_text.hpp"
 #include "simulation/debug_renderer.hpp"
+#include "rendering/fps_camera.hpp"
 
 GLFWwindow* window;
 const int kWindowWidth = 1024;
 const int kWindowHeight = 768;
 
-Model* g_model = nullptr;
-Shader* g_shader_vel = nullptr;
-Shader* g_shader_dye = nullptr;
-Camera* g_camera = nullptr;
-bool g_simulate = false;
-
+FPSCamera* g_cam = nullptr;
 Skybox* g_skybox = nullptr;
+DebugRenderer* g_debug_renderer = nullptr;
+bool g_simulate = false;
 
 // TODO: Defined a scene renderer class that makes it so we don't need all these global variables
 // SceneRenderer g_scene_renderer; // Holds camera, models, skybox, etc.
 
-glm::mat4 model_matrix = glm::mat4(1.0f);
+bool UpdateView(const glm::mat4& view) {
+    if (g_skybox)
+        g_skybox->SetView(view);
+    if (g_debug_renderer)
+        g_debug_renderer->SetViewMat(view);
+    return true;
+}
+
+bool UpdateProjection(const glm::mat4& proj) {
+    if (g_skybox)
+        g_skybox->SetProjection(proj);
+    if (g_debug_renderer)
+        g_debug_renderer->SetProjectionMat(proj);
+    return true;
+}
 
 void WindowSizeCallback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
-
-    if (g_camera != nullptr)
-    {
-        // TODO: Move this to a scene renderer where we just call a method
-        // g_scene_renderer->SetAspectRatio()
-        g_camera->SetAspectRatio(width, height);
-        if (g_shader_vel != nullptr)
-            g_shader_vel->SetUniformMatrix4fv("proj_view", g_camera->GetProjectionMatrix() * g_camera->GetViewMatrix());
-
-        if (g_shader_dye != nullptr)
-            g_shader_dye->SetUniformMatrix4fv("proj_view", g_camera->GetProjectionMatrix() * g_camera->GetViewMatrix());
-        if (g_skybox != nullptr) {
-            g_skybox->SetProjection(g_camera->GetProjectionMatrix());
-            g_skybox->SetView(g_camera->GetViewMatrix());
-        }
+    if (g_cam != nullptr) {
+        g_cam->SetAspectRatio(width, height);
+        UpdateProjection(g_cam->GetCam()->GetProjectionMatrix());
     }
+
 }
 
 void WindowKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    // TODO: Use scene renderer to get camera and manipulate for debugging
-    // g_scene_renderer->GetActiveCamera();
-    // Then manipulate the camera based on key input
-    // After done, call g_scene_renderer->UpdateActiveCamera(cam); to modify the camera data
-    // Possibly have g_scene_renderer->SetActiveCamera(); to allow for multiple camera views?
-    
-    // Model rotation
-    if (key == GLFW_KEY_E && action == GLFW_PRESS)
-        model_matrix = glm::rotate(model_matrix, glm::radians(-45.0f), glm::vec3(0, 1, 0));
-    if (key == GLFW_KEY_Q && action == GLFW_PRESS)
-        model_matrix = glm::rotate(model_matrix, glm::radians(45.0f), glm::vec3(0, 1, 0));
+    if (g_cam == nullptr) {
+        return;
+    }
 
-    if (key == GLFW_KEY_P && action == GLFW_PRESS)
-        g_simulate = !g_simulate;
+    if (key == GLFW_KEY_W) {
+        if (action == GLFW_PRESS) {
+            g_cam->ForwardPressed();
+        } else if (action == GLFW_RELEASE) {
+            g_cam->ForwardReleased();
+        }
+    }
+    if (key == GLFW_KEY_S) {
+        if (action == GLFW_PRESS) {
+            g_cam->BackPressed();
+        }
+        else if (action == GLFW_RELEASE) {
+            g_cam->BackReleased();
+        }
+    }
+    if (key == GLFW_KEY_A) {
+        if (action == GLFW_PRESS) {
+            g_cam->LeftPressed();
+        }
+        else if (action == GLFW_RELEASE) {
+            g_cam->LeftReleased();
+        }
+    }
+    if (key == GLFW_KEY_D) {
+        if (action == GLFW_PRESS) {
+            g_cam->RightPressed();
+        }
+        else if (action == GLFW_RELEASE) {
+            g_cam->RightReleased();
+        }
+    }
+    if (key == GLFW_KEY_I) {
+        if (action == GLFW_PRESS) {
+            g_cam->UpPressed();
+        }
+        else if (action == GLFW_RELEASE) {
+            g_cam->UpReleased();
+        }
+    }
+    if (key == GLFW_KEY_K) {
+        if (action == GLFW_PRESS) {
+            g_cam->DownPressed();
+        }
+        else if (action == GLFW_RELEASE) {
+            g_cam->DownReleased();
+        }
+    }
+    UpdateView(g_cam->GetCam()->GetViewMatrix());
 }
 
 bool Init() {
@@ -139,19 +178,6 @@ bool Init() {
     return true;
 }
 
-bool LoadContent()
-{
-    /* Create camera for scene */
-    //g_camera = new Camera(glm::vec3(0.5f, 1.5f, 2.5f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    g_camera = new Camera(glm::vec3(0.0f, 0.0f, 2.5f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    // g_shader_vel = new Shader("viz_velocity_grid.vert", "viz_velocity_grid.frag");
-    // g_shader_dye = new Shader("viz_dye_grid.vert", "viz_dye_grid.frag");
-    g_skybox = new Skybox({ "skybox/right.jpg", "skybox/left.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/front.jpg", "skybox/back.jpg" });
-    g_skybox->SetProjection(g_camera->GetProjectionMatrix());
-    g_skybox->SetView(g_camera->GetViewMatrix());
-    return true;
-}
-
 void InitializeDummyGridVel(Texture3D& tex) {
     glm::vec3 dim = tex.GetDimensions();
     std::vector<glm::vec4> new_data;
@@ -162,7 +188,30 @@ void InitializeDummyGridVel(Texture3D& tex) {
             }
         }
     }
-    tex.ModifyTextureData(glm::ivec3(0, 0, 0), dim, (void*) &new_data[0]);
+    tex.ModifyTextureData(glm::ivec3(0, 0, 0), dim, (void*)&new_data[0]);
+}
+
+bool LoadContent()
+{
+    /* Create camera for scene */
+    g_cam = new FPSCamera(glm::vec3(0.0f, 0.0f, 2.5f), glm::vec3(0.0f, 0.0f, -1.0f));
+
+    /* Create Skybox for scene */
+    g_skybox = new Skybox({ "skybox/right.jpg", "skybox/left.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/front.jpg", "skybox/back.jpg" });
+    g_skybox->SetView(g_cam->GetCam()->GetViewMatrix());
+    g_skybox->SetProjection(g_cam->GetCam()->GetProjectionMatrix());
+
+    Texture3D temp_grid_vel = Texture3D(glm::ivec3(3, 3, 3));
+    InitializeDummyGridVel(temp_grid_vel);
+
+    g_debug_renderer = new DebugRenderer();
+    g_debug_renderer->SetGridBoundaries(glm::vec3(-0.5, -0.5, -0.5), glm::vec3(0.5, 0.5, 0.5));
+    g_debug_renderer->SetGridCellInterval(0.5);
+    // g_debug_renderer->SetGridVelocities(temp_grid_vel);
+    g_debug_renderer->SetViewMat(g_cam->GetCam()->GetViewMatrix());
+    g_debug_renderer->SetProjectionMat(g_cam->GetCam()->GetProjectionMatrix());
+
+    return true;
 }
 
 void UpdateLoop() 
@@ -173,16 +222,7 @@ void UpdateLoop()
     float time_step = 1.0f;
     
     DisplayText frame_time_display = DisplayText("0.0 ms/frame");
-    DebugRenderer debug = DebugRenderer();
-    Texture3D temp_grid_vel = Texture3D(glm::ivec3(3, 3, 3));
 
-
-    debug.SetViewMat(g_camera->GetViewMatrix());
-    debug.SetProjectionMat(g_camera->GetProjectionMatrix());
-    printf("Camera view direction is (%f %f %f)\n", g_camera->GetForward().x, g_camera->GetForward().y, g_camera->GetForward().z);
-    debug.SetGridBoundaries(glm::vec3(-0.5, -0.5, -0.5), glm::vec3(0.5, 0.5, 0.5));
-    debug.SetGridCellInterval(0.5);
-    debug.SetGridVelocities(temp_grid_vel);
     /* Loop until the user closes the window or presses ESC */
     double lastTime = glfwGetTime();
     int nbFrames = 0;
@@ -200,6 +240,7 @@ void UpdateLoop()
         new_time = static_cast<float>(glfwGetTime());
         float deltaTime = new_time - previous_time;
         previous_time = new_time;
+        g_cam->Process(deltaTime);
 
         if (new_time - last_time_updated >= time_step && g_simulate) {
             // Perform new step in simulation
@@ -212,7 +253,7 @@ void UpdateLoop()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         // g_skybox->Draw();
         frame_time_display.Draw();
-        debug.Draw();
+        g_debug_renderer->Draw();
 
 
         /* Swap front and back buffers */
@@ -238,10 +279,8 @@ int main()
     UpdateLoop();
     glfwTerminate();
 
-    delete g_shader_vel;
-    delete g_shader_dye;
-    delete g_model;
-    delete g_camera;
+    delete g_cam;
+    delete g_debug_renderer;
     delete g_skybox;
 
 	return 0;
