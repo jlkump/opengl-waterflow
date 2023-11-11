@@ -91,7 +91,7 @@ bool DisplayText::SetText(const std::string& text)
 	glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(TextVert), &verts[0], GL_DYNAMIC_DRAW);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned char), &indices[0], GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned char), &indices[0], GL_DYNAMIC_DRAW);
 	draw_amount_ = indices.size();
 	// vertex position
 	glEnableVertexAttribArray(0);
@@ -127,7 +127,7 @@ bool DisplayText::Draw()
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glBindVertexArray(VAO_);
-	glDrawElements(GL_TRIANGLES, draw_amount_, GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, draw_amount_, GL_UNSIGNED_BYTE, 0);
 	glBindVertexArray(0);
 	glDisable(GL_BLEND);
 	return true;

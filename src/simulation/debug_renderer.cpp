@@ -2,7 +2,7 @@
 #include "debug_renderer.hpp"
 #include "debug_renderer.hpp"
 
-bool DebugRenderer::MakeLine(std::vector<DebugLineVert>& verts, std::vector<unsigned int>& indices, 
+bool DebugRenderer::MakeLine(std::vector<DebugLineVert>& verts, std::vector<unsigned short>& indices, 
 	int& index, glm::vec3 start_pos, glm::vec3 end_pos, glm::vec3 color, float thickness, glm::vec3 view_direction)
 {
 	glm::vec3 line_thickness_dir = glm::normalize(glm::cross((end_pos - start_pos), view_direction)) * thickness;
@@ -89,11 +89,10 @@ void DebugRenderer::UpdateGridLines()
 	int grid_size = (ws_grid_upper_bound_.x - ws_grid_lower_bound_.x) / ws_grid_cell_size_ + 1;
 	glm::vec3 grid_line_color = glm::vec3(156.0 / 256.0, 158.0 / 256.0, 136.0 / 256.0);
 	glm::vec3 cam_view_dir_ = cached_view_[2];
-	//printf("Camera view direction is assumed as (%f %f %f)\n", cam_view_dir_.x, cam_view_dir_.y, cam_view_dir_.z);
 	float line_thickness = 0.01;
 
 	std::vector<DebugLineVert> grid_line_vertices;
-	std::vector<unsigned int> grid_line_indices;
+	std::vector<unsigned short> grid_line_indices;
 	int z_idx = 0;
 	int index = 0;
 	for (float z = ws_grid_lower_bound_.z; z <= ws_grid_upper_bound_.z; z += ws_grid_cell_size_) {
@@ -124,10 +123,10 @@ void DebugRenderer::UpdateGridLines()
 	// load data into vertex buffers
 	grid_line_elements_ = grid_line_indices.size();
 	glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_lines_);
-	glBufferData(GL_ARRAY_BUFFER, grid_line_vertices.size() * sizeof(DebugLineVert), &grid_line_vertices[0], GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, grid_line_vertices.size() * sizeof(DebugLineVert), &grid_line_vertices[0], GL_STATIC_DRAW);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_grid_lines_);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, grid_line_indices.size() * sizeof(unsigned int), &grid_line_indices[0], GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, grid_line_indices.size() * sizeof(unsigned short), &grid_line_indices[0], GL_STATIC_DRAW);
 
 	// vertex position
 	glEnableVertexAttribArray(0);
@@ -136,6 +135,9 @@ void DebugRenderer::UpdateGridLines()
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(DebugLineVert), (void*)offsetof(DebugLineVert, color_));
 
+	// Cleanup
+	glDisableVertexAttribArray(1);
+	glDisableVertexAttribArray(0);
 	glBindVertexArray(0);
 }
 
@@ -260,8 +262,6 @@ DebugRenderer::DebugRenderer() :
 	glGenBuffers(1, &VBO_grid_lines_);
 	glGenBuffers(1, &EBO_grid_lines_);
 
-	UpdateGridLines();
-
 	// Setup for the arrows
 	glGenVertexArrays(1, &VAO_grid_arrows_);
 	glGenBuffers(1, &VBO_grid_arrow_instances_);
@@ -347,7 +347,7 @@ bool DebugRenderer::SetView(const glm::mat4& view)
 	return true;
 }
 
-bool DebugRenderer::SetProjection(const glm::mat4 proj)
+bool DebugRenderer::SetProjection(const glm::mat4& proj)
 {
 	cached_proj_ = proj;
 	// Update the uniforms for shaders
@@ -374,45 +374,46 @@ bool DebugRenderer::Draw()
 			break;
 		case GRID:
 			// Draw Grid Lines
+			printf("Drawing grid\n");
 			debug_line_shader_.SetActive();
 			glDisable(GL_CULL_FACE);
 			glBindVertexArray(VAO_grid_lines_);
-			glDrawElements(GL_TRIANGLES, grid_line_elements_, GL_UNSIGNED_INT, 0);
+			glDrawElements(GL_TRIANGLES, grid_line_elements_, GL_UNSIGNED_SHORT, 0);
 			glBindVertexArray(0);
 			glEnable(GL_CULL_FACE);
 			break;
 		case GRID_VELOCITIES:
 			// Draw Grid Arrows
-			debug_grid_vel_shader_.SetActive();
-			glDisable(GL_CULL_FACE);
-			glBindVertexArray(VAO_grid_arrows_);
-			glEnableVertexAttribArray(0);
-			glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_arrow_instances_);
-			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-			glVertexAttribDivisor(0, 0); // Reuse these on each instance
+			//debug_grid_vel_shader_.SetActive();
+			//glDisable(GL_CULL_FACE);
+			//glBindVertexArray(VAO_grid_arrows_);
+			//glEnableVertexAttribArray(0);
+			//glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_arrow_instances_);
+			//glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+			//glVertexAttribDivisor(0, 0); // Reuse these on each instance
 
-			glEnableVertexAttribArray(1);
-			glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_arrow_pos_);
-			glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-			glVertexAttribDivisor(1, 1); // Unique to each instance
+			//glEnableVertexAttribArray(1);
+			//glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_arrow_pos_);
+			//glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+			//glVertexAttribDivisor(1, 1); // Unique to each instance
 
-			glEnableVertexAttribArray(2);
-			glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_arrow_colors_);
-			glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-			glVertexAttribDivisor(2, 1); // Unique to each instance
+			//glEnableVertexAttribArray(2);
+			//glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_arrow_colors_);
+			//glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+			//glVertexAttribDivisor(2, 1); // Unique to each instance
 
-			glEnableVertexAttribArray(3);
-			glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_arrow_indices_);
-			glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-			glVertexAttribDivisor(3, 1); // Unique to each instance
+			//glEnableVertexAttribArray(3);
+			//glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_arrow_indices_);
+			//glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+			//glVertexAttribDivisor(3, 1); // Unique to each instance
 
-			glDrawArraysInstanced(GL_TRIANGLES, 0, 18, grid_arrow_elements_);
-			glDisableVertexAttribArray(0);
-			glDisableVertexAttribArray(1);
-			glDisableVertexAttribArray(2);
-			glDisableVertexAttribArray(3);
-			glBindVertexArray(0);
-			glEnable(GL_CULL_FACE);
+			//glDrawArraysInstanced(GL_TRIANGLES, 0, 18, grid_arrow_elements_);
+			//glDisableVertexAttribArray(0);
+			//glDisableVertexAttribArray(1);
+			//glDisableVertexAttribArray(2);
+			//glDisableVertexAttribArray(3);
+			//glBindVertexArray(0);
+			//glEnable(GL_CULL_FACE);
 			break;
 		case GRID_DYE:
 			break;

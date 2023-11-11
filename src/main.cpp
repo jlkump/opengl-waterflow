@@ -145,8 +145,11 @@ void WindowKeyCallback(GLFWwindow* window, int key, int scancode, int action, in
     if (key == GLFW_KEY_T) {
         if (action == GLFW_PRESS) {
             g_debug_renderer->ToggleDebugView(DebugRenderer::FRAME_TIME);
-        } else if (action == GLFW_RELEASE) {
-            g_debug_renderer->ToggleDebugView(DebugRenderer::FRAME_TIME);
+        }
+    }
+    if (key == GLFW_KEY_G) {
+        if (action == GLFW_PRESS) {
+            g_debug_renderer->ToggleDebugView(DebugRenderer::GRID);
         }
     }
 }
@@ -194,8 +197,8 @@ bool Init() {
     glClearColor(0.6784f, 0.8f, 1.0f, 1.0f);
     glViewport(0, 0, kWindowWidth, kWindowHeight);
 
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
+    // glEnable(GL_DEPTH_TEST);
+    // glDepthFunc(GL_LESS);
 
     return true;
 }
@@ -220,18 +223,18 @@ bool LoadContent()
 
     /* Create Skybox for scene */
     g_skybox = new Skybox({ "skybox/right.jpg", "skybox/left.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/front.jpg", "skybox/back.jpg" });
-    g_skybox->SetView(g_cam->GetCam()->GetViewMatrix());
-    g_skybox->SetProjection(g_cam->GetCam()->GetProjectionMatrix());
 
-    Texture3D temp_grid_vel = Texture3D(glm::ivec3(3, 3, 3));
-    InitializeDummyGridVel(temp_grid_vel);
+    // Texture3D temp_grid_vel = Texture3D(glm::ivec3(3, 3, 3));
+    // InitializeDummyGridVel(temp_grid_vel); // This causes bad_alloc problems sometimes 
 
     g_debug_renderer = new DebugRenderer();
     g_debug_renderer->SetGridBoundaries(glm::vec3(-0.5, -0.5, -0.5), glm::vec3(0.5, 0.5, 0.5));
     g_debug_renderer->SetGridCellInterval(0.5);
-    g_debug_renderer->SetGridVelocities(temp_grid_vel);
-    g_debug_renderer->SetView(g_cam->GetCam()->GetViewMatrix());
-    g_debug_renderer->SetProjection(g_cam->GetCam()->GetProjectionMatrix());
+    // g_debug_renderer->SetGridVelocities(temp_grid_vel);
+
+
+    UpdateView(g_cam->GetCam()->GetViewMatrix());
+    UpdateProjection(g_cam->GetCam()->GetProjectionMatrix());
 
     return true;
 }
@@ -264,8 +267,9 @@ void UpdateLoop()
         float deltaTime = new_time - previous_time;
         previous_time = new_time;
         g_cam->Process(deltaTime);
-        if (g_keys_pressed.size() != 0) {
+        if (true) { //g_keys_pressed.size() != 0) { // Very inefficent, but just for testing and sanity check
             UpdateView(g_cam->GetCam()->GetViewMatrix());
+            UpdateProjection(g_cam->GetCam()->GetProjectionMatrix());
         }
         if (new_time - last_time_updated >= time_step && g_simulate) {
             // Perform new step in simulation
@@ -276,8 +280,8 @@ void UpdateLoop()
         //  3D Rendering  //
         ////////////////////
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-        g_skybox->Draw();
         g_debug_renderer->Draw();
+        // g_skybox->Draw();
 
 
         /* Swap front and back buffers */

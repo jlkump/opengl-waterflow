@@ -71,7 +71,7 @@ private:
 	DisplayText frame_time_display_;
 
 
-	bool MakeLine(std::vector<DebugLineVert>& verts, std::vector<unsigned int>& indices, 
+	bool MakeLine(std::vector<DebugLineVert>& verts, std::vector<unsigned short>& indices, 
 		int& index, glm::vec3 start_pos, glm::vec3 end_pos, glm::vec3 color, float thickness, glm::vec3 view_direction);
 
 	bool MakeArrow(std::vector<glm::vec3>& verts, float thickness);
@@ -92,7 +92,7 @@ public:
 	bool SetParticleVelocities(const Texture2D& particle_velocities);
 
 	bool SetView(const glm::mat4& view);
-	bool SetProjection(const glm::mat4 proj);
+	bool SetProjection(const glm::mat4& proj);
 
 	void ToggleDebugView(DebugView view_toggle);
 	void UpdateFrameTime(float frame_time);
