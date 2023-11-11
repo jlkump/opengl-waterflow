@@ -9,6 +9,7 @@
 #include "../rendering/display_text.hpp"
 
 #define MAX_DEBUG_GRID_ARROWS 40
+#define MAX_DEBUG_GRID_LINES 256
 
 class DebugRenderer {
 public:
@@ -39,8 +40,10 @@ private:
 
 	Shader debug_line_shader_;
 	GLuint VAO_grid_lines_;
-	GLuint VBO_grid_lines_;
-	GLuint EBO_grid_lines_;
+	GLuint VBO_line_instance_;
+	GLuint VBO_line_pos_;
+	GLuint VBO_line_end_;
+	GLuint VBO_line_color_;
 	int grid_line_elements_;
 	//std::vector<DebugLineVert> grid_line_vertices_;
 	//std::vector<unsigned int> grid_line_indices_;
