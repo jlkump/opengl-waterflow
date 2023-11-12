@@ -8,7 +8,7 @@
 #include "../rendering/texture.hpp"
 #include "../rendering/display_text.hpp"
 
-#define MAX_DEBUG_GRID_ARROWS 40
+#define MAX_DEBUG_GRID_ARROWS 256
 #define MAX_DEBUG_GRID_LINES 256
 
 class DebugRenderer {
