@@ -42,36 +42,26 @@ void DebugRenderer::UpdateGridLines()
 
 	std::vector<glm::mat4> line_mats;
 	std::vector<glm::vec3> line_color;
-	int z_idx = 0;
-	int index = 0;
 	for (float z = ws_grid_lower_bound_.z; z <= ws_grid_upper_bound_.z; z += ws_grid_cell_size_) {
-		int y_idx = 0;
 		for (float y = ws_grid_lower_bound_.y; y <= ws_grid_upper_bound_.y; y += ws_grid_cell_size_) {
-			int x_idx = 0;
 			for (float x = ws_grid_lower_bound_.x; x <= ws_grid_upper_bound_.x; x += ws_grid_cell_size_) {
-				if (x_idx < grid_size) {
-					glm::mat4 mat;
+				glm::mat4 mat;
+				if (x + 0.01f < ws_grid_upper_bound_.x) {
 					ConstructLineMat(line_scale, mat, glm::vec3(x, y, z), glm::vec3(x + ws_grid_cell_size_, y, z), glm::vec3(0, 0, 1));
 					line_mats.push_back(mat);
 					line_color.push_back(grid_line_color);
 				}
-				if (y_idx < grid_size) {
-					glm::mat4 mat;
+
+				if (y + 0.01f < ws_grid_upper_bound_.y) {
 					ConstructLineMat(line_scale, mat, glm::vec3(x, y, z), glm::vec3(x, y + ws_grid_cell_size_, z), glm::vec3(1, 0, 0));
 					line_mats.push_back(mat);
 					line_color.push_back(grid_line_color);
 				}
-				if (z_idx < grid_size) {
-					glm::mat4 mat;
-					ConstructLineMat(line_scale, mat, glm::vec3(x, y, z), glm::vec3(x, y, z + ws_grid_cell_size_), glm::vec3(0, 1, 0));
-					line_mats.push_back(mat);
-					line_color.push_back(grid_line_color);
-				}
-				x_idx++;
+				ConstructLineMat(line_scale, mat, glm::vec3(x, y, z), glm::vec3(x, y, z + ws_grid_cell_size_), glm::vec3(0, 1, 0));
+				line_mats.push_back(mat);
+				line_color.push_back(grid_line_color);
 			}
-			y_idx++;
 		}
-		z_idx++;
 	}
 
 	glBindVertexArray(VAO_grid_lines_);
