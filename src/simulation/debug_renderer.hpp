@@ -41,8 +41,7 @@ private:
 	Shader debug_line_shader_;
 	GLuint VAO_grid_lines_;
 	GLuint VBO_line_instance_;
-	GLuint VBO_line_pos_;
-	GLuint VBO_line_end_;
+	GLuint VBO_line_mats_;
 	GLuint VBO_line_color_;
 	int grid_line_elements_;
 	//std::vector<DebugLineVert> grid_line_vertices_;
@@ -81,6 +80,8 @@ private:
 
 	void UpdateGridLines();
 	void UpdateArrowPositions();
+
+	void SetupGridLineBuffers();
 
 public:
 	DebugRenderer();
