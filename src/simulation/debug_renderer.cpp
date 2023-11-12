@@ -30,7 +30,7 @@ void DebugRenderer::MakeInstanceArrow(std::vector<glm::vec3>& verts) {
 }
 
 void ConstructLineMat(const glm::vec3& scale, glm::mat4& res, const glm::vec3& start, const glm::vec3& end, const glm::vec3& right) {
-	res = glm::lookAt(glm::vec3(0,0,0), right, end - start) * glm::translate(glm::mat4(1.0f), start) * glm::scale(glm::mat4(1.0f), scale);
+	res = glm::translate(glm::mat4(1.0f), start) * glm::lookAt(glm::vec3(0, 0, 0), right, end - start) * glm::scale(glm::mat4(1.0f), scale);
 }
 
 void DebugRenderer::UpdateGridLines()
@@ -46,20 +46,27 @@ void DebugRenderer::UpdateGridLines()
 		for (float y = ws_grid_lower_bound_.y; y <= ws_grid_upper_bound_.y; y += ws_grid_cell_size_) {
 			for (float x = ws_grid_lower_bound_.x; x <= ws_grid_upper_bound_.x; x += ws_grid_cell_size_) {
 				glm::mat4 mat;
-				if (x + 0.01f < ws_grid_upper_bound_.x) {
+				//printf("At grid ws pos: \n   [%3.3f, %3.3f, %3.3f] with upper bounds [%3.3f, %3.3f, %3.3f]\n", x, y, z, ws_grid_upper_bound_.x, ws_grid_upper_bound_.y, ws_grid_upper_bound_.z);
+				if (x < ws_grid_upper_bound_.x) {
+					//printf("   Drawing x line\n");
 					ConstructLineMat(line_scale, mat, glm::vec3(x, y, z), glm::vec3(x + ws_grid_cell_size_, y, z), glm::vec3(0, 0, 1));
 					line_mats.push_back(mat);
-					line_color.push_back(grid_line_color);
+					line_color.push_back(glm::vec3(1, 0, 0));
 				}
 
-				if (y + 0.01f < ws_grid_upper_bound_.y) {
+				if (y < ws_grid_upper_bound_.y) {
+					//printf("   Drawing y line\n");
 					ConstructLineMat(line_scale, mat, glm::vec3(x, y, z), glm::vec3(x, y + ws_grid_cell_size_, z), glm::vec3(1, 0, 0));
 					line_mats.push_back(mat);
-					line_color.push_back(grid_line_color);
+					line_color.push_back(glm::vec3(0, 1, 0));
 				}
-				ConstructLineMat(line_scale, mat, glm::vec3(x, y, z), glm::vec3(x, y, z + ws_grid_cell_size_), glm::vec3(0, 1, 0));
-				line_mats.push_back(mat);
-				line_color.push_back(grid_line_color);
+
+				if (z > ws_grid_lower_bound_.z) {
+					//printf("   Drawing z line\n");
+					ConstructLineMat(line_scale, mat, glm::vec3(x, y, z), glm::vec3(x, y, z + ws_grid_cell_size_), glm::vec3(0, 1, 0));
+					line_mats.push_back(mat);
+					line_color.push_back(glm::vec3(0, 0, 1));
+				}
 			}
 		}
 	}
@@ -251,17 +258,11 @@ DebugRenderer::~DebugRenderer()
 	glDeleteBuffers(1, &VBO_grid_arrow_colors_);
 }
 
-bool DebugRenderer::SetGridBoundaries(const glm::vec3& lower_left, const glm::vec3& upper_right)
+bool DebugRenderer::SetGridBoundaries(const glm::vec3& lower_left, const glm::vec3& upper_right, const float interval)
 {
 	ws_grid_lower_bound_ = lower_left;
 	ws_grid_upper_bound_ = upper_right;
-	UpdateGridLines();
-	return true;
-}
-
-bool DebugRenderer::SetGridCellInterval(const float cell_size)
-{
-	ws_grid_cell_size_ = cell_size;
+	ws_grid_cell_size_ = interval;
 	UpdateGridLines();
 	return true;
 }

@@ -223,8 +223,7 @@ bool LoadContent()
     g_skybox = new Skybox({ "skybox/right.jpg", "skybox/left.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/front.jpg", "skybox/back.jpg" });
 
     g_debug_renderer = new DebugRenderer();
-    g_debug_renderer->SetGridBoundaries(glm::vec3(-0.5, -0.5, -0.5), glm::vec3(0.5, 0.5, 0.5));
-    g_debug_renderer->SetGridCellInterval(0.5);
+    g_debug_renderer->SetGridBoundaries(glm::vec3(-0.5, -0.5, -0.5), glm::vec3(0.5, 0.5, 0.5), 0.5f);
     std::vector<glm::vec3> velocities = {
         glm::vec3(0.2f, 0.2f, 0.2f),
         glm::vec3(0.3f, 0.3f, 0.3f),

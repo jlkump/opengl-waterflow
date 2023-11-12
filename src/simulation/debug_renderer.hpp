@@ -111,8 +111,7 @@ public:
 	DebugRenderer();
 	~DebugRenderer();
 	
-	bool SetGridBoundaries(const glm::vec3& lower_left, const glm::vec3& upper_right);
-	bool SetGridCellInterval(const float cell_size);
+	bool SetGridBoundaries(const glm::vec3& lower_left, const glm::vec3& upper_right, const float interval);
 	bool SetGridVelocities(const std::vector<glm::vec3>& grid_velocities, const unsigned int grid_dimensions);
 	bool SetGridVelocities(Texture3D& grid_velocities);
 	bool SetGridDye(const Texture3D& grid_dye);
