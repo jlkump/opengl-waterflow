@@ -23,43 +23,70 @@ public:
 		FRAME_TIME,
 	};
 private:
-	struct DebugLineVert {
-		glm::vec3 pos_;
-		glm::vec3 color_;
-		DebugLineVert(const glm::vec3& pos, const glm::vec3& color) : pos_(pos), color_(color) {}
+	const float k_line_instance_verts_[108] = {
+		0.0f, 0.0f, 0.0f, // triangle 1 : begin
+		0.0f, 0.0f, 1.0f,
+		0.0f, 1.0f, 1.0f, // triangle 1 : end
+		1.0f, 1.0f, 0.0f, // triangle 2 : begin
+		0.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 0.0f, // triangle 2 : end
+		1.0f, 0.0f, 1.0f,
+		0.0f, 0.0f, 0.0f,
+		1.0f, 0.0f, 0.0f,
+		1.0f, 1.0f, 0.0f,
+		1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 1.0f,
+		0.0f, 1.0f, 0.0f,
+		1.0f, 0.0f, 1.0f,
+		0.0f, 0.0f, 1.0f,
+		0.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 1.0f,
+		0.0f, 0.0f, 1.0f,
+		1.0f, 0.0f, 1.0f,
+		1.0f, 1.0f, 1.0f,
+		1.0f, 0.0f, 0.0f,
+		1.0f, 1.0f, 0.0f,
+		1.0f, 0.0f, 0.0f,
+		1.0f, 1.0f, 1.0f,
+		1.0f, 0.0f, 1.0f,
+		1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, 0.0f,
+		0.0f, 1.0f, 0.0f,
+		1.0f, 1.0f, 1.0f,
+		0.0f, 1.0f, 0.0f,
+		0.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, 1.0f,
+		0.0f, 1.0f, 1.0f,
+		1.0f, 0.0f, 1.0f
 	};
-	struct DebugArrowVert {
-		glm::vec3 pos_;
-		glm::vec3 color_;
-		DebugArrowVert(const glm::vec3& pos, const glm::vec3& color) : pos_(pos), color_(color) {}
-	};
+
 	glm::vec3 ws_grid_lower_bound_;
 	glm::vec3 ws_grid_upper_bound_;
 	float ws_grid_cell_size_;
 
-
 	Shader debug_line_shader_;
+	GLuint VAO_origin_lines_;
+	GLuint VBO_origin_line_instance_;
+	GLuint VBO_origin_line_mats_;
+	GLuint VBO_origin_line_colors_;
+
 	GLuint VAO_grid_lines_;
 	GLuint VBO_line_instance_;
 	GLuint VBO_line_mats_;
 	GLuint VBO_line_color_;
 	int grid_line_elements_;
-	//std::vector<DebugLineVert> grid_line_vertices_;
-	//std::vector<unsigned int> grid_line_indices_;
 
 	// Instance an arrow for each velocity
 	Shader debug_grid_vel_shader_;
 	GLuint VAO_grid_arrows_;
 	GLuint VBO_grid_arrow_instances_;
-	GLuint VBO_grid_arrow_pos_;
+	GLuint VBO_grid_arrow_mats_;
 	GLuint VBO_grid_arrow_colors_;
-	GLuint VBO_grid_arrow_indices_;
 	int grid_arrow_elements_;
-	//std::vector<glm::vec3> instance_arrow_verts_;
-	//std::vector<unsigned int> instance_arrow_indices_; 
-	//std::vector<glm::vec3> arrow_positions_;
-	//std::vector<glm::vec3> arrow_colors_;
-	//std::vector<glm::vec3> arrow_indexes_;
+	int grid_arrow_instance_num_;
+
 	glm::ivec3 vel_texture_dimensions_;
 
 	Shader debug_particle_shader_;
@@ -73,22 +100,20 @@ private:
 	DisplayText frame_time_display_;
 
 
-	bool MakeLine(std::vector<DebugLineVert>& verts, std::vector<unsigned short>& indices, 
-		int& index, glm::vec3 start_pos, glm::vec3 end_pos, glm::vec3 color, float thickness, glm::vec3 view_direction);
-
-	bool MakeArrow(std::vector<glm::vec3>& verts, float thickness);
-
 	void UpdateGridLines();
-	void UpdateArrowPositions();
 
+	void SetupOriginBuffers();
 	void SetupGridLineBuffers();
+	void MakeInstanceArrow(std::vector<glm::vec3>& verts);
+	void SetupGridVelocityBuffers();
 
 public:
 	DebugRenderer();
 	~DebugRenderer();
-
+	
 	bool SetGridBoundaries(const glm::vec3& lower_left, const glm::vec3& upper_right);
 	bool SetGridCellInterval(const float cell_size);
+	bool SetGridVelocities(const std::vector<glm::vec3>& grid_velocities, const unsigned int grid_dimensions);
 	bool SetGridVelocities(Texture3D& grid_velocities);
 	bool SetGridDye(const Texture3D& grid_dye);
 

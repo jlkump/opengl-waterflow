@@ -142,6 +142,7 @@ void WindowKeyCallback(GLFWwindow* window, int key, int scancode, int action, in
         }
     }
 
+    // Debug Keys
     if (key == GLFW_KEY_T) {
         if (action == GLFW_PRESS) {
             g_debug_renderer->ToggleDebugView(DebugRenderer::FRAME_TIME);
@@ -150,6 +151,16 @@ void WindowKeyCallback(GLFWwindow* window, int key, int scancode, int action, in
     if (key == GLFW_KEY_G) {
         if (action == GLFW_PRESS) {
             g_debug_renderer->ToggleDebugView(DebugRenderer::GRID);
+        }
+    }
+    if (key == GLFW_KEY_V) {
+        if (action == GLFW_PRESS) {
+            g_debug_renderer->ToggleDebugView(DebugRenderer::GRID_VELOCITIES);
+        }
+    }
+    if (key == GLFW_KEY_O) {
+        if (action == GLFW_PRESS) {
+            g_debug_renderer->ToggleDebugView(DebugRenderer::ORIGIN);
         }
     }
 }
@@ -197,23 +208,10 @@ bool Init() {
     glClearColor(0.6784f, 0.8f, 1.0f, 1.0f);
     glViewport(0, 0, kWindowWidth, kWindowHeight);
 
-    // glEnable(GL_DEPTH_TEST);
-    // glDepthFunc(GL_LESS);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
 
     return true;
-}
-
-void InitializeDummyGridVel(Texture3D& tex) {
-    glm::ivec3 dim = tex.GetDimensions();
-    std::vector<glm::vec4> new_data;
-    for (int i = 0; i < dim.x; i++) {
-        for (int j = 0; j < dim.y; j++) {
-            for (int k = 0; k < dim.z; k++) {
-                new_data.push_back(glm::vec4(0, 1, 0, 0));
-            }
-        }
-    }
-    tex.ModifyTextureData(glm::ivec3(0, 0, 0), dim, (void*)&new_data[0]);
 }
 
 bool LoadContent()
@@ -224,13 +222,21 @@ bool LoadContent()
     /* Create Skybox for scene */
     g_skybox = new Skybox({ "skybox/right.jpg", "skybox/left.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/front.jpg", "skybox/back.jpg" });
 
-    // Texture3D temp_grid_vel = Texture3D(glm::ivec3(3, 3, 3));
-    // InitializeDummyGridVel(temp_grid_vel); // This causes bad_alloc problems sometimes 
-
     g_debug_renderer = new DebugRenderer();
     g_debug_renderer->SetGridBoundaries(glm::vec3(-0.5, -0.5, -0.5), glm::vec3(0.5, 0.5, 0.5));
     g_debug_renderer->SetGridCellInterval(0.5);
-    // g_debug_renderer->SetGridVelocities(temp_grid_vel);
+    std::vector<glm::vec3> velocities = {
+        glm::vec3(0.2f, 0.2f, 0.2f),
+        glm::vec3(0.3f, 0.3f, 0.3f),
+        glm::vec3(0.4f, 0.4f, 0.4f), // Imaginary
+        glm::vec3(0.5f, 0.5f, 0.5f),
+        glm::vec3(0.6f, 0.6f, 0.6f),
+        glm::vec3(0.7f, 0.7f, 0.7f), // Imaginary
+        glm::vec3(0.8f, 0.8f, 0.8f), // Imaginary
+        glm::vec3(0.9f, 0.9f, 0.9f), // Imaginary
+        glm::vec3(20.2f, 20.2f, 20.2f)  // Imaginary
+    };
+    g_debug_renderer->SetGridVelocities(velocities, 2);
 
 
     UpdateView(g_cam->GetCam()->GetViewMatrix());
