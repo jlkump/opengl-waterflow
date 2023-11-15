@@ -6,12 +6,16 @@
 
 class Simulation {
 public:
+	virtual void SetInitialVelocities(const std::vector<glm::vec3>& initial, glm::vec3 lower_bound, glm::vec3 upper_bound) = 0;
 	virtual void TimeStep(float delta) = 0;
 	virtual std::vector<glm::vec3>* GetGridVelocities() = 0;
 	virtual unsigned int GetGridDimensions() = 0;
 	virtual glm::vec3 GetGridUpperBounds() = 0;
 	virtual glm::vec3 GetGridLowerBounds() = 0;
 	virtual float GetGrindInterval() = 0;
+	virtual std::vector<float>* GetGridPressures() = 0;
+	virtual std::vector<float>* GetGridDyeDensities() = 0;
+	virtual std::vector<float>* GetGridFluidCells() = 0;
 	virtual std::vector<glm::vec3>* GetParticleVelocities() = 0;
 };
 
@@ -24,6 +28,9 @@ private:
 	unsigned int grid_dim_;
 	std::vector<glm::vec3> velocities_;
 	std::vector<float> is_fluid_;
+	std::vector<float> pressures_;
+	std::vector<float> dye_density_;
+	const float density_ = 1000.0f;
 
 	unsigned int number_of_iterations_;
 
@@ -46,7 +53,7 @@ public:
 	SequentialGridBased();
 	~SequentialGridBased();
 
-	void SetInitialVelocities(const std::vector<glm::vec3>& initial, glm::vec3 lower_bound, glm::vec3 upper_bound);
+	virtual void SetInitialVelocities(const std::vector<glm::vec3>& initial, glm::vec3 lower_bound, glm::vec3 upper_bound);
 	virtual void TimeStep(float delta);
 	virtual std::vector<glm::vec3>* GetGridVelocities();
 	virtual unsigned int GetGridDimensions();
@@ -54,6 +61,9 @@ public:
 	virtual glm::vec3 GetGridLowerBounds();
 	virtual float GetGrindInterval();
 	virtual std::vector<glm::vec3>* GetParticleVelocities();
+	virtual std::vector<float>* GetGridPressures();
+	virtual std::vector<float>* GetGridDyeDensities();
+	virtual std::vector<float>* GetGridFluidCells();
 };
 
 /**
@@ -110,5 +120,10 @@ float GetDivergence(const std::vector<glm::vec3>& grid,
 	const unsigned int y,
 	const unsigned int z);
 
+float GetFloatValFrom3DGridCell(const std::vector<float>& grid,
+	const unsigned int dim,
+	const unsigned int x,
+	const unsigned int y,
+	const unsigned int z);
 
 #endif // !SEQUENTIAL_IMPLEMENTATION_H

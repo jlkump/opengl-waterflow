@@ -175,6 +175,38 @@ void WindowKeyCallback(GLFWwindow* window, int key, int scancode, int action, in
             g_simulate = !g_simulate;
         }
     }
+    if (key == GLFW_KEY_1) {
+        if (action == GLFW_PRESS) {
+            if (g_seq_sim != nullptr && g_seq_sim->GetGridPressures() != nullptr) {
+                if (g_debug_renderer->IsCellViewActive(DebugRenderer::PRESSURE) || !g_debug_renderer->IsDebugViewActive(DebugRenderer::GRID_CELL)) {
+                    g_debug_renderer->ToggleDebugView(DebugRenderer::GRID_CELL);
+                }
+                g_debug_renderer->SetGridPressures(*g_seq_sim->GetGridPressures(), g_seq_sim->GetGridDimensions());
+            }
+        }
+    }
+    if (key == GLFW_KEY_2) {
+        if (action == GLFW_PRESS) {
+            if (g_seq_sim != nullptr && g_seq_sim->GetGridDyeDensities() != nullptr) {
+                if (g_debug_renderer->IsCellViewActive(DebugRenderer::DYE) || !g_debug_renderer->IsDebugViewActive(DebugRenderer::GRID_CELL)) {
+                    g_debug_renderer->ToggleDebugView(DebugRenderer::GRID_CELL);
+                }
+                g_debug_renderer->SetGridDyeDensities(*g_seq_sim->GetGridDyeDensities(), g_seq_sim->GetGridDimensions());
+            }
+        }
+    }
+    if (key == GLFW_KEY_3) {
+        if (action == GLFW_PRESS) {
+            if (g_seq_sim != nullptr && g_seq_sim->GetGridFluidCells() != nullptr) {
+                printf("Displaying fluid cells\n");
+                if (g_debug_renderer->IsCellViewActive(DebugRenderer::IS_FLUID) || !g_debug_renderer->IsDebugViewActive(DebugRenderer::GRID_CELL)) {
+                    printf("Toggling cell display\n");
+                    g_debug_renderer->ToggleDebugView(DebugRenderer::GRID_CELL);
+                }
+                g_debug_renderer->SetGridFluidCells(*g_seq_sim->GetGridFluidCells(), g_seq_sim->GetGridDimensions());
+            }
+        }
+    }
 }
 
 bool Init() {
@@ -221,6 +253,7 @@ bool Init() {
     glViewport(0, 0, kWindowWidth, kWindowHeight);
 
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
     glDepthFunc(GL_LESS);
 
     return true;

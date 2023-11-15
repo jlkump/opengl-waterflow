@@ -3,6 +3,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "sequential_simulation.hpp"
+#include "print_debug_helpers.h"
 
 void DebugRenderer::MakeInstanceArrow(std::vector<glm::vec3>& verts) {
 	float arrow_head_start = 0.95f;
@@ -10,9 +11,9 @@ void DebugRenderer::MakeInstanceArrow(std::vector<glm::vec3>& verts) {
 	float arrow_wideness = 1.5;
 	for (int i = 0; i < 36; i++) {
 		verts.push_back(glm::vec3(
-			((k_line_instance_verts_[i * 3] * 2.0f) - 1.0f) * line_thickness_relative, 
-			k_line_instance_verts_[i * 3 + 1] * arrow_head_start, 
-			((k_line_instance_verts_[i * 3 + 2] * 2.0f) - 1.0f) * line_thickness_relative));
+			((k_cube_verts[i * 3] * 2.0f) - 1.0f) * line_thickness_relative, 
+			k_cube_verts[i * 3 + 1] * arrow_head_start, 
+			((k_cube_verts[i * 3 + 2] * 2.0f) - 1.0f) * line_thickness_relative));
 	}
 	verts.push_back(glm::vec3(-arrow_wideness, arrow_head_start, -arrow_wideness));
 	verts.push_back(glm::vec3(-arrow_wideness, arrow_head_start, arrow_wideness));
@@ -33,7 +34,7 @@ void DebugRenderer::MakeInstanceArrow(std::vector<glm::vec3>& verts) {
 	grid_arrow_instance_num_ = verts.size();
 }
 
-void ConstructAxisAlignedLineMat(glm::mat4& res, const glm::vec3& scale, const glm::vec3& start) {
+void ConstructAxisAlignedModelMat(glm::mat4& res, const glm::vec3& scale, const glm::vec3& start) {
 	res = glm::scale(glm::translate(glm::mat4(1.0f), start), scale);
 }
 
@@ -65,14 +66,14 @@ void DebugRenderer::UpdateGridLines()
 				//printf("At grid ws pos: \n   [%3.3f, %3.3f, %3.3f] with upper bounds [%3.3f, %3.3f, %3.3f]\n", x, y, z, ws_grid_upper_bound_.x, ws_grid_upper_bound_.y, ws_grid_upper_bound_.z);
 				if (x < ws_grid_upper_bound_.x) {
 					//printf("   Drawing x line\n");
-					ConstructAxisAlignedLineMat(mat, glm::vec3(ws_grid_cell_size_ / 3.0, k_line_thickness, k_line_thickness), glm::vec3(x, y, z));
+					ConstructAxisAlignedModelMat(mat, glm::vec3(ws_grid_cell_size_ / 3.0, k_line_thickness, k_line_thickness), glm::vec3(x, y, z));
 					line_mats.push_back(mat);
 					line_color.push_back(grid_line_color);
 					//line_color.push_back(glm::vec3(1, 0, 0));
 				}
 
 				if (x > ws_grid_lower_bound_.x) {
-					ConstructAxisAlignedLineMat(mat, glm::vec3(-ws_grid_cell_size_ / 3.0, k_line_thickness, k_line_thickness), glm::vec3(x, y, z));
+					ConstructAxisAlignedModelMat(mat, glm::vec3(-ws_grid_cell_size_ / 3.0, k_line_thickness, k_line_thickness), glm::vec3(x, y, z));
 					line_mats.push_back(mat);
 					line_color.push_back(grid_line_color);
 					//line_color.push_back(glm::vec3(0, 1, 1));
@@ -80,14 +81,14 @@ void DebugRenderer::UpdateGridLines()
 
 				if (y < ws_grid_upper_bound_.y) {
 					//printf("   Drawing y line\n");
-					ConstructAxisAlignedLineMat(mat, glm::vec3(k_line_thickness, ws_grid_cell_size_ / 3.0, k_line_thickness), glm::vec3(x, y, z));
+					ConstructAxisAlignedModelMat(mat, glm::vec3(k_line_thickness, ws_grid_cell_size_ / 3.0, k_line_thickness), glm::vec3(x, y, z));
 					line_mats.push_back(mat);
 					line_color.push_back(grid_line_color);
 					//line_color.push_back(glm::vec3(0, 1, 0));
 				}
 
 				if (y > ws_grid_lower_bound_.y) {
-					ConstructAxisAlignedLineMat(mat, glm::vec3(k_line_thickness, -ws_grid_cell_size_ / 3.0, k_line_thickness), glm::vec3(x, y, z));
+					ConstructAxisAlignedModelMat(mat, glm::vec3(k_line_thickness, -ws_grid_cell_size_ / 3.0, k_line_thickness), glm::vec3(x, y, z));
 					line_mats.push_back(mat);
 					line_color.push_back(grid_line_color);
 					//line_color.push_back(glm::vec3(1, 0, 1));
@@ -95,14 +96,14 @@ void DebugRenderer::UpdateGridLines()
 
 				if (z < ws_grid_upper_bound_.z) {
 					//printf("   Drawing z line\n");
-					ConstructAxisAlignedLineMat(mat, glm::vec3(k_line_thickness, k_line_thickness, ws_grid_cell_size_ / 3.0), glm::vec3(x, y, z));
+					ConstructAxisAlignedModelMat(mat, glm::vec3(k_line_thickness, k_line_thickness, ws_grid_cell_size_ / 3.0), glm::vec3(x, y, z));
 					line_mats.push_back(mat);
 					line_color.push_back(grid_line_color);
 					//line_color.push_back(glm::vec3(0, 0, 1));
 				}
 
 				if (z > ws_grid_lower_bound_.z) {
-					ConstructAxisAlignedLineMat(mat, glm::vec3(k_line_thickness, k_line_thickness, -ws_grid_cell_size_ / 3.0), glm::vec3(x, y, z));
+					ConstructAxisAlignedModelMat(mat, glm::vec3(k_line_thickness, k_line_thickness, -ws_grid_cell_size_ / 3.0), glm::vec3(x, y, z));
 					line_mats.push_back(mat);
 					line_color.push_back(grid_line_color);
 					//line_color.push_back(glm::vec3(1, 1, 0));
@@ -181,18 +182,6 @@ void DebugRenderer::UpdateGridAxisVelocities(const std::vector<glm::vec3>& veloc
 	glBindVertexArray(0);
 }
 
-void PrintMat4(const glm::mat4& mat) {
-	printf("| %3.3f %3.3f %3.3f %3.3f |\n| %3.3f %3.3f %3.3f %3.3f |\n| %3.3f %3.3f %3.3f %3.3f |\n| %3.3f %3.3f %3.3f %3.3f |\n",
-		mat[0][0], mat[0][1], mat[0][2], mat[0][3], 
-		mat[1][0], mat[1][1], mat[1][2], mat[1][3], 
-		mat[2][0], mat[2][1], mat[2][2], mat[2][3],
-		mat[3][0], mat[3][1], mat[3][2], mat[3][3]);
-}
-
-void PrintVec3(const glm::vec3& vec) {
-	printf("[ %3.3f %3.3f %3.3f ]\n", vec.x, vec.y, vec.z);
-}
-
 void DebugRenderer::UpdateGridVelocities(const std::vector<glm::vec3>& velocities, const unsigned int grid_dim)
 {
 	std::vector<glm::mat4> arrow_mats;
@@ -249,6 +238,95 @@ void DebugRenderer::UpdateGridVelocities(const std::vector<glm::vec3>& velocitie
 	glBindVertexArray(0);
 }
 
+void DebugRenderer::UpdateGridCells(const unsigned int grid_dim)
+{
+	std::vector<glm::mat4> model_mats;
+	for (int x = 0; x < grid_dim; x++) {
+		for (int y = 0; y < grid_dim; y++) {
+			for (int z = 0; z < grid_dim; z++) {
+				glm::vec3 scale = glm::vec3(ws_grid_cell_size_);
+				glm::vec3 pos = glm::vec3(x, y, z) * ws_grid_cell_size_ + ws_grid_lower_bound_;
+				glm::mat4 mat;
+				ConstructAxisAlignedModelMat(mat, scale, pos);
+				model_mats.push_back(mat);
+			}
+		}
+	}
+
+	glBindVertexArray(VAO_grid_cell_);
+	// load data into vertex buffers
+	grid_cell_elements_ = model_mats.size();
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_cell_mats_);
+	glBufferData(GL_ARRAY_BUFFER, MAX_DEBUG_GRID_CELLS * sizeof(glm::mat4), NULL, GL_STREAM_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, model_mats.size() * sizeof(glm::mat4), (void*)&model_mats[0]);
+
+	glBindVertexArray(0);
+}
+
+void DebugRenderer::UpdateGridCellFloats(const std::vector<float>& floats, const unsigned int grid_dim)
+{
+	std::vector<float> final_floats;
+	for (int x = 0; x < grid_dim; x++) {
+		for (int y = 0; y < grid_dim; y++) {
+			for (int z = 0; z < grid_dim; z++) {
+				final_floats.push_back(GetFloatValFrom3DGridCell(floats, grid_dim, x, y, z));
+			}
+		}
+	}
+	glBindVertexArray(VAO_grid_cell_);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_cell_float_val_);
+	glBufferData(GL_ARRAY_BUFFER, MAX_DEBUG_GRID_CELLS * sizeof(float), NULL, GL_STREAM_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, final_floats.size() * sizeof(float), (void*)&final_floats[0]);
+	glBindVertexArray(0);
+}
+
+void DebugRenderer::SetVariableDefaults()
+{
+	ws_grid_lower_bound_ = glm::vec3(-1.0f, -1.0f, -1.0f);
+	ws_grid_upper_bound_ = glm::vec3(1.0f, 1.0f, 1.0f);
+	ws_grid_cell_size_ = 1.0f;
+
+	active_cell_view_ = NONE;
+
+	cached_view_ = glm::mat4(1.0f);
+	cached_proj_ = glm::mat4(1.0f);
+
+	// Origin
+	VAO_origin_lines_ = 0;
+	VBO_origin_line_instance_ = 0;
+	VBO_origin_line_mats_ = 0;
+	VBO_origin_line_colors_ = 0;
+
+	// Grid lines 
+	VAO_grid_lines_ = 0;
+	VBO_line_instance_ = 0;
+	VBO_line_mats_ = 0;
+	VBO_line_color_ = 0;
+	grid_line_elements_ = 0;
+
+	// Grid arrows
+	grid_arrow_instance_num_ = 0; // Number of verts in the arrow instance
+	VAO_grid_arrows_ = 0;
+	VBO_grid_arrow_instance_ = 0;
+	VBO_grid_arrow_mats_ = 0;
+	VBO_grid_arrow_colors_ = 0;
+	grid_arrow_elements_ = 0;
+
+	// Axis aligned grid arrows
+	VAO_grid_axis_arrows_ = 0;
+	VBO_grid_axis_arrow_instance_ = 0;
+	VBO_grid_axis_arrow_mats_ = 0;
+	VBO_grid_axis_arrow_colors_ = 0;
+	grid_axis_arrow_elements_ = 0;
+
+	// Cell fluid visualization
+	VAO_grid_cell_ = 0;
+	VBO_grid_cell_instance_ = 0;
+	VBO_grid_cell_mats_ = 0;
+	VBO_grid_cell_float_val_ = 0;
+	grid_cell_elements_ = 0;
+}
+
 void DebugRenderer::SetupOriginBuffers() {
 	glGenVertexArrays(1, &VAO_origin_lines_);
 	glGenBuffers(1, &VBO_origin_line_instance_);
@@ -258,7 +336,7 @@ void DebugRenderer::SetupOriginBuffers() {
 	glBindVertexArray(VAO_origin_lines_);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO_origin_line_instance_);
-	glBufferData(GL_ARRAY_BUFFER, 36 * sizeof(glm::vec3), &k_line_instance_verts_[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, 36 * sizeof(glm::vec3), &k_cube_verts[0], GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
@@ -268,7 +346,7 @@ void DebugRenderer::SetupOriginBuffers() {
 	std::vector<glm::mat4> transforms;
 	for (int i = 0; i < k_end_points.size(); i++) {
 		glm::mat4 mat;
-		ConstructAxisAlignedLineMat(mat, k_origin_scales[i], glm::vec3(0, 0, 0));
+		ConstructAxisAlignedModelMat(mat, k_origin_scales[i], glm::vec3(0, 0, 0));
 		transforms.push_back(mat);
 	}
 
@@ -308,7 +386,7 @@ void DebugRenderer::SetupGridLineBuffers() {
 	glBindVertexArray(VAO_grid_lines_);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO_line_instance_);
-	glBufferData(GL_ARRAY_BUFFER, 36 * sizeof(glm::vec3), &k_line_instance_verts_[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, 36 * sizeof(glm::vec3), &k_cube_verts[0], GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
@@ -425,32 +503,60 @@ void DebugRenderer::SetupGridAxisVelocityBuffers()
 	glBindVertexArray(0);
 }
 
+void DebugRenderer::SetupGridCellBuffers()
+{
+	// Setup for the arrows
+	glGenVertexArrays(1, &VAO_grid_cell_);
+	glGenBuffers(1, &VBO_grid_cell_instance_);
+	glGenBuffers(1, &VBO_grid_cell_float_val_);
+	glGenBuffers(1, &VBO_grid_cell_mats_);
+
+	glBindVertexArray(VAO_grid_cell_);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_cell_instance_);
+	glBufferData(GL_ARRAY_BUFFER, 36 * sizeof(glm::vec3), &k_cube_verts[0], GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_cell_float_val_);
+	glBufferData(GL_ARRAY_BUFFER, MAX_DEBUG_GRID_CELLS * sizeof(float), NULL, GL_STREAM_DRAW);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_cell_mats_);
+	glBufferData(GL_ARRAY_BUFFER, MAX_DEBUG_GRID_CELLS * sizeof(glm::mat4), NULL, GL_STREAM_DRAW);
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)0);
+	glEnableVertexAttribArray(3);
+	glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(1 * sizeof(glm::vec4)));
+	glEnableVertexAttribArray(4);
+	glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(2 * sizeof(glm::vec4)));
+	glEnableVertexAttribArray(5);
+	glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(3 * sizeof(glm::vec4)));
+
+	glVertexAttribDivisor(0, 0); // Reuse on each instance
+	glVertexAttribDivisor(1, 1); // Unique to each instance
+	glVertexAttribDivisor(2, 1); // Unique ...
+	glVertexAttribDivisor(3, 1);
+	glVertexAttribDivisor(4, 1);
+	glVertexAttribDivisor(5, 1);
+	glBindVertexArray(0);
+}
+
 DebugRenderer::DebugRenderer() :
-	debug_line_shader_("debug/line.vert", "debug/line.frag"),
-	debug_grid_vel_shader_("debug/grid_arrows.vert", "debug/grid_arrows.frag"),
+	debug_instance_shader_("debug/simple_instance.vert", "debug/simple_instance.frag"),
+	debug_grid_cell_shader_("debug/cell_visualization.vert", "debug/cell_visualization.frag"),
 	debug_particle_shader_("debug/particle.vert", "debug/particle.frag"),
-	ws_grid_cell_size_(1.0),
-	ws_grid_lower_bound_(glm::vec3(-1, -1, -1)),
-	ws_grid_upper_bound_(glm::vec3(1, 1, 1)),
-	cached_view_(glm::mat4(1.0f)),
-	cached_proj_(glm::mat4(1.0f)),
-	VAO_grid_lines_(0),
-	VBO_line_instance_(0),
-	VBO_line_mats_(0),
-	VBO_line_color_(0),
-	grid_line_elements_(0),
-	VBO_grid_arrow_instance_(0),
-	VBO_grid_arrow_mats_(0),
-	VBO_grid_arrow_colors_(0),
-	grid_arrow_elements_(0),
 	frame_time_display_("0.0 ms/frame")
 {
+	SetVariableDefaults();
 	SetupOriginBuffers();
 	SetupGridLineBuffers();
 	SetupGridVelocityBuffers();
 	SetupGridAxisVelocityBuffers();
+	SetupGridCellBuffers();
 
 	ToggleDebugView(GRID_VELOCITIES);
+	ToggleDebugView(FRAME_TIME);
 }
 
 DebugRenderer::~DebugRenderer()
@@ -477,17 +583,43 @@ void DebugRenderer::SetGridBoundaries(const glm::vec3& low_bound, const glm::vec
 	ws_grid_upper_bound_ = high_bound;
 	ws_grid_cell_size_ = interval;
 	UpdateGridLines();
-}
-
-void DebugRenderer::SetGridVelocities(Texture3D& grid_velocities)
-{
-
+	UpdateGridCells((high_bound.x - low_bound.x) / interval);
 }
 
 void DebugRenderer::SetGridVelocities(const std::vector<glm::vec3>& grid_velocities, const unsigned int grid_dimensions)
 {
 	UpdateGridVelocities(grid_velocities, grid_dimensions);
 	UpdateGridAxisVelocities(grid_velocities, grid_dimensions);
+}
+
+void DebugRenderer::SetGridPressures(const std::vector<float>& grid_pressures, const unsigned int grid_dim)
+{
+	if (active_cell_view_ != PRESSURE) {
+		active_cell_view_ = PRESSURE;
+		debug_grid_cell_shader_.SetUniform3fv("empty_color", glm::vec3(0.2, 0.2, 0.9));
+		debug_grid_cell_shader_.SetUniform3fv("full_color", glm::vec3(0.9, 0.25, 0.1));
+	}
+	UpdateGridCellFloats(grid_pressures, grid_dim);
+}
+
+void DebugRenderer::SetGridDyeDensities(const std::vector<float>& grid_dyes, const unsigned int grid_dim)
+{
+	if (active_cell_view_ != DYE) {
+		active_cell_view_ = DYE;
+		debug_grid_cell_shader_.SetUniform3fv("empty_color", glm::vec3(0.0, 0.2, 0.9));
+		debug_grid_cell_shader_.SetUniform3fv("full_color", glm::vec3(0.0, 0.25, 0.1));
+	}
+	UpdateGridCellFloats(grid_dyes, grid_dim);
+}
+
+void DebugRenderer::SetGridFluidCells(const std::vector<float>& grid_fluid, const unsigned int grid_dim)
+{
+	if (active_cell_view_ != IS_FLUID) {
+		active_cell_view_ = IS_FLUID;
+		debug_grid_cell_shader_.SetUniform3fv("empty_color", glm::vec3(0.4, 0.4, 0.4));
+		debug_grid_cell_shader_.SetUniform3fv("full_color", glm::vec3(0.3, 0.3, 0.9));
+	}
+	UpdateGridCellFloats(grid_fluid, grid_dim);
 }
 
 
@@ -505,9 +637,8 @@ bool DebugRenderer::SetView(const glm::mat4& view)
 {
 	cached_view_ = view;
 	// Update the uniforms for shaders
-	debug_line_shader_.SetUniformMatrix4fv("proj_view", cached_proj_ * cached_view_);
-	debug_grid_vel_shader_.SetUniformMatrix4fv("view", cached_view_);
-	debug_grid_vel_shader_.SetUniformMatrix4fv("proj_view", cached_proj_ * cached_view_);
+	debug_instance_shader_.SetUniformMatrix4fv("proj_view", cached_proj_ * cached_view_);
+	debug_grid_cell_shader_.SetUniformMatrix4fv("proj_view", cached_proj_ * cached_view_);
 	return true;
 }
 
@@ -515,8 +646,8 @@ bool DebugRenderer::SetProjection(const glm::mat4& proj)
 {
 	cached_proj_ = proj;
 	// Update the uniforms for shaders
-	debug_line_shader_.SetUniformMatrix4fv("proj_view", cached_proj_ * cached_view_);
-	debug_grid_vel_shader_.SetUniformMatrix4fv("proj_view", cached_proj_ * cached_view_);
+	debug_instance_shader_.SetUniformMatrix4fv("proj_view", cached_proj_ * cached_view_);
+	debug_grid_cell_shader_.SetUniformMatrix4fv("proj_view", cached_proj_ * cached_view_);
 	return true;
 }
 
@@ -529,36 +660,50 @@ void DebugRenderer::ToggleDebugView(DebugView view_toggle)
 	}
 }
 
+bool DebugRenderer::IsDebugViewActive(DebugView view)
+{
+	return active_views_.count(view) != 0;
+}
+
+bool DebugRenderer::IsCellViewActive(GridCellView view)
+{
+	return active_cell_view_ == view;
+}
+
 bool DebugRenderer::Draw()
 {
 	for (auto& view : active_views_) {
 		switch (view) {
 		case ORIGIN:
-			debug_line_shader_.SetActive();
+			debug_instance_shader_.SetActive();
 			glBindVertexArray(VAO_origin_lines_);
 			glDrawArraysInstanced(GL_TRIANGLES, 0, 36, 3);
 			glBindVertexArray(0);
 			break;
 		case GRID:
 			// Draw Grid Lines
-			debug_line_shader_.SetActive();
+			debug_instance_shader_.SetActive();
 			glBindVertexArray(VAO_grid_lines_);
 			glDrawArraysInstanced(GL_TRIANGLES, 0, 36, grid_line_elements_);
 			glBindVertexArray(0);
 			break;
 		case GRID_AXIS_VELOCITIES:
-			debug_line_shader_.SetActive();
+			debug_instance_shader_.SetActive();
 			glBindVertexArray(VAO_grid_axis_arrows_);
 			glDrawArraysInstanced(GL_TRIANGLES, 0, grid_arrow_instance_num_, grid_axis_arrow_elements_);
 			glBindVertexArray(0);
 			break;
 		case GRID_VELOCITIES:
-			debug_line_shader_.SetActive();
+			debug_instance_shader_.SetActive();
 			glBindVertexArray(VAO_grid_arrows_);
 			glDrawArraysInstanced(GL_TRIANGLES, 0, grid_arrow_instance_num_, grid_arrow_elements_);
 			glBindVertexArray(0);
 			break;
-		case GRID_DYE:
+		case GRID_CELL:
+			debug_grid_cell_shader_.SetActive();
+			glBindVertexArray(VAO_grid_cell_);
+			glDrawArraysInstanced(GL_TRIANGLES, 0, 36, grid_cell_elements_);
+			glBindVertexArray(0);
 			break;
 		case PARTICLES:
 			break;

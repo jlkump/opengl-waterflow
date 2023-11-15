@@ -35,28 +35,13 @@ float GetDivergence(const std::vector<glm::vec3>& grid,
 	return cell_x.x - cell.x + cell_y.y - cell.y + cell_z.z - cell.z;
 }
 
-SequentialGridBased::SequentialGridBased()
-	: ws_lower_bound_(-1.0, -1.0, -1.0),
-	ws_upper_bound_(1.0, 1.0, 1.0),
-	ws_grid_interval_(0.5),
-	grid_dim_(4),
-	number_of_iterations_(40),
-	velocities_((grid_dim_ + 1) * (grid_dim_ + 1) * (grid_dim_ + 1)),
-	is_fluid_((grid_dim_) * (grid_dim_) * (grid_dim_))
+float GetFloatValFrom3DGridCell(const std::vector<float>& grid, 
+	const unsigned int dim, 
+	const unsigned int x, 
+	const unsigned int y, 
+	const unsigned int z)
 {
-	for (int x = 0; x < grid_dim_; x++) {
-		for (int y = 0; y < grid_dim_; y++) {
-			for (int z = 0; z < grid_dim_; z++) {
-				if (x == 0 || y == 0 || z == 0 || x + 1 == grid_dim_ || y + 1 == grid_dim_ || z + 1 == grid_dim_) {
-					is_fluid_[x * grid_dim_ * grid_dim_ + y * grid_dim_ + z] = 0.0f;
-					SetVelocityIn3DGridCell(velocities_, grid_dim_, x, y, z, glm::vec3(0, 0, 0));
-				} else {
-					is_fluid_[x * grid_dim_ * grid_dim_ + y * grid_dim_ + z] = 1.0f;
-					SetVelocityIn3DGridCell(velocities_, grid_dim_, x, y, z, glm::vec3(-0.2f, 0.4f, 0.1f));
-				}
-			}
-		}
-	}
+	return grid[x * dim * dim + y * dim + z];
 }
 
 void SequentialGridBased::Integrate(float delta, const glm::vec3& acceleration)
@@ -68,6 +53,7 @@ void SequentialGridBased::Integrate(float delta, const glm::vec3& acceleration)
 
 void SequentialGridBased::SolveIncompressability(float delta)
 {
+	float cp = density_ * ws_grid_interval_ / delta; // For pressure calc
 	for (int iter = 0; iter < number_of_iterations_; iter++) {
 
 		for (int x = 1; x < grid_dim_ - 1; x++) {
@@ -95,6 +81,7 @@ void SequentialGridBased::SolveIncompressability(float delta)
 					glm::vec3 v_z_pos = GetVelocityFrom3DGridCell(velocities_, grid_dim_, x, y, z + 1);
 
 					float p = -total_divergence / s;
+					pressures_[x * grid_dim_ * grid_dim_ + y * grid_dim_ + z] += cp * p; // Pressure
 
 					v_cur.x -= s_x_neg * p;
 					v_cur.y -= s_y_neg * p;
@@ -342,6 +329,39 @@ float SequentialGridBased::SampleGridVelocity(glm::vec3 ws_pos, SampleType s)
 	return v_0_4_1_5 * sz + v_2_6_3_7 * tz;
 }
 
+SequentialGridBased::SequentialGridBased()
+	: ws_lower_bound_(-1.0, -1.0, -1.0),
+	ws_upper_bound_(1.0, 1.0, 1.0),
+	ws_grid_interval_(0.5),
+	grid_dim_(4),
+	number_of_iterations_(40),
+	velocities_((grid_dim_ + 1)* (grid_dim_ + 1)* (grid_dim_ + 1)),
+	is_fluid_((grid_dim_) * (grid_dim_) * (grid_dim_)),
+	pressures_((grid_dim_)* (grid_dim_)* (grid_dim_)),
+	dye_density_((grid_dim_)* (grid_dim_)* (grid_dim_))
+{
+	for (int x = 0; x < grid_dim_; x++) {
+		for (int y = 0; y < grid_dim_; y++) {
+			for (int z = 0; z < grid_dim_; z++) {
+				if (x == 0 || y == 0 || z == 0 || x + 1 == grid_dim_ || y + 1 == grid_dim_ || z + 1 == grid_dim_) {
+					is_fluid_[x * grid_dim_ * grid_dim_ + y * grid_dim_ + z] = 0.0f;
+					SetVelocityIn3DGridCell(velocities_, grid_dim_, x, y, z, glm::vec3(0, 0, 0));
+				}
+				else {
+					is_fluid_[x * grid_dim_ * grid_dim_ + y * grid_dim_ + z] = 1.0f;
+					SetVelocityIn3DGridCell(velocities_, grid_dim_, x, y, z, glm::vec3(-0.2f, 0.4f, 0.1f));
+					if (y == 1) {
+						dye_density_[x * grid_dim_ * grid_dim_ + y * grid_dim_ + z] = 1.0f;
+					} else {
+						dye_density_[x * grid_dim_ * grid_dim_ + y * grid_dim_ + z] = 0.0f;
+					}
+				}
+				pressures_[x * grid_dim_ * grid_dim_ + y * grid_dim_ + z] = 0.0f;
+			}
+		}
+	}
+}
+
 SequentialGridBased::~SequentialGridBased()
 {
 }
@@ -389,4 +409,19 @@ float SequentialGridBased::GetGrindInterval()
 std::vector<glm::vec3>* SequentialGridBased::GetParticleVelocities()
 {
 	return nullptr;
+}
+
+std::vector<float>* SequentialGridBased::GetGridPressures()
+{
+	return &pressures_;
+}
+
+std::vector<float>* SequentialGridBased::GetGridDyeDensities()
+{
+	return &dye_density_;
+}
+
+std::vector<float>* SequentialGridBased::GetGridFluidCells()
+{
+	return &is_fluid_;
 }
