@@ -32,7 +32,7 @@ void DebugRenderer::MakeInstanceArrow(std::vector<glm::vec3>& verts) {
 }
 
 void ConstructAxisAlignedLineMat(glm::mat4& res, const glm::vec3& scale, const glm::vec3& start) {
-	res = glm::translate(glm::mat4(1.0f), start) * glm::scale(glm::mat4(1.0f), scale);
+	res = glm::scale(glm::translate(glm::mat4(1.0f), start), scale);
 }
 
 void DebugRenderer::UpdateGridLines()
@@ -42,6 +42,7 @@ void DebugRenderer::UpdateGridLines()
 	const float k_line_thickness = 0.01f;
 	glm::vec3 line_scale = glm::vec3(k_line_thickness, ws_grid_cell_size_ / 3.0, k_line_thickness);
 
+	//printf("Updating grid lines\n   low bound: [%3.3f, %3.3f, %3.3f]\n   upper bound: [%3.3f, %3.3f, %3.3f]\n", ws_grid_lower_bound_.x, ws_grid_lower_bound_.y, ws_grid_lower_bound_.z, ws_grid_upper_bound_.x, ws_grid_upper_bound_.y, ws_grid_upper_bound_.z);
 	std::vector<glm::mat4> line_mats;
 	std::vector<glm::vec3> line_color;
 	for (float z = ws_grid_lower_bound_.z; z <= ws_grid_upper_bound_.z; z += ws_grid_cell_size_) {
@@ -277,23 +278,20 @@ DebugRenderer::~DebugRenderer()
 	glDeleteBuffers(1, &VBO_grid_arrow_colors_);
 }
 
-bool DebugRenderer::SetGridBoundaries(const glm::vec3& lower_left, const glm::vec3& upper_right, const float interval)
+void DebugRenderer::SetGridBoundaries(const glm::vec3& low_bound, const glm::vec3& high_bound, const float interval)
 {
-	ws_grid_lower_bound_ = lower_left;
-	ws_grid_upper_bound_ = upper_right;
+	ws_grid_lower_bound_ = low_bound;
+	ws_grid_upper_bound_ = high_bound;
 	ws_grid_cell_size_ = interval;
 	UpdateGridLines();
-	return true;
 }
 
-bool DebugRenderer::SetGridVelocities(Texture3D& grid_velocities)
+void DebugRenderer::SetGridVelocities(Texture3D& grid_velocities)
 {
-	//vel_texture_dimensions_ = grid_velocities.GetDimensions();
-	//debug_grid_vel_shader_.SetUniformTexture3D("velocities", grid_velocities, GL_TEXTURE0);
-	return false;
+
 }
 
-bool DebugRenderer::SetGridVelocities(const std::vector<glm::vec3>& grid_velocities, const unsigned int grid_dimensions)
+void DebugRenderer::SetGridVelocities(const std::vector<glm::vec3>& grid_velocities, const unsigned int grid_dimensions)
 {
 	std::vector<glm::mat4> arrow_mats;
 	std::vector<glm::vec3> arrow_colors;
@@ -413,14 +411,8 @@ bool DebugRenderer::SetGridVelocities(const std::vector<glm::vec3>& grid_velocit
 	glBindVertexArray(0);
 
 
-	return true;
 }
 
-
-bool DebugRenderer::SetGridDye(const Texture3D& grid_dye)
-{
-	return false;
-}
 
 bool DebugRenderer::SetParticlePositions(const Texture2D& particle_positions)
 {

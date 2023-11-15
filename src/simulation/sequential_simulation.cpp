@@ -377,12 +377,12 @@ unsigned int SequentialGridBased::GetGridDimensions()
 
 glm::vec3 SequentialGridBased::GetGridUpperBounds()
 {
-	return ws_lower_bound_;
+	return ws_upper_bound_;
 }
 
 glm::vec3 SequentialGridBased::GetGridLowerBounds()
 {
-	return ws_upper_bound_;
+	return ws_lower_bound_;
 }
 
 float SequentialGridBased::GetGrindInterval()

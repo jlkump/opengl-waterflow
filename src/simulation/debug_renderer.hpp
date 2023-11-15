@@ -8,8 +8,8 @@
 #include "../rendering/texture.hpp"
 #include "../rendering/display_text.hpp"
 
-#define MAX_DEBUG_GRID_ARROWS 256
-#define MAX_DEBUG_GRID_LINES 256
+#define MAX_DEBUG_GRID_ARROWS 4096
+#define MAX_DEBUG_GRID_LINES 4096
 
 class DebugRenderer {
 public:
@@ -111,10 +111,9 @@ public:
 	DebugRenderer();
 	~DebugRenderer();
 	
-	bool SetGridBoundaries(const glm::vec3& lower_left, const glm::vec3& upper_right, const float interval);
-	bool SetGridVelocities(const std::vector<glm::vec3>& grid_velocities, const unsigned int grid_dimensions);
-	bool SetGridVelocities(Texture3D& grid_velocities);
-	bool SetGridDye(const Texture3D& grid_dye);
+	void SetGridBoundaries(const glm::vec3& ws_low_bound, const glm::vec3& ws_upper_bound, const float interval);
+	void SetGridVelocities(const std::vector<glm::vec3>& grid_velocities, const unsigned int grid_dimensions);
+	void SetGridVelocities(Texture3D& grid_velocities);
 
 	bool SetParticlePositions(const Texture2D& particle_positions);
 	bool SetParticleVelocities(const Texture2D& particle_velocities);
