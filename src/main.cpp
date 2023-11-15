@@ -308,7 +308,7 @@ void UpdateLoop()
         float deltaTime = new_time - previous_time;
         previous_time = new_time;
         g_cam->Process(deltaTime);
-        if (true) { //g_keys_pressed.size() != 0) { // Very inefficent, but just for testing and sanity check
+        if (g_keys_pressed.size() != 0) {
             UpdateView(g_cam->GetCam()->GetViewMatrix());
             UpdateProjection(g_cam->GetCam()->GetProjectionMatrix());
         }
@@ -316,6 +316,21 @@ void UpdateLoop()
             // Perform new step in simulation
             g_seq_sim->TimeStep(deltaTime);
             g_debug_renderer->SetGridVelocities(*g_seq_sim->GetGridVelocities(), g_seq_sim->GetGridDimensions());
+            if (g_debug_renderer->IsDebugViewActive(DebugRenderer::GRID_CELL)) {
+                switch (g_debug_renderer->GetCellViewActive()) {
+                case DebugRenderer::DYE:
+                    g_debug_renderer->SetGridDyeDensities(*g_seq_sim->GetGridDyeDensities(), g_seq_sim->GetGridDimensions());
+                    break;
+                case DebugRenderer::IS_FLUID:
+                    g_debug_renderer->SetGridDyeDensities(*g_seq_sim->GetGridFluidCells(), g_seq_sim->GetGridDimensions());
+                    break;
+                case DebugRenderer::PRESSURE:
+                    g_debug_renderer->SetGridPressures(*g_seq_sim->GetGridPressures(), g_seq_sim->GetGridDimensions());
+                    break;
+                case DebugRenderer::NONE:
+                    break;
+                }
+            }
             last_time_updated = new_time;
         }
 

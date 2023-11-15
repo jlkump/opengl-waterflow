@@ -161,7 +161,9 @@ public:
 
 	void ToggleDebugView(DebugView view_toggle);
 	bool IsDebugViewActive(DebugView view);
+	void SetDebugCellView(GridCellView view);
 	bool IsCellViewActive(GridCellView view);
+	GridCellView GetCellViewActive();
 	void UpdateFrameTime(float frame_time);
 
 	bool Draw();

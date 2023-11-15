@@ -665,9 +665,19 @@ bool DebugRenderer::IsDebugViewActive(DebugView view)
 	return active_views_.count(view) != 0;
 }
 
+void DebugRenderer::SetDebugCellView(GridCellView view)
+{
+	active_cell_view_ = view;
+}
+
 bool DebugRenderer::IsCellViewActive(GridCellView view)
 {
 	return active_cell_view_ == view;
+}
+
+DebugRenderer::GridCellView DebugRenderer::GetCellViewActive()
+{
+	return active_cell_view_;
 }
 
 bool DebugRenderer::Draw()

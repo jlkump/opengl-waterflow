@@ -11,6 +11,6 @@ uniform mat4 proj_view;
 
 void main()
 {
-	blend = cell_float;
+	blend = cell_float;	
 	gl_Position = proj_view * cell_model * vec4(ls_vert, 1.0);
 }
