@@ -37,6 +37,17 @@ void ConstructAxisAlignedLineMat(glm::mat4& res, const glm::vec3& scale, const g
 	res = glm::scale(glm::translate(glm::mat4(1.0f), start), scale);
 }
 
+void ConstructVectorAlignedModelMat(glm::mat4& res, const glm::vec3& scale, const glm::vec3& pos, const glm::vec3& forward, const glm::vec3& up, const glm::vec3& right) {
+	glm::mat4 rot_mat = glm::mat4(
+		right.x, right.y, right.z, 0.0,
+		up.x, up.y, up.z, 0.0,
+		forward.x, forward.y, forward.z, 0.0,
+		0.0, 0.0, 0.0, 1.0
+	);
+	
+	res = glm::translate(glm::mat4(1.0f), pos) * rot_mat * glm::scale(glm::mat4(1.0f), scale);
+}
+
 void DebugRenderer::UpdateGridLines()
 {
 	static const glm::vec3 grid_line_color = glm::vec3(156.0 / 256.0, 158.0 / 256.0, 136.0 / 256.0);
@@ -318,17 +329,17 @@ void DebugRenderer::SetGridVelocities(const std::vector<glm::vec3>& grid_velocit
 
 				glm::vec3 sample_vel = GetVelocityFrom3DGridCell(grid_velocities, grid_dimensions, x, y, z);
 
-				glm::vec3 x_scale = glm::vec3(sample_vel.x, thickness, thickness);
+				glm::vec3 x_scale = glm::vec3(thickness, sample_vel.x, thickness);
 				glm::vec3 y_scale = glm::vec3(thickness, sample_vel.y, thickness);
-				glm::vec3 z_scale = glm::vec3(thickness, thickness, sample_vel.z);
+				glm::vec3 z_scale = glm::vec3(thickness, sample_vel.z, thickness);
 
 				glm::mat4 x_mat;
 				glm::mat4 y_mat;
 				glm::mat4 z_mat;
 
-				ConstructAxisAlignedLineMat(x_mat, x_scale, x_pos);
-				ConstructAxisAlignedLineMat(y_mat, y_scale, y_pos);
-				ConstructAxisAlignedLineMat(z_mat, z_scale, z_pos);
+				ConstructVectorAlignedModelMat(x_mat, x_scale, x_pos, glm::vec3(0, 1, 0), glm::vec3(1, 0, 0), glm::vec3(0, 0, 1));
+				ConstructVectorAlignedModelMat(y_mat, y_scale, y_pos, glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0, 0, 1));
+				ConstructVectorAlignedModelMat(z_mat, z_scale, z_pos, glm::vec3(1, 0, 0), glm::vec3(1, 0, 0), glm::vec3(0, 1, 0));
 
 				arrow_mats.push_back(x_mat);
 				arrow_mats.push_back(y_mat);
