@@ -2,6 +2,8 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "sequential_simulation.hpp"
+
 void DebugRenderer::MakeInstanceArrow(std::vector<glm::vec3>& verts) {
 	glm::vec3 norm = glm::vec3(0, 0, 1);
 	glm::vec3 start_pos = glm::vec3(0, 0, 0);
@@ -293,129 +295,122 @@ bool DebugRenderer::SetGridVelocities(Texture3D& grid_velocities)
 
 bool DebugRenderer::SetGridVelocities(const std::vector<glm::vec3>& grid_velocities, const unsigned int grid_dimensions)
 {
-	//std::vector<glm::mat4> arrow_mats;
-	//std::vector<glm::vec3> arrow_colors;
-	//const float thickness = 0.01f;
+	std::vector<glm::mat4> arrow_mats;
+	std::vector<glm::vec3> arrow_colors;
+	const float thickness = 0.01f;
 
-	//const glm::vec3 k_x_color = glm::vec3(0.8, 0.4, 4.0);
-	//const glm::vec3 k_y_color = glm::vec3(4.0, 0.8, 4.0);
-	//const glm::vec3 k_z_color = glm::vec3(2.0, 2.0, 0.8);
-	//for (int z = 0; z < grid_dimensions; z++) {
-	//	for (int y = 0; y < grid_dimensions; y++) {
-	//		for (int x = 0; x < grid_dimensions; x++) {
-	//			glm::vec3 x_pos = ws_grid_lower_bound_ + glm::vec3(x, y, z) * ws_grid_cell_size_ + glm::vec3(ws_grid_cell_size_ / 2.0, 0.0, 0.0);
-	//			glm::vec3 y_pos = ws_grid_lower_bound_ + glm::vec3(x, y, z) * ws_grid_cell_size_ + glm::vec3(0.0, ws_grid_cell_size_ / 2.0, 0.0);
-	//			glm::vec3 z_pos = ws_grid_lower_bound_ + glm::vec3(x, y, z) * ws_grid_cell_size_ + glm::vec3(0.0, 0.0, ws_grid_cell_size_ / 2.0);
+	const glm::vec3 k_x_color = glm::vec3(0.8, 0.4, 4.0);
+	const glm::vec3 k_y_color = glm::vec3(4.0, 0.8, 4.0);
+	const glm::vec3 k_z_color = glm::vec3(2.0, 2.0, 0.8);
+	for (int z = 0; z < grid_dimensions; z++) {
+		for (int y = 0; y < grid_dimensions; y++) {
+			for (int x = 0; x < grid_dimensions; x++) {
+				glm::vec3 x_pos = ws_grid_lower_bound_ + glm::vec3(x, y, z) * ws_grid_cell_size_ + glm::vec3(0.0, ws_grid_cell_size_ / 2.0, ws_grid_cell_size_ / 2.0);
+				glm::vec3 y_pos = ws_grid_lower_bound_ + glm::vec3(x, y, z) * ws_grid_cell_size_ + glm::vec3(ws_grid_cell_size_ / 2.0, 0.0, ws_grid_cell_size_ / 2.0);
+				glm::vec3 z_pos = ws_grid_lower_bound_ + glm::vec3(x, y, z) * ws_grid_cell_size_ + glm::vec3(ws_grid_cell_size_ / 2.0, ws_grid_cell_size_ / 2.0, 0.0);
 
-	//			// TODO: Use utility GetVelocityAtGridIndex();
-	//			glm::vec3 sample_vel = grid_velocities[x * grid_dimensions * grid_dimensions + y * grid_dimensions + z];
+				glm::vec3 sample_vel = GetVelocityFrom3DGridCell(grid_velocities, grid_dimensions, x, y, z);
 
-	//			glm::vec3 x_end = x_pos + glm::vec3(sample_vel.x, 0, 0);
-	//			glm::vec3 y_end = y_pos + glm::vec3(0, sample_vel.y, 0);
-	//			glm::vec3 z_end = z_pos + glm::vec3(0, 0, sample_vel.z);
-	//			printf("Placing x vel vector at:\n   pos: [%3.3f, %3.3f, %3.3f]\n   vel: [%3.3f, %3.3f, %3.3f]\n   end_pos: [%3.3f, %3.3f, %3.3f]\n", x_pos.x, x_pos.y, x_pos.z, sample_vel.x, sample_vel.y, sample_vel.z, x_end.x, x_end.y, x_end.z);
-	//			printf("Placing y vel vector at:\n   pos: [%3.3f, %3.3f, %3.3f]\n   vel: [%3.3f, %3.3f, %3.3f]\n   end_pos: [%3.3f, %3.3f, %3.3f]\n", y_pos.x, y_pos.y, y_pos.z, sample_vel.x, sample_vel.y, sample_vel.z, y_end.x, y_end.y, y_end.z);
-	//			printf("Placing z vel vector at:\n   pos: [%3.3f, %3.3f, %3.3f]\n   vel: [%3.3f, %3.3f, %3.3f]\n   end_pos: [%3.3f, %3.3f, %3.3f]\n", z_pos.x, z_pos.y, z_pos.z, sample_vel.x, sample_vel.y, sample_vel.z, z_end.x, z_end.y, z_end.z);
+				glm::vec3 x_scale = glm::vec3(sample_vel.x, thickness, thickness);
+				glm::vec3 y_scale = glm::vec3(thickness, sample_vel.y, thickness);
+				glm::vec3 z_scale = glm::vec3(thickness, thickness, sample_vel.z);
 
-	//			glm::mat4 x_mat;
-	//			glm::vec3 x_scale = glm::vec3(thickness, sample_vel.x, thickness);
-	//			ConstructLineMat(x_scale, x_mat, x_pos, x_end, glm::vec3(0, 0, 1));
+				glm::mat4 x_mat;
+				glm::mat4 y_mat;
+				glm::mat4 z_mat;
 
-	//			glm::mat4 y_mat;
-	//			glm::vec3 y_scale = glm::vec3(thickness, sample_vel.y, thickness);
-	//			ConstructLineMat(y_scale, y_mat, y_pos, y_end, glm::vec3(1, 0, 0));
+				ConstructAxisAlignedLineMat(x_mat, x_scale, x_pos);
+				ConstructAxisAlignedLineMat(y_mat, y_scale, y_pos);
+				ConstructAxisAlignedLineMat(z_mat, z_scale, z_pos);
 
-	//			glm::mat4 z_mat;
-	//			glm::vec3 z_scale = glm::vec3(thickness, sample_vel.z, thickness);
-	//			ConstructLineMat(z_scale, z_mat, z_pos, z_end, glm::vec3(0, 1, 0));
+				arrow_mats.push_back(x_mat);
+				arrow_mats.push_back(y_mat);
+				arrow_mats.push_back(z_mat);
 
-	//			arrow_mats.push_back(x_mat);
-	//			arrow_mats.push_back(y_mat);
-	//			arrow_mats.push_back(z_mat);
-	//			arrow_colors.push_back(k_x_color);
-	//			arrow_colors.push_back(k_y_color);
-	//			arrow_colors.push_back(k_z_color);
+				arrow_colors.push_back(k_x_color);
+				arrow_colors.push_back(k_y_color);
+				arrow_colors.push_back(k_z_color);
 
-	//			if (x + 1 == grid_dimensions) {
-	//				// Add the last two vectors
-	//				y_pos = ws_grid_lower_bound_ + glm::vec3(x, y + 1, z) * ws_grid_cell_size_ + glm::vec3(0.0, ws_grid_cell_size_ / 2.0, 0.0);
-	//				z_pos = ws_grid_lower_bound_ + glm::vec3(x, y, z + 1) * ws_grid_cell_size_ + glm::vec3(0.0, 0.0, ws_grid_cell_size_ / 2.0);
+				//if (x + 1 == grid_dimensions) {
+				//	// Add the last two vectors
+				//	y_pos = ws_grid_lower_bound_ + glm::vec3(x, y + 1, z) * ws_grid_cell_size_ + glm::vec3(0.0, ws_grid_cell_size_ / 2.0, 0.0);
+				//	z_pos = ws_grid_lower_bound_ + glm::vec3(x, y, z + 1) * ws_grid_cell_size_ + glm::vec3(0.0, 0.0, ws_grid_cell_size_ / 2.0);
 
-	//				sample_vel = grid_velocities[(x + 1) * grid_dimensions * grid_dimensions + y * grid_dimensions + z];
-	//				y_end = y_pos + sample_vel.y;
-	//				z_end = z_pos + sample_vel.z;
-	//				printf("Placing extra x vel vector at:\n   pos: [%3.3f, %3.3f, %3.3f]\n   vel: [%3.3f, %3.3f, %3.3f]\n   end_pos: [%3.3f, %3.3f, %3.3f]\n", x_pos.x, x_pos.y, x_pos.z, sample_vel.x, sample_vel.y, sample_vel.z, x_end.x, x_end.y, x_end.z);
-	//				printf("Placing extra z vel vector at:\n   pos: [%3.3f, %3.3f, %3.3f]\n   vel: [%3.3f, %3.3f, %3.3f]\n   end_pos: [%3.3f, %3.3f, %3.3f]\n", z_pos.x, z_pos.y, z_pos.z, sample_vel.x, sample_vel.y, sample_vel.z, z_end.x, z_end.y, z_end.z);
+				//	sample_vel = grid_velocities[(x + 1) * grid_dimensions * grid_dimensions + y * grid_dimensions + z];
+				//	y_end = y_pos + sample_vel.y;
+				//	z_end = z_pos + sample_vel.z;
+				//	printf("Placing extra x vel vector at:\n   pos: [%3.3f, %3.3f, %3.3f]\n   vel: [%3.3f, %3.3f, %3.3f]\n   end_pos: [%3.3f, %3.3f, %3.3f]\n", x_pos.x, x_pos.y, x_pos.z, sample_vel.x, sample_vel.y, sample_vel.z, x_end.x, x_end.y, x_end.z);
+				//	printf("Placing extra z vel vector at:\n   pos: [%3.3f, %3.3f, %3.3f]\n   vel: [%3.3f, %3.3f, %3.3f]\n   end_pos: [%3.3f, %3.3f, %3.3f]\n", z_pos.x, z_pos.y, z_pos.z, sample_vel.x, sample_vel.y, sample_vel.z, z_end.x, z_end.y, z_end.z);
 
-	//				y_scale = glm::vec3(thickness, sample_vel.y, thickness);
-	//				ConstructLineMat(y_scale, y_mat, y_pos, y_end, glm::vec3(0, 1, 0));
+				//	y_scale = glm::vec3(thickness, sample_vel.y, thickness);
+				//	ConstructLineMat(y_scale, y_mat, y_pos, y_end, glm::vec3(0, 1, 0));
 
-	//				z_scale = glm::vec3(thickness, sample_vel.z, thickness);
-	//				ConstructLineMat(z_scale, z_mat, z_pos, z_end, glm::vec3(0, 1, 0));
+				//	z_scale = glm::vec3(thickness, sample_vel.z, thickness);
+				//	ConstructLineMat(z_scale, z_mat, z_pos, z_end, glm::vec3(0, 1, 0));
 
-	//				arrow_mats.push_back(y_mat);
-	//				arrow_mats.push_back(z_mat);
+				//	arrow_mats.push_back(y_mat);
+				//	arrow_mats.push_back(z_mat);
 
-	//				arrow_colors.push_back(k_y_color);
-	//				arrow_colors.push_back(k_z_color);
-	//			}
-	//			if (y + 1 == grid_dimensions) {
-	//				// Add the last two vectors
-	//				x_pos = ws_grid_lower_bound_ + glm::vec3(x + 1, y, z) * ws_grid_cell_size_ + glm::vec3(ws_grid_cell_size_ / 2.0, 0.0, 0.0);
-	//				z_pos = ws_grid_lower_bound_ + glm::vec3(x, y, z + 1) * ws_grid_cell_size_ + glm::vec3(0.0, 0.0, ws_grid_cell_size_ / 2.0);
-	//				sample_vel = grid_velocities[x * grid_dimensions * grid_dimensions + (y + 1) * grid_dimensions + z];
-	//				x_end = x_pos + sample_vel.x;
-	//				z_end = z_pos + sample_vel.z;
+				//	arrow_colors.push_back(k_y_color);
+				//	arrow_colors.push_back(k_z_color);
+				//}
+				//if (y + 1 == grid_dimensions) {
+				//	// Add the last two vectors
+				//	x_pos = ws_grid_lower_bound_ + glm::vec3(x + 1, y, z) * ws_grid_cell_size_ + glm::vec3(ws_grid_cell_size_ / 2.0, 0.0, 0.0);
+				//	z_pos = ws_grid_lower_bound_ + glm::vec3(x, y, z + 1) * ws_grid_cell_size_ + glm::vec3(0.0, 0.0, ws_grid_cell_size_ / 2.0);
+				//	sample_vel = grid_velocities[x * grid_dimensions * grid_dimensions + (y + 1) * grid_dimensions + z];
+				//	x_end = x_pos + sample_vel.x;
+				//	z_end = z_pos + sample_vel.z;
 
-	//				x_scale = glm::vec3(thickness, sample_vel.x, thickness);
-	//				ConstructLineMat(x_scale, x_mat, x_pos, x_end, glm::vec3(0, 0, 1));
+				//	x_scale = glm::vec3(thickness, sample_vel.x, thickness);
+				//	ConstructLineMat(x_scale, x_mat, x_pos, x_end, glm::vec3(0, 0, 1));
 
-	//				z_scale = glm::vec3(thickness, sample_vel.z, thickness);
-	//				ConstructLineMat(z_scale, z_mat, z_pos, z_end, glm::vec3(0, 1, 0));
+				//	z_scale = glm::vec3(thickness, sample_vel.z, thickness);
+				//	ConstructLineMat(z_scale, z_mat, z_pos, z_end, glm::vec3(0, 1, 0));
 
-	//				arrow_mats.push_back(x_mat);
-	//				arrow_mats.push_back(z_mat);
+				//	arrow_mats.push_back(x_mat);
+				//	arrow_mats.push_back(z_mat);
 
-	//				arrow_colors.push_back(k_x_color);
-	//				arrow_colors.push_back(k_z_color);
-	//			}
-	//			if (z + 1 == grid_dimensions) {
-	//				// Add the last two vectors
-	//				x_pos = ws_grid_lower_bound_ + glm::vec3(x + 1, y, z) * ws_grid_cell_size_ + glm::vec3(ws_grid_cell_size_ / 2.0, 0.0, 0.0);
-	//				y_pos = ws_grid_lower_bound_ + glm::vec3(x, y + 1, z) * ws_grid_cell_size_ + glm::vec3(0.0, ws_grid_cell_size_ / 2.0, 0.0);
-	//				sample_vel = grid_velocities[x * grid_dimensions * grid_dimensions + y * grid_dimensions + (z + 1)];
-	//				x_end = x_pos + sample_vel.x;
-	//				y_end = y_pos + sample_vel.y;
+				//	arrow_colors.push_back(k_x_color);
+				//	arrow_colors.push_back(k_z_color);
+				//}
+				//if (z + 1 == grid_dimensions) {
+				//	// Add the last two vectors
+				//	x_pos = ws_grid_lower_bound_ + glm::vec3(x + 1, y, z) * ws_grid_cell_size_ + glm::vec3(ws_grid_cell_size_ / 2.0, 0.0, 0.0);
+				//	y_pos = ws_grid_lower_bound_ + glm::vec3(x, y + 1, z) * ws_grid_cell_size_ + glm::vec3(0.0, ws_grid_cell_size_ / 2.0, 0.0);
+				//	sample_vel = grid_velocities[x * grid_dimensions * grid_dimensions + y * grid_dimensions + (z + 1)];
+				//	x_end = x_pos + sample_vel.x;
+				//	y_end = y_pos + sample_vel.y;
 
-	//				x_scale = glm::vec3(thickness, sample_vel.x, thickness);
-	//				ConstructLineMat(x_scale, x_mat, x_pos, x_end, glm::vec3(0, 0, 1));
+				//	x_scale = glm::vec3(thickness, sample_vel.x, thickness);
+				//	ConstructLineMat(x_scale, x_mat, x_pos, x_end, glm::vec3(0, 0, 1));
 
-	//				y_scale = glm::vec3(thickness, sample_vel.y, thickness);
-	//				ConstructLineMat(y_scale, y_mat, y_pos, y_end, glm::vec3(1, 0, 0));
+				//	y_scale = glm::vec3(thickness, sample_vel.y, thickness);
+				//	ConstructLineMat(y_scale, y_mat, y_pos, y_end, glm::vec3(1, 0, 0));
 
-	//				arrow_mats.push_back(x_mat);
-	//				arrow_mats.push_back(y_mat);
+				//	arrow_mats.push_back(x_mat);
+				//	arrow_mats.push_back(y_mat);
 
-	//				arrow_colors.push_back(k_x_color);
-	//				arrow_colors.push_back(k_y_color);
-	//			}
-	//		}
-	//	}
-	//}
+				//	arrow_colors.push_back(k_x_color);
+				//	arrow_colors.push_back(k_y_color);
+				//}
+			}
+		}
+	}
 
 
-	//glBindVertexArray(VAO_grid_arrows_);
-	//// load data into vertex buffers
-	//grid_arrow_elements_ = arrow_mats.size();
-	//glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_arrow_mats_);
-	//glBufferData(GL_ARRAY_BUFFER, MAX_DEBUG_GRID_ARROWS * sizeof(glm::mat4), NULL, GL_STREAM_DRAW);
-	//glBufferSubData(GL_ARRAY_BUFFER, 0, arrow_mats.size() * sizeof(glm::mat4), (void*)&arrow_mats[0]);
+	glBindVertexArray(VAO_grid_arrows_);
+	// load data into vertex buffers
+	grid_arrow_elements_ = arrow_mats.size();
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_arrow_mats_);
+	glBufferData(GL_ARRAY_BUFFER, MAX_DEBUG_GRID_ARROWS * sizeof(glm::mat4), NULL, GL_STREAM_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, arrow_mats.size() * sizeof(glm::mat4), (void*)&arrow_mats[0]);
 
-	//glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_arrow_colors_);
-	//glBufferData(GL_ARRAY_BUFFER, MAX_DEBUG_GRID_ARROWS * sizeof(glm::vec3), NULL, GL_STREAM_DRAW);
-	//glBufferSubData(GL_ARRAY_BUFFER, 0, arrow_colors.size() * sizeof(glm::vec3), (void*)&arrow_colors[0]);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_arrow_colors_);
+	glBufferData(GL_ARRAY_BUFFER, MAX_DEBUG_GRID_ARROWS * sizeof(glm::vec3), NULL, GL_STREAM_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, arrow_colors.size() * sizeof(glm::vec3), (void*)&arrow_colors[0]);
 
-	//glBindVertexArray(0);
+	glBindVertexArray(0);
 
 
 	return true;
