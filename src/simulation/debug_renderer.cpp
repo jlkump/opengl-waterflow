@@ -56,39 +56,45 @@ void DebugRenderer::UpdateGridLines()
 					//printf("   Drawing x line\n");
 					ConstructAxisAlignedLineMat(mat, glm::vec3(ws_grid_cell_size_ / 3.0, k_line_thickness, k_line_thickness), glm::vec3(x, y, z));
 					line_mats.push_back(mat);
-					line_color.push_back(glm::vec3(1, 0, 0));
+					line_color.push_back(grid_line_color);
+					//line_color.push_back(glm::vec3(1, 0, 0));
 				}
 
 				if (x > ws_grid_lower_bound_.x) {
 					ConstructAxisAlignedLineMat(mat, glm::vec3(-ws_grid_cell_size_ / 3.0, k_line_thickness, k_line_thickness), glm::vec3(x, y, z));
 					line_mats.push_back(mat);
-					line_color.push_back(glm::vec3(0, 1, 1));
+					line_color.push_back(grid_line_color);
+					//line_color.push_back(glm::vec3(0, 1, 1));
 				}
 
 				if (y < ws_grid_upper_bound_.y) {
 					//printf("   Drawing y line\n");
 					ConstructAxisAlignedLineMat(mat, glm::vec3(k_line_thickness, ws_grid_cell_size_ / 3.0, k_line_thickness), glm::vec3(x, y, z));
 					line_mats.push_back(mat);
-					line_color.push_back(glm::vec3(0, 1, 0));
+					line_color.push_back(grid_line_color);
+					//line_color.push_back(glm::vec3(0, 1, 0));
 				}
 
 				if (y > ws_grid_lower_bound_.y) {
 					ConstructAxisAlignedLineMat(mat, glm::vec3(k_line_thickness, -ws_grid_cell_size_ / 3.0, k_line_thickness), glm::vec3(x, y, z));
 					line_mats.push_back(mat);
-					line_color.push_back(glm::vec3(1, 0, 1));
+					line_color.push_back(grid_line_color);
+					//line_color.push_back(glm::vec3(1, 0, 1));
 				}
 
 				if (z < ws_grid_upper_bound_.z) {
 					//printf("   Drawing z line\n");
 					ConstructAxisAlignedLineMat(mat, glm::vec3(k_line_thickness, k_line_thickness, ws_grid_cell_size_ / 3.0), glm::vec3(x, y, z));
 					line_mats.push_back(mat);
-					line_color.push_back(glm::vec3(0, 0, 1));
+					line_color.push_back(grid_line_color);
+					//line_color.push_back(glm::vec3(0, 0, 1));
 				}
 
 				if (z > ws_grid_lower_bound_.z) {
 					ConstructAxisAlignedLineMat(mat, glm::vec3(k_line_thickness, k_line_thickness, -ws_grid_cell_size_ / 3.0), glm::vec3(x, y, z));
 					line_mats.push_back(mat);
-					line_color.push_back(glm::vec3(1, 1, 0));
+					line_color.push_back(grid_line_color);
+					//line_color.push_back(glm::vec3(1, 1, 0));
 				}
 			}
 		}
@@ -298,11 +304,11 @@ void DebugRenderer::SetGridVelocities(const std::vector<glm::vec3>& grid_velocit
 	std::vector<glm::vec3> arrow_colors;
 	const float thickness = 0.01f;
 
-	const glm::vec3 k_x_color = glm::vec3(0.8, 0.4, 1.0);
-	const glm::vec3 k_y_color = glm::vec3(1.0, 0.8, 1.0);
-	const glm::vec3 k_z_color = glm::vec3(1.0, 1.0, 0.8);
-	arrow_mats.push_back(glm::scale(glm::mat4(1.0f), glm::vec3(thickness, 1.0f, thickness)));
-	arrow_colors.push_back(glm::vec3(0.3, 0.4, 1.0));
+	const glm::vec3 k_x_color = glm::vec3(0.8, 0.2, 0.2);
+	const glm::vec3 k_y_color = glm::vec3(0.2, 0.8, 0.2);
+	const glm::vec3 k_z_color = glm::vec3(0.2, 0.2, 0.8);
+	//arrow_mats.push_back(glm::scale(glm::mat4(1.0f), glm::vec3(thickness, 1.0f, thickness)));
+	//arrow_colors.push_back(glm::vec3(0.3, 0.4, 1.0));
 	for (int z = 0; z < grid_dimensions; z++) {
 		for (int y = 0; y < grid_dimensions; y++) {
 			for (int x = 0; x < grid_dimensions; x++) {
