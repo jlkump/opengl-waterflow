@@ -5,30 +5,32 @@
 #include "sequential_simulation.hpp"
 
 void DebugRenderer::MakeInstanceArrow(std::vector<glm::vec3>& verts) {
-	glm::vec3 norm = glm::vec3(0, 0, 1);
-	glm::vec3 start_pos = glm::vec3(0, 0, 0);
-	glm::vec3 end_pos = glm::vec3(0, 1, 0);
-	glm::vec3 arrow_head_start = glm::vec3(0, 0.95, 0.0);
-	float arrow_wideness = 0.05f;
-	const float k_thickness = 0.01f;
+	float arrow_head_start = 0.95f;
+	float line_thickness_relative = 0.8f;
+	float arrow_wideness = 1.5;
+	for (int i = 0; i < 36; i++) {
+		verts.push_back(glm::vec3(
+			((k_line_instance_verts_[i * 3] * 2.0f) - 1.0f) * line_thickness_relative, 
+			k_line_instance_verts_[i * 3 + 1] * arrow_head_start, 
+			((k_line_instance_verts_[i * 3 + 2] * 2.0f) - 1.0f) * line_thickness_relative));
+	}
+	verts.push_back(glm::vec3(-arrow_wideness, arrow_head_start, -arrow_wideness));
+	verts.push_back(glm::vec3(-arrow_wideness, arrow_head_start, arrow_wideness));
+	verts.push_back(glm::vec3(0, 1, 0));
 
-	glm::vec3 x_offset = glm::vec3(k_thickness, 0, 0);
-	verts.push_back(start_pos - x_offset);
-	verts.push_back(start_pos + x_offset);
-	verts.push_back(end_pos + x_offset);
-	verts.push_back(end_pos - x_offset);
-	verts.push_back(end_pos + x_offset);
-	verts.push_back(start_pos - x_offset);
+	verts.push_back(glm::vec3(-arrow_wideness, arrow_head_start, -arrow_wideness));
+	verts.push_back(glm::vec3(arrow_wideness, arrow_head_start, -arrow_wideness));
+	verts.push_back(glm::vec3(0, 1, 0));
 
-	glm::vec3 z_offset = glm::vec3(0, 0, k_thickness);
-	verts.push_back(start_pos - x_offset + z_offset);
-	verts.push_back(start_pos + x_offset + z_offset);
-	verts.push_back(end_pos + x_offset + z_offset);
-	verts.push_back(end_pos - x_offset + z_offset);
-	verts.push_back(end_pos + x_offset + z_offset);
-	verts.push_back(start_pos - x_offset + z_offset);
+	verts.push_back(glm::vec3(-arrow_wideness, arrow_head_start, arrow_wideness));
+	verts.push_back(glm::vec3(arrow_wideness, arrow_head_start, arrow_wideness));
+	verts.push_back(glm::vec3(0, 1, 0));
 
+	verts.push_back(glm::vec3(arrow_wideness, arrow_head_start, -arrow_wideness));
+	verts.push_back(glm::vec3(arrow_wideness, arrow_head_start, arrow_wideness));
+	verts.push_back(glm::vec3(0, 1, 0));
 
+	grid_arrow_instance_num_ = verts.size();
 }
 
 void ConstructAxisAlignedLineMat(glm::mat4& res, const glm::vec3& scale, const glm::vec3& start) {
@@ -205,11 +207,10 @@ void DebugRenderer::SetupGridVelocityBuffers() {
 
 	std::vector<glm::vec3> instance_arrow_verts;
 	MakeInstanceArrow(instance_arrow_verts);
-	grid_arrow_instance_num_ = instance_arrow_verts.size();
 
 	glBindVertexArray(VAO_grid_arrows_);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO_grid_arrow_instances_);
-	glBufferData(GL_ARRAY_BUFFER, 36 * sizeof(glm::vec3), &k_line_instance_verts_[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, instance_arrow_verts.size() * sizeof(glm::vec3), &instance_arrow_verts[0], GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
@@ -297,9 +298,11 @@ void DebugRenderer::SetGridVelocities(const std::vector<glm::vec3>& grid_velocit
 	std::vector<glm::vec3> arrow_colors;
 	const float thickness = 0.01f;
 
-	const glm::vec3 k_x_color = glm::vec3(0.8, 0.4, 4.0);
-	const glm::vec3 k_y_color = glm::vec3(4.0, 0.8, 4.0);
-	const glm::vec3 k_z_color = glm::vec3(2.0, 2.0, 0.8);
+	const glm::vec3 k_x_color = glm::vec3(0.8, 0.4, 1.0);
+	const glm::vec3 k_y_color = glm::vec3(1.0, 0.8, 1.0);
+	const glm::vec3 k_z_color = glm::vec3(1.0, 1.0, 0.8);
+	arrow_mats.push_back(glm::scale(glm::mat4(1.0f), glm::vec3(thickness, 1.0f, thickness)));
+	arrow_colors.push_back(glm::vec3(0.3, 0.4, 1.0));
 	for (int z = 0; z < grid_dimensions; z++) {
 		for (int y = 0; y < grid_dimensions; y++) {
 			for (int x = 0; x < grid_dimensions; x++) {
@@ -472,7 +475,7 @@ bool DebugRenderer::Draw()
 		case GRID_VELOCITIES:
 			debug_line_shader_.SetActive();
 			glBindVertexArray(VAO_grid_arrows_);
-			glDrawArraysInstanced(GL_TRIANGLES, 0, 36, grid_arrow_elements_);
+			glDrawArraysInstanced(GL_TRIANGLES, 0, grid_arrow_instance_num_, grid_arrow_elements_);
 			glBindVertexArray(0);
 			break;
 		case GRID_DYE:
