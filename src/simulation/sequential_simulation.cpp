@@ -52,11 +52,7 @@ SequentialGridBased::SequentialGridBased()
 					SetVelocityIn3DGridCell(velocities_, grid_dim_, x, y, z, glm::vec3(0, 0, 0));
 				} else {
 					is_fluid_[x * grid_dim_ * grid_dim_ + y * grid_dim_ + z] = 1.0f;
-					if (x >= 2) {
-						SetVelocityIn3DGridCell(velocities_, grid_dim_, x, y, z, glm::vec3(-0.2f, 0, 0));
-					} else {
-						SetVelocityIn3DGridCell(velocities_, grid_dim_, x, y, z, glm::vec3(0.0, 0, 0));
-					}
+					SetVelocityIn3DGridCell(velocities_, grid_dim_, x, y, z, glm::vec3(-0.2f, 0.4f, 0.1f));
 				}
 			}
 		}

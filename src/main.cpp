@@ -160,6 +160,11 @@ void WindowKeyCallback(GLFWwindow* window, int key, int scancode, int action, in
             g_debug_renderer->ToggleDebugView(DebugRenderer::GRID_VELOCITIES);
         }
     }
+    if (key == GLFW_KEY_B) {
+        if (action == GLFW_PRESS) {
+            g_debug_renderer->ToggleDebugView(DebugRenderer::GRID_AXIS_VELOCITIES);
+        }
+    }
     if (key == GLFW_KEY_O) {
         if (action == GLFW_PRESS) {
             g_debug_renderer->ToggleDebugView(DebugRenderer::ORIGIN);

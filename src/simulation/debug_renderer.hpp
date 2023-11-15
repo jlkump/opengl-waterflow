@@ -9,6 +9,7 @@
 #include "../rendering/display_text.hpp"
 
 #define MAX_DEBUG_GRID_ARROWS 4096
+#define MAX_DEBUG_AXIS_GRID_ARROWS 4096
 #define MAX_DEBUG_GRID_LINES 4096
 
 class DebugRenderer {
@@ -17,6 +18,7 @@ public:
 		ORIGIN,
 		GRID,
 		GRID_VELOCITIES,
+		GRID_AXIS_VELOCITIES,
 		GRID_DYE,
 		PARTICLES,
 		PARTICLE_VELOCITIES,
@@ -81,10 +83,17 @@ private:
 	// Instance an arrow for each velocity
 	Shader debug_grid_vel_shader_;
 	GLuint VAO_grid_arrows_;
-	GLuint VBO_grid_arrow_instances_;
+	GLuint VBO_grid_arrow_instance_;
 	GLuint VBO_grid_arrow_mats_;
 	GLuint VBO_grid_arrow_colors_;
+
+	GLuint VAO_grid_axis_arrows_;
+	GLuint VBO_grid_axis_arrow_instance_;
+	GLuint VBO_grid_axis_arrow_mats_;
+	GLuint VBO_grid_axis_arrow_colors_;
+
 	int grid_arrow_elements_;
+	int grid_axis_arrow_elements_;
 	int grid_arrow_instance_num_;
 
 	glm::ivec3 vel_texture_dimensions_;
@@ -101,11 +110,14 @@ private:
 
 
 	void UpdateGridLines();
+	void UpdateGridAxisVelocities(const std::vector<glm::vec3>& velocities, const unsigned int grid_dim);
+	void UpdateGridVelocities(const std::vector<glm::vec3>& velocities, const unsigned int grid_dim);
 
 	void SetupOriginBuffers();
 	void SetupGridLineBuffers();
 	void MakeInstanceArrow(std::vector<glm::vec3>& verts);
 	void SetupGridVelocityBuffers();
+	void SetupGridAxisVelocityBuffers();
 
 public:
 	DebugRenderer();
