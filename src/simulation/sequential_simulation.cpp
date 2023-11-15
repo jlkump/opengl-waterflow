@@ -48,10 +48,10 @@ SequentialGridBased::SequentialGridBased()
 		for (int y = 0; y < grid_dim_; y++) {
 			for (int z = 0; z < grid_dim_; z++) {
 				if (x == 0 || y == 0 || z == 0 || x + 1 == grid_dim_ || y + 1 == grid_dim_ || z + 1 == grid_dim_) {
-					is_fluid_[x * grid_dim_ * grid_dim_ + y * grid_dim_ + z] = false;
+					is_fluid_[x * grid_dim_ * grid_dim_ + y * grid_dim_ + z] = 0.0f;
 					SetVelocityIn3DGridCell(velocities_, grid_dim_, x, y, z, glm::vec3(0, 0, 0));
 				} else {
-					is_fluid_[x * grid_dim_ * grid_dim_ + y * grid_dim_ + z] = true;
+					is_fluid_[x * grid_dim_ * grid_dim_ + y * grid_dim_ + z] = 1.0f;
 					if (x >= 2) {
 						SetVelocityIn3DGridCell(velocities_, grid_dim_, x, y, z, glm::vec3(-0.2f, 0, 0));
 					} else {
