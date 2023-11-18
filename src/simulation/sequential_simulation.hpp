@@ -17,6 +17,7 @@ public:
 	virtual std::vector<float>* GetGridDyeDensities() = 0;
 	virtual std::vector<float>* GetGridFluidCells() = 0;
 	virtual std::vector<glm::vec3>* GetParticleVelocities() = 0;
+	virtual std::vector<glm::vec3>* GetParticlePositions() = 0;
 };
 
 class SequentialGridBased : public Simulation {
@@ -64,6 +65,10 @@ public:
 	virtual std::vector<float>* GetGridPressures();
 	virtual std::vector<float>* GetGridDyeDensities();
 	virtual std::vector<float>* GetGridFluidCells();
+};
+
+class SequentialParticleBased : public SequentialGridBased {
+
 };
 
 /**

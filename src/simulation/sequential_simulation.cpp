@@ -374,9 +374,7 @@ void SequentialGridBased::SetInitialVelocities(const std::vector<glm::vec3>& ini
 void SequentialGridBased::TimeStep(float delta)
 {
 	Integrate(delta, glm::vec3(0.0, -9.8, 0.0));
-
 	SolveIncompressability(delta);
-
 	BorderConditionUpdate();
 	AdvectVelocity(delta);
 }
