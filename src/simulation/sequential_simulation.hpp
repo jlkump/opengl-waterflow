@@ -6,7 +6,7 @@
 
 class Simulation {
 public:
-	virtual void SetInitialVelocities(const std::vector<glm::vec3>& initial, glm::vec3 lower_bound, glm::vec3 upper_bound) = 0;
+	virtual void SetInitialVelocities(const std::vector<glm::vec3>& initial, glm::vec3 lower_bound, glm::vec3 upper_bound, float interval) = 0;
 	virtual void TimeStep(float delta) = 0;
 	virtual std::vector<glm::vec3>* GetGridVelocities() = 0;
 	virtual unsigned int GetGridDimensions() = 0;
@@ -22,12 +22,20 @@ public:
 
 class SequentialGridBased : public Simulation {
 private:
+protected:
+	enum CellType {
+		SOLID,
+		FLUID,
+		AIR
+	};
+
 	glm::vec3 ws_lower_bound_;
 	glm::vec3 ws_upper_bound_;
 	float ws_grid_interval_;
 
 	unsigned int grid_dim_;
 	std::vector<glm::vec3> velocities_;
+	std::vector<CellType> cell_types_;
 	std::vector<float> is_fluid_;
 	std::vector<float> pressures_;
 	std::vector<float> dye_density_;
@@ -54,7 +62,7 @@ public:
 	SequentialGridBased();
 	~SequentialGridBased();
 
-	virtual void SetInitialVelocities(const std::vector<glm::vec3>& initial, glm::vec3 lower_bound, glm::vec3 upper_bound);
+	virtual void SetInitialVelocities(const std::vector<glm::vec3>& initial, glm::vec3 lower_bound, glm::vec3 upper_bound, float interval);
 	virtual void TimeStep(float delta);
 	virtual std::vector<glm::vec3>* GetGridVelocities();
 	virtual unsigned int GetGridDimensions();
@@ -62,13 +70,32 @@ public:
 	virtual glm::vec3 GetGridLowerBounds();
 	virtual float GetGrindInterval();
 	virtual std::vector<glm::vec3>* GetParticleVelocities();
+	virtual std::vector<glm::vec3>* GetParticlePositions();
 	virtual std::vector<float>* GetGridPressures();
 	virtual std::vector<float>* GetGridDyeDensities();
 	virtual std::vector<float>* GetGridFluidCells();
 };
 
 class SequentialParticleBased : public SequentialGridBased {
+private:
+	std::vector<glm::vec3> particle_pos_;
+	std::vector<glm::vec3> particle_vel_;
+	std::vector<glm::vec3> particle_densities_;
+	std::vector<glm::vec3> delta_velocities_;
+	bool seperate_particles_;
 
+	void IntegrateParticles(float delta, glm::vec3 accel);
+	void PushApartParticles();
+	void TransferVelocitiesToGrid();
+	void TransferVelocitiesToParticles(float flip_ratio);
+
+public:
+	SequentialParticleBased();
+	~SequentialParticleBased();
+	virtual void SetInitialVelocities(const std::vector<glm::vec3>& initial, glm::vec3 lower_bound, glm::vec3 upper_bound, float interval);
+	virtual void TimeStep(float delta);
+	virtual std::vector<glm::vec3>* GetParticleVelocities();
+	virtual std::vector<glm::vec3>* GetParticlePositions();
 };
 
 /**
