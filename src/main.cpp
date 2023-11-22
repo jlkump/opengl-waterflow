@@ -34,6 +34,7 @@
 #include "rendering/display_text.hpp"
 #include "simulation/debug_renderer.hpp"
 #include "rendering/fps_camera.hpp"
+#include "simulation/sequential_simulation.hpp"
 
 GLFWwindow* window;
 const int kWindowWidth = 1024;
@@ -42,6 +43,7 @@ const int kWindowHeight = 768;
 FPSCamera* g_cam = nullptr;
 Skybox* g_skybox = nullptr;
 DebugRenderer* g_debug_renderer = nullptr;
+Simulation* g_seq_sim = nullptr;
 bool g_simulate = false;
 std::set<int> g_keys_pressed;
 
@@ -158,9 +160,51 @@ void WindowKeyCallback(GLFWwindow* window, int key, int scancode, int action, in
             g_debug_renderer->ToggleDebugView(DebugRenderer::GRID_VELOCITIES);
         }
     }
+    if (key == GLFW_KEY_B) {
+        if (action == GLFW_PRESS) {
+            g_debug_renderer->ToggleDebugView(DebugRenderer::GRID_AXIS_VELOCITIES);
+        }
+    }
     if (key == GLFW_KEY_O) {
         if (action == GLFW_PRESS) {
             g_debug_renderer->ToggleDebugView(DebugRenderer::ORIGIN);
+        }
+    }
+    if (key == GLFW_KEY_P) {
+        if (action == GLFW_PRESS) {
+            g_simulate = !g_simulate;
+        }
+    }
+    if (key == GLFW_KEY_1) {
+        if (action == GLFW_PRESS) {
+            if (g_seq_sim != nullptr && g_seq_sim->GetGridPressures() != nullptr) {
+                if (g_debug_renderer->IsCellViewActive(DebugRenderer::PRESSURE) || !g_debug_renderer->IsDebugViewActive(DebugRenderer::GRID_CELL)) {
+                    g_debug_renderer->ToggleDebugView(DebugRenderer::GRID_CELL);
+                }
+                g_debug_renderer->SetGridPressures(*g_seq_sim->GetGridPressures(), g_seq_sim->GetGridDimensions());
+            }
+        }
+    }
+    if (key == GLFW_KEY_2) {
+        if (action == GLFW_PRESS) {
+            if (g_seq_sim != nullptr && g_seq_sim->GetGridDyeDensities() != nullptr) {
+                if (g_debug_renderer->IsCellViewActive(DebugRenderer::DYE) || !g_debug_renderer->IsDebugViewActive(DebugRenderer::GRID_CELL)) {
+                    g_debug_renderer->ToggleDebugView(DebugRenderer::GRID_CELL);
+                }
+                g_debug_renderer->SetGridDyeDensities(*g_seq_sim->GetGridDyeDensities(), g_seq_sim->GetGridDimensions());
+            }
+        }
+    }
+    if (key == GLFW_KEY_3) {
+        if (action == GLFW_PRESS) {
+            if (g_seq_sim != nullptr && g_seq_sim->GetGridFluidCells() != nullptr) {
+                printf("Displaying fluid cells\n");
+                if (g_debug_renderer->IsCellViewActive(DebugRenderer::IS_FLUID) || !g_debug_renderer->IsDebugViewActive(DebugRenderer::GRID_CELL)) {
+                    printf("Toggling cell display\n");
+                    g_debug_renderer->ToggleDebugView(DebugRenderer::GRID_CELL);
+                }
+                g_debug_renderer->SetGridFluidCells(*g_seq_sim->GetGridFluidCells(), g_seq_sim->GetGridDimensions());
+            }
         }
     }
 }
@@ -209,6 +253,7 @@ bool Init() {
     glViewport(0, 0, kWindowWidth, kWindowHeight);
 
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
     glDepthFunc(GL_LESS);
 
     return true;
@@ -222,20 +267,11 @@ bool LoadContent()
     /* Create Skybox for scene */
     g_skybox = new Skybox({ "skybox/right.jpg", "skybox/left.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/front.jpg", "skybox/back.jpg" });
 
+    g_seq_sim = new SequentialGridBased();
+
     g_debug_renderer = new DebugRenderer();
-    g_debug_renderer->SetGridBoundaries(glm::vec3(-0.5, -0.5, -0.5), glm::vec3(0.5, 0.5, 0.5), 0.5f);
-    std::vector<glm::vec3> velocities = {
-        glm::vec3(0.2f, 0.2f, 0.2f),
-        glm::vec3(0.3f, 0.3f, 0.3f),
-        glm::vec3(0.4f, 0.4f, 0.4f), // Imaginary
-        glm::vec3(0.5f, 0.5f, 0.5f),
-        glm::vec3(0.6f, 0.6f, 0.6f),
-        glm::vec3(0.7f, 0.7f, 0.7f), // Imaginary
-        glm::vec3(0.8f, 0.8f, 0.8f), // Imaginary
-        glm::vec3(0.9f, 0.9f, 0.9f), // Imaginary
-        glm::vec3(20.2f, 20.2f, 20.2f)  // Imaginary
-    };
-    g_debug_renderer->SetGridVelocities(velocities, 2);
+    g_debug_renderer->SetGridBoundaries(g_seq_sim->GetGridLowerBounds(), g_seq_sim->GetGridUpperBounds(), g_seq_sim->GetGrindInterval());
+    g_debug_renderer->SetGridVelocities(*g_seq_sim->GetGridVelocities(), g_seq_sim->GetGridDimensions());
 
 
     UpdateView(g_cam->GetCam()->GetViewMatrix());
@@ -249,7 +285,7 @@ void UpdateLoop()
     float previous_time = static_cast<float>(glfwGetTime());
     float new_time = 0.0f;
     float last_time_updated = 0.0f;
-    float time_step = 1.0f;
+    float time_step = 0.1f;
     
 
     /* Loop until the user closes the window or presses ESC */
@@ -272,12 +308,29 @@ void UpdateLoop()
         float deltaTime = new_time - previous_time;
         previous_time = new_time;
         g_cam->Process(deltaTime);
-        if (true) { //g_keys_pressed.size() != 0) { // Very inefficent, but just for testing and sanity check
+        if (g_keys_pressed.size() != 0) {
             UpdateView(g_cam->GetCam()->GetViewMatrix());
             UpdateProjection(g_cam->GetCam()->GetProjectionMatrix());
         }
         if (new_time - last_time_updated >= time_step && g_simulate) {
             // Perform new step in simulation
+            g_seq_sim->TimeStep(deltaTime);
+            g_debug_renderer->SetGridVelocities(*g_seq_sim->GetGridVelocities(), g_seq_sim->GetGridDimensions());
+            if (g_debug_renderer->IsDebugViewActive(DebugRenderer::GRID_CELL)) {
+                switch (g_debug_renderer->GetCellViewActive()) {
+                case DebugRenderer::DYE:
+                    g_debug_renderer->SetGridDyeDensities(*g_seq_sim->GetGridDyeDensities(), g_seq_sim->GetGridDimensions());
+                    break;
+                case DebugRenderer::IS_FLUID:
+                    g_debug_renderer->SetGridDyeDensities(*g_seq_sim->GetGridFluidCells(), g_seq_sim->GetGridDimensions());
+                    break;
+                case DebugRenderer::PRESSURE:
+                    g_debug_renderer->SetGridPressures(*g_seq_sim->GetGridPressures(), g_seq_sim->GetGridDimensions());
+                    break;
+                case DebugRenderer::NONE:
+                    break;
+                }
+            }
             last_time_updated = new_time;
         }
 
