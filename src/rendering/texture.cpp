@@ -43,6 +43,10 @@ Texture2D::Texture2D(glm::ivec2 dimensions, StorageType storage_type, ChannelTyp
 			gl_channel_type_ = GL_RGB;
 			format = GL_RGB;
 			break;
+		case ChannelType::RGB32F:
+			gl_channel_type_ = GL_RGB32F;
+			format = GL_RGB;
+			break;
 		case ChannelType::RGBA:
 			gl_channel_type_ = GL_RGBA;
 			format = GL_RGBA;

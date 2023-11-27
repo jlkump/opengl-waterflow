@@ -428,13 +428,11 @@ float SequentialGridBased::GetGrindInterval()
 
 std::vector<glm::vec3>* SequentialGridBased::GetParticleVelocities()
 {
-	printf(">>> getting particles velocities from sequential GRID based\n");
 	return nullptr;
 }
 
 std::vector<glm::vec3>* SequentialGridBased::GetParticlePositions()
 {
-	printf(">>> getting particles positions from sequential GRID based\n");
 	return nullptr;
 }
 
@@ -667,9 +665,6 @@ void SequentialParticleBased::TransferVelocitiesToGrid()
 
 void SequentialParticleBased::TransferVelocitiesToParticles(float flip_ratio)
 {
-
-
-
 	enum CompType {
 		X, Y, Z
 	};

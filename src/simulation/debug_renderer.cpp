@@ -630,8 +630,8 @@ void DebugRenderer::SetGridFluidCells(const std::vector<float>& grid_fluid, cons
 bool DebugRenderer::SetParticlePositions(const Texture2D& particle_positions)
 {
 	// TODO: handle the const
-	Texture2D particle_positions_copy = particle_positions;
-	pic_flip_renderer_->UpdateParticlePositionsTexture(particle_positions_copy);
+	//Texture2D& particle_positions_copy = particle_positions;
+	pic_flip_renderer_->UpdateParticlePositionsTexture(const_cast<Texture2D&>(particle_positions));
 	return true;
 }
 

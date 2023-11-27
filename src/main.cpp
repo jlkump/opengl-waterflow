@@ -281,6 +281,7 @@ bool LoadContent()
     /* Create Skybox for scene */
     g_skybox = new Skybox({ "skybox/right.jpg", "skybox/left.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/front.jpg", "skybox/back.jpg" });
 
+    /* Create the simulation */
     //g_seq_sim = new SequentialGridBased();
     g_seq_sim = new SequentialParticleBased();
     std::vector<glm::vec3> initialParticleVelocities(8 * 8);
@@ -294,29 +295,20 @@ bool LoadContent()
         0.5f
     );
     glm::ivec2 particle_tex_dimen(8, 8);
-    std::vector<glm::vec3>& temp_positions = *g_seq_sim->GetParticlePositions();
-    std::vector<glm::vec3>& temp_velocities = *g_seq_sim->GetParticleVelocities();
+    std::vector<glm::vec3>& positions = *g_seq_sim->GetParticlePositions();
+    std::vector<glm::vec3>& velocities = *g_seq_sim->GetParticleVelocities();
 
-    std::vector<glm::vec4> positions;
-    //std::vector<glm::vec4> velocities(temp_velocities.size());
-    for (const glm::vec3& pos : temp_positions) {
-        //positions.emplace_back(pos.x, pos.y, pos.z, 1);
-        positions.emplace_back(0, 0, 0, 1);
-    }
-    for (const glm::vec4& pos : positions) {
-        printf("\t- pos = (%f, %f, %f, %f)\n", pos.x, pos.y, pos.z, pos.w);
-    }
-
-    Texture2D texture_positions(particle_tex_dimen, StorageType::TEX_FLOAT, ChannelType::RGBA32F, (const float*)&positions[0]);
-    //Texture2D texture_velocities(particle_tex_dimen, StorageType::TEX_FLOAT, ChannelType::RGBA32F, (const float*)&velocities[0]);
-    printf("Number of particle positions = %ld\n", positions.size());
+    Texture2D texture_positions(particle_tex_dimen, StorageType::TEX_FLOAT, ChannelType::RGB32F, (const float*)&positions[0]);
+    Texture2D texture_velocities(particle_tex_dimen, StorageType::TEX_FLOAT, ChannelType::RGB32F, (const float*)&velocities[0]);
+    //printf("Number of particle positions = %ld\n", positions.size());
     //printf("Number of particle velocities = %ld\n", velocities.size());
 
+    /* Create the renderer */
     g_debug_renderer = new DebugRenderer();
     g_debug_renderer->SetGridBoundaries(g_seq_sim->GetGridLowerBounds(), g_seq_sim->GetGridUpperBounds(), g_seq_sim->GetGrindInterval());
     g_debug_renderer->SetGridVelocities(*g_seq_sim->GetGridVelocities(), g_seq_sim->GetGridDimensions());
     g_debug_renderer->SetParticlePositions(texture_positions);
-    //g_debug_renderer->SetParticleVelocities(texture_velocities);
+    g_debug_renderer->SetParticleVelocities(texture_velocities);
 
 
     UpdateView(g_cam->GetCam()->GetViewMatrix());
@@ -332,37 +324,14 @@ void UpdateLoop()
     float last_time_updated = 0.0f;
     float time_step = 0.1f;
 
-    // TODO: START remove ---
-    //SequentialParticleBased* temp = new SequentialParticleBased();
-    //std::vector<glm::vec3> initialParticleVelocities(4 * 4 * 4);
-    //for (size_t i = 0; i < initialParticleVelocities.size(); ++i) {
-    //    initialParticleVelocities[i] = glm::vec3(0.0f, 0.0f, 0.0f);
-    //}
-    //temp->SetInitialVelocities(initialParticleVelocities, glm::vec3(-1, -1, -1), glm::vec3(1, 1, 1), 0.5f);
-
-    //WaterParticleRenderer* pic_flip_renderer = new WaterParticleRenderer();
-
-    //std::vector<glm::vec3> particle_pos(512 * 512);
-    //for (size_t i = 0; i < particle_pos.size(); ++i) {
-    //    particle_pos[i] = glm::vec4(1.0,1.0,1.0, 1);
-    //}
-
-    //std::vector<glm::vec3>* positions = temp->GetParticlePositions();
-    //std::vector<glm::vec3>* velocities = temp->GetParticleVelocities();
-    //printf("Number of particle positions = %ld\n", positions->size());
-    //printf("Number of particle velocities = %ld\n", velocities->size());
-    //for (const auto pos : *positions) {
-    //    printf("\tpos: (%f, %f, %f)\n", pos.x, pos.y, pos.z);
-    //}
-
-    //glm::ivec2 particle_tex_dimen(64, 64);
-    //Texture2D tex_pos_old(particle_tex_dimen, StorageType::TEX_FLOAT, ChannelType::RGBA32F, (const float*)&positions[0]);
-    //Texture2D tex_pos_new(particle_tex_dimen, StorageType::TEX_FLOAT, ChannelType::RGBA32F, (const float*)&positions[0]);
-    //Texture2D tex_vel_old(particle_tex_dimen);
-    //Texture2D tex_vel_new(particle_tex_dimen);
-
-    //system("pause");
-    // TODO: END remove ---
+    // TODO: temp; testing particle positions
+    glm::ivec2 particle_tex_dimen(8, 8);
+    Texture2D texture_positions(
+        particle_tex_dimen, 
+        StorageType::TEX_FLOAT, 
+        ChannelType::RGB32F, 
+        (const float*)&(*g_seq_sim->GetParticlePositions())[0]
+    );
 
     /* Loop until the user closes the window or presses ESC */
     double lastTime = glfwGetTime();
@@ -415,10 +384,9 @@ void UpdateLoop()
         //  3D Rendering  //
         ////////////////////
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+        g_debug_renderer->SetParticlePositions(texture_positions);
         g_debug_renderer->Draw(*(g_cam->GetCam()), *g_skybox);
         g_skybox->Draw();
-        //pic_flip_renderer->UpdateParticlePositionsTexture(tex_pos_old);
-        //pic_flip_renderer->Draw(*(g_cam->GetCam()), *g_skybox);
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);

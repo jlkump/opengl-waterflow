@@ -17,6 +17,7 @@ enum ChannelType {
 	R,
 	RG,
 	RGB,
+	RGB32F,
 	RGBA,
 	RGBA32F
 };
