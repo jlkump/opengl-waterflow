@@ -85,14 +85,14 @@ void WaterParticleRenderer::InitializeSmoothingVariables()
 /////////////////
 
 WaterParticleRenderer::WaterParticleRenderer()
-	: particle_shader_("water_particle_shader.vert", "water_particle_shader.frag"),
+	: particle_shader_("water/water_particle_shader.vert", "water/water_particle_shader.frag"),
 	particle_billboard_buffer_(0), particle_index_buffer_(0), particle_VAO_(0), 
 	depth_texture_(glm::ivec2(viewport_width_ / reduce_resolution_factor_, viewport_height_ / reduce_resolution_factor_)),
 	quad_VAO_(0), quad_position_buffer_(0),
-	smoothing_shader_("screen_quad.vert", "water_smooth_depth.frag"),
+	smoothing_shader_("screen_quad.vert", "water/water_smooth_depth.frag"),
 	smoothing_frame_buffer_id_(0), 
 	smoothed_depth_texture_(glm::ivec2(viewport_width_ / reduce_resolution_factor_, viewport_height_ / reduce_resolution_factor_)),
-	water_shader_("screen_quad.vert", "water_shader.frag")
+	water_shader_("screen_quad.vert", "water/water_shader.frag")
 {
 	InitializeParticleRenderingVariables();
 	InitializeScreenQuadVariables();

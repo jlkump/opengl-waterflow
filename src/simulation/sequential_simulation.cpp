@@ -428,11 +428,13 @@ float SequentialGridBased::GetGrindInterval()
 
 std::vector<glm::vec3>* SequentialGridBased::GetParticleVelocities()
 {
+	printf(">>> getting particles velocities from sequential GRID based\n");
 	return nullptr;
 }
 
 std::vector<glm::vec3>* SequentialGridBased::GetParticlePositions()
 {
+	printf(">>> getting particles positions from sequential GRID based\n");
 	return nullptr;
 }
 
@@ -910,7 +912,9 @@ void SequentialParticleBased::SetInitialVelocities(const std::vector<glm::vec3>&
 	delta_velocities_.resize((grid_dim_ + 1) * (grid_dim_ + 1) * (grid_dim_ + 1), glm::vec3(0, 0, 0));
 
 	particle_vel_ = initial;
+	particle_pos_ = std::vector<glm::vec3>(initial.size());
 	float particles_per_side = floor(cbrt(initial.size()));
+	printf("The number of particles per side = (%f)\n", particles_per_side);
 	glm::vec3 pos = lower_bound;
 	float side_count_x = 0.0f;
 	float side_count_y = 0.0f;
@@ -921,6 +925,9 @@ void SequentialParticleBased::SetInitialVelocities(const std::vector<glm::vec3>&
 			(side_count_y / particles_per_side) * (upper_bound.y - lower_bound.y),
 			(side_count_z / particles_per_side) * (upper_bound.z - lower_bound.z)
 		);
+		// TODO: figure out how to set initial positions (have a function or do it in here?); temp is to do positions here
+		particle_pos_[i] = pos;
+
 		side_count_x++;
 		if (pos.x > upper_bound.x) {
 			pos.x = lower_bound.x;

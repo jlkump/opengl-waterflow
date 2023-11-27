@@ -18,6 +18,7 @@ enum ChannelType {
 	RG,
 	RGB,
 	RGBA,
+	RGBA32F
 };
 
 class Shader;

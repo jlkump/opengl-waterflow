@@ -555,6 +555,8 @@ DebugRenderer::DebugRenderer() :
 	SetupGridAxisVelocityBuffers();
 	SetupGridCellBuffers();
 
+	pic_flip_renderer_ = new WaterParticleRenderer();
+
 	ToggleDebugView(GRID_VELOCITIES);
 	ToggleDebugView(FRAME_TIME);
 }
@@ -575,6 +577,8 @@ DebugRenderer::~DebugRenderer()
 	glDeleteBuffers(1, &VBO_grid_axis_arrow_instance_);
 	glDeleteBuffers(1, &VBO_grid_axis_arrow_mats_);
 	glDeleteBuffers(1, &VBO_grid_axis_arrow_colors_);
+
+	delete pic_flip_renderer_;
 }
 
 void DebugRenderer::SetGridBoundaries(const glm::vec3& low_bound, const glm::vec3& high_bound, const float interval)
@@ -625,11 +629,15 @@ void DebugRenderer::SetGridFluidCells(const std::vector<float>& grid_fluid, cons
 
 bool DebugRenderer::SetParticlePositions(const Texture2D& particle_positions)
 {
-	return false;
+	// TODO: handle the const
+	Texture2D particle_positions_copy = particle_positions;
+	pic_flip_renderer_->UpdateParticlePositionsTexture(particle_positions_copy);
+	return true;
 }
 
 bool DebugRenderer::SetParticleVelocities(const Texture2D& particle_velocities)
 {
+	// TODO: update particle velocity arrows
 	return false;
 }
 
@@ -680,7 +688,7 @@ DebugRenderer::GridCellView DebugRenderer::GetCellViewActive()
 	return active_cell_view_;
 }
 
-bool DebugRenderer::Draw()
+bool DebugRenderer::Draw(Camera& camera, Skybox& skybox)
 {
 	for (auto& view : active_views_) {
 		switch (view) {
@@ -716,8 +724,11 @@ bool DebugRenderer::Draw()
 			glBindVertexArray(0);
 			break;
 		case PARTICLES:
+			// TODO
+			pic_flip_renderer_->Draw(camera, skybox);
 			break;
 		case PARTICLE_VELOCITIES:
+			// TODO
 			break;
 		case FRAME_TIME:
 			frame_time_display_.Draw();

@@ -7,6 +7,7 @@
 #include "../rendering/shader.hpp"
 #include "../rendering/texture.hpp"
 #include "../rendering/display_text.hpp"
+#include "../simulation/water_particle_renderer.hpp"
 
 #define MAX_DEBUG_GRID_ARROWS 4096
 #define MAX_DEBUG_AXIS_GRID_ARROWS 4096
@@ -127,7 +128,7 @@ private:
 
 	// TODO:
 	Shader debug_particle_shader_;
-
+	WaterParticleRenderer* pic_flip_renderer_;
 
 	void UpdateGridLines();
 	void UpdateGridAxisVelocities(const std::vector<glm::vec3>& velocities, const unsigned int grid_dim);
@@ -166,7 +167,7 @@ public:
 	GridCellView GetCellViewActive();
 	void UpdateFrameTime(float frame_time);
 
-	bool Draw();
+	bool Draw(Camera& camera, Skybox& skybox);
 };
 
 #endif

@@ -27,18 +27,29 @@ Texture2D::Texture2D(glm::ivec2 dimensions, StorageType storage_type, ChannelTyp
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
+	// TODO: figure out format and internal format for glTexImage2D(...)
+	GLenum format = GL_RGBA;
+
 	switch (channel_type) {
 		case ChannelType::R:
 			gl_channel_type_ = GL_RED;
+			format = GL_RED;
 			break;
 		case ChannelType::RG:
 			gl_channel_type_ = GL_RG;
+			format = GL_RG;
 			break;
 		case ChannelType::RGB:
 			gl_channel_type_ = GL_RGB;
+			format = GL_RGB;
 			break;
 		case ChannelType::RGBA:
 			gl_channel_type_ = GL_RGBA;
+			format = GL_RGBA;
+			break;
+		case ChannelType::RGBA32F:
+			gl_channel_type_ = GL_RGBA32F;
+			format = GL_RGBA;
 			break;
 	}
 
@@ -57,7 +68,7 @@ Texture2D::Texture2D(glm::ivec2 dimensions, StorageType storage_type, ChannelTyp
 			break;
 	}
 	// Place texture data to the GPU
-	glTexImage2D(GL_TEXTURE_2D, 0, gl_channel_type_, dimensions.x, dimensions.y, 0, gl_channel_type_, gl_storage_type_, initial_data);
+	glTexImage2D(GL_TEXTURE_2D, 0, gl_channel_type_, dimensions.x, dimensions.y, 0, format, gl_storage_type_, initial_data);
 	// TODO: Error check the result of OpenGL calls
 	valid_texture_ = true;
 }
