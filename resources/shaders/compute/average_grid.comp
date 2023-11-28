@@ -1,0 +1,23 @@
+#version 430
+
+layout(local_size_x=1, local_size_y=1, local_size_z=1) in; // One local worker per worker group
+
+layout (rgba32f, binding = 0) uniform image3D grid_vel;
+layout (rgba32f, binding = 1) uniform image3D grid_count;
+
+void main() {
+	ivec3 pos_id = ivec3(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y, gl_GlobalInvocationID.z);
+
+	vec3 vel = imageLoad(grid_vel, pos_id).xyz;
+	vec3 count = imageLoad(grid_count, pos_id).xyz;
+	if (count.x != 0) {
+		vel.x = vel.x / count.x;
+	}
+	if (count.y != 0) {
+		vel.y = vel.y / count.y;
+	}	
+	if (count.z != 0) {
+		vel.z = vel.z / count.z;
+	}
+	imageStore(grid_vel, pos_id, vec4(vel, 0.0));
+}
