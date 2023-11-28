@@ -284,24 +284,23 @@ bool LoadContent()
     /* Create the simulation */
     //g_seq_sim = new SequentialGridBased();
     g_seq_sim = new SequentialParticleBased();
-    std::vector<glm::vec3> initialParticleVelocities(8 * 8);
+    std::vector<glm::vec3> initialParticleVelocities(64 * 64);
     for (size_t i = 0; i < initialParticleVelocities.size(); ++i) {
         initialParticleVelocities[i] = glm::vec3(0.0f, 0.0f, 0.0f);
     }
+    // TODO: Note that upperbound, lowerbound, and interval correspond to the grid at the moment
     g_seq_sim->SetInitialVelocities(
         initialParticleVelocities, 
-        glm::vec3(-1.0, -1.0, -1.0), 
-        glm::vec3(1.0, 1.0, 1.0), 
+        glm::vec3(-1.0), 
+        glm::vec3(1.0), 
         0.5f
     );
-    glm::ivec2 particle_tex_dimen(8, 8);
+    glm::ivec2 particle_tex_dimen(64, 64);
     std::vector<glm::vec3>& positions = *g_seq_sim->GetParticlePositions();
     std::vector<glm::vec3>& velocities = *g_seq_sim->GetParticleVelocities();
 
     Texture2D texture_positions(particle_tex_dimen, StorageType::TEX_FLOAT, ChannelType::RGB32F, (const float*)&positions[0]);
     Texture2D texture_velocities(particle_tex_dimen, StorageType::TEX_FLOAT, ChannelType::RGB32F, (const float*)&velocities[0]);
-    //printf("Number of particle positions = %ld\n", positions.size());
-    //printf("Number of particle velocities = %ld\n", velocities.size());
 
     /* Create the renderer */
     g_debug_renderer = new DebugRenderer();
@@ -323,15 +322,6 @@ void UpdateLoop()
     float new_time = 0.0f;
     float last_time_updated = 0.0f;
     float time_step = 0.1f;
-
-    // TODO: temp; testing particle positions
-    glm::ivec2 particle_tex_dimen(8, 8);
-    Texture2D texture_positions(
-        particle_tex_dimen, 
-        StorageType::TEX_FLOAT, 
-        ChannelType::RGB32F, 
-        (const float*)&(*g_seq_sim->GetParticlePositions())[0]
-    );
 
     /* Loop until the user closes the window or presses ESC */
     double lastTime = glfwGetTime();
@@ -358,9 +348,10 @@ void UpdateLoop()
             UpdateView(g_cam->GetCam()->GetViewMatrix());
             UpdateProjection(g_cam->GetCam()->GetProjectionMatrix());
         }
-        if (new_time - last_time_updated >= time_step && g_simulate) {
+        if (g_simulate && new_time - last_time_updated >= time_step) {
             // Perform new step in simulation
-            g_seq_sim->TimeStep(deltaTime);
+            g_seq_sim->TimeStep(deltaTime + time_step);
+
             g_debug_renderer->SetGridVelocities(*g_seq_sim->GetGridVelocities(), g_seq_sim->GetGridDimensions());
             if (g_debug_renderer->IsDebugViewActive(DebugRenderer::GRID_CELL)) {
                 switch (g_debug_renderer->GetCellViewActive()) {
@@ -380,12 +371,22 @@ void UpdateLoop()
             last_time_updated = new_time;
         }
 
+        // TODO: Change this part
+        // Update particle texture position
+        glm::ivec2 particle_tex_dimen(64, 64);
+        Texture2D texture_particle_positions(
+            particle_tex_dimen,
+            StorageType::TEX_FLOAT,
+            ChannelType::RGB32F,
+            (const float*)&(*g_seq_sim->GetParticlePositions())[0]
+        );
+        g_debug_renderer->SetParticlePositions(texture_particle_positions);
+
         ////////////////////
         //  3D Rendering  //
         ////////////////////
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-        g_debug_renderer->SetParticlePositions(texture_positions);
-        g_debug_renderer->Draw(*(g_cam->GetCam()), *g_skybox);
+        g_debug_renderer->Draw(*g_cam->GetCam(), *g_skybox);
         g_skybox->Draw();
 
         /* Swap front and back buffers */
@@ -394,7 +395,6 @@ void UpdateLoop()
         /* Poll for and process events */
         glfwPollEvents();
     }
-    //delete pic_flip_renderer;
 }
 
 int main() 

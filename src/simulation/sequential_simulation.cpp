@@ -907,38 +907,52 @@ void SequentialParticleBased::SetInitialVelocities(const std::vector<glm::vec3>&
 	delta_velocities_.resize((grid_dim_ + 1) * (grid_dim_ + 1) * (grid_dim_ + 1), glm::vec3(0, 0, 0));
 
 	particle_vel_ = initial;
+
+	// Setting particle positions
+	// TODO: under the assumption that all sides are equal
 	particle_pos_ = std::vector<glm::vec3>(initial.size());
 	float particles_per_side = floor(cbrt(initial.size()));
-	printf("The number of particles per side = (%f)\n", particles_per_side);
-	glm::vec3 pos = lower_bound;
-	float side_count_x = 0.0f;
-	float side_count_y = 0.0f;
-	float side_count_z = 0.0f;
-	for (int i = 0; i < initial.size(); i++) {
-		pos += glm::vec3(
-			(side_count_x / particles_per_side) * (upper_bound.x - lower_bound.x), 
-			(side_count_y / particles_per_side) * (upper_bound.y - lower_bound.y),
-			(side_count_z / particles_per_side) * (upper_bound.z - lower_bound.z)
-		);
-		// TODO: figure out how to set initial positions (have a function or do it in here?); temp is to do positions here
-		particle_pos_[i] = pos;
+	int particles_per_side_squared = particles_per_side * particles_per_side;
+	float delta = (std::fabs(lower_bound.x) + std::fabs(upper_bound.x)) / particles_per_side;
 
-		side_count_x++;
-		if (pos.x > upper_bound.x) {
-			pos.x = lower_bound.x;
-			side_count_x = 0.0f;
-			side_count_y++;
-		}
-		if (pos.y > upper_bound.y) {
-			pos.y = upper_bound.y;
-			side_count_y = 0.0f;
-			side_count_z++;
-		}
-		if (pos.z > upper_bound.z) {
-			pos.z = upper_bound.z;
-			side_count_z = 0.0f;
+	int index = 0;
+	for (float z = lower_bound.z; z < upper_bound.z; z += delta) {
+		for (float y = lower_bound.y; y < upper_bound.y; y += delta) {
+			for (float x = lower_bound.x; x < upper_bound.x; x += delta) {
+				particle_pos_[index] = glm::vec3(x, y, z);
+				++index;
+			}
 		}
 	}
+
+	// TODO: previous code
+	//glm::vec3 pos = lower_bound;
+	//float side_count_x = 0.0f;
+	//float side_count_y = 0.0f;
+	//float side_count_z = 0.0f;
+	//for (int i = 0; i < initial.size(); i++) {
+	//	pos += glm::vec3(
+	//		(side_count_x / particles_per_side) * (upper_bound.x - lower_bound.x), 
+	//		(side_count_y / particles_per_side) * (upper_bound.y - lower_bound.y),
+	//		(side_count_z / particles_per_side) * (upper_bound.z - lower_bound.z)
+	//	);
+	//
+	//	side_count_x++;
+	//	if (pos.x > upper_bound.x) {
+	//		pos.x = lower_bound.x;
+	//		side_count_x = 0.0f;
+	//		side_count_y++;
+	//	}
+	//	if (pos.y > upper_bound.y) {
+	//		pos.y = upper_bound.y;
+	//		side_count_y = 0.0f;
+	//		side_count_z++;
+	//	}
+	//	if (pos.z > upper_bound.z) {
+	//		pos.z = upper_bound.z;
+	//		side_count_z = 0.0f;
+	//	}
+	//}
 }
 
 void SequentialParticleBased::TimeStep(float delta)
