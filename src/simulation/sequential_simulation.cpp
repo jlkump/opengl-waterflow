@@ -903,6 +903,21 @@ void SequentialParticleBased::SetInitialVelocities(const std::vector<glm::vec3>&
 	pressures_.clear();
 	pressures_.resize(grid_dim_ * grid_dim_ * grid_dim_, 0.0f);
 
+	for (int x = 0; x < grid_dim_; x++) {
+		for (int y = 0; y < grid_dim_; y++) {
+			for (int z = 0; z < grid_dim_; z++) {
+				if (x == 0 || y == 0 || z == 0 || x + 1 == grid_dim_ || y + 1 == grid_dim_ || z + 1 == grid_dim_) {
+					is_fluid_[x * grid_dim_ * grid_dim_ + y * grid_dim_ + z] = 0.0f;
+					cell_types_[x * grid_dim_ * grid_dim_ + y * grid_dim_ + z] = SOLID;
+				}
+				else {
+					is_fluid_[x * grid_dim_ * grid_dim_ + y * grid_dim_ + z] = 1.0f;
+					cell_types_[x * grid_dim_ * grid_dim_ + y * grid_dim_ + z] = AIR;
+				}
+			}
+		}
+	}
+
 	particle_densities_.clear();
 	particle_densities_.resize((grid_dim_ + 1) * (grid_dim_ + 1) * (grid_dim_ + 1), glm::vec3(0, 0, 0));
 
@@ -910,8 +925,10 @@ void SequentialParticleBased::SetInitialVelocities(const std::vector<glm::vec3>&
 	delta_velocities_.resize((grid_dim_ + 1) * (grid_dim_ + 1) * (grid_dim_ + 1), glm::vec3(0, 0, 0));
 
 	particle_vel_ = initial;
+	particle_pos_.clear();
+
 	float particles_per_side = floor(cbrt(initial.size()));
-	glm::vec3 pos = lower_bound;
+	glm::vec3 pos = lower_bound + glm::vec3(interval);
 	float side_count_x = 0.0f;
 	float side_count_y = 0.0f;
 	float side_count_z = 0.0f;
@@ -922,21 +939,26 @@ void SequentialParticleBased::SetInitialVelocities(const std::vector<glm::vec3>&
 			(side_count_z / particles_per_side) * (upper_bound.z - lower_bound.z)
 		);
 		side_count_x++;
-		if (pos.x > upper_bound.x) {
-			pos.x = lower_bound.x;
+		if (pos.x > upper_bound.x + interval) {
+			pos.x = lower_bound.x + interval;
 			side_count_x = 0.0f;
 			side_count_y++;
 		}
-		if (pos.y > upper_bound.y) {
-			pos.y = upper_bound.y;
+		if (pos.y > upper_bound.y + interval) {
+			pos.y = upper_bound.y + interval;
 			side_count_y = 0.0f;
 			side_count_z++;
 		}
-		if (pos.z > upper_bound.z) {
-			pos.z = upper_bound.z;
+		if (pos.z > upper_bound.z + interval) {
+			pos.z = upper_bound.z + interval;
 			side_count_z = 0.0f;
 		}
+		particle_pos_.push_back(pos);
+		printf("Pushing pos: ");
+		printf("[ %3.3f %3.3f %3.3f ]\n", pos.x, pos.y, pos.z);
 	}
+	printf("Set initial particle positions of size: %d\n", particle_pos_.size());
+	printf("Set initial particle velocities of size: %d\n", particle_vel_.size());
 }
 
 void SequentialParticleBased::TimeStep(float delta)
