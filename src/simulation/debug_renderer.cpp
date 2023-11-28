@@ -459,7 +459,6 @@ void DebugRenderer::SetupGridVelocityBuffers()
 	glBindVertexArray(0);
 }
 
-
 void DebugRenderer::SetupGridAxisVelocityBuffers()
 {
 	// Setup for the arrows
@@ -544,6 +543,7 @@ void DebugRenderer::SetupGridCellBuffers()
 
 void DebugRenderer::SetupParticleSpriteBuffers()
 {
+	// TODO
 	particle_sprite_elements_ = 0;
 
 	debug_particle_shader_.SetUniform1fv("particle_radius", 0.05f);
@@ -567,7 +567,11 @@ void DebugRenderer::SetupParticleSpriteBuffers()
 
 	std::vector<glm::vec3> particle_colors;
 	for (int i = 0; i < MAX_DEBUG_PARTICLES; i++) {
-		particle_colors.push_back(glm::vec3(((float)(rand() % 100) / 100.0f), ((float)(rand() % 100) / 100.0f), ((float)(rand() % 100) / 100.0f)));
+		particle_colors.push_back(glm::vec3(
+			((float)(rand() % 100) / 100.0f), 
+			((float)(rand() % 100) / 100.0f), 
+			((float)(rand() % 100) / 100.0f))
+		);
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO_particle_sprite_color_);
@@ -593,8 +597,6 @@ DebugRenderer::DebugRenderer() :
 	SetupGridVelocityBuffers();
 	SetupGridAxisVelocityBuffers();
 	SetupGridCellBuffers();
-
-	pic_flip_renderer_ = new WaterParticleRenderer();
 
 	ToggleDebugView(GRID_VELOCITIES);
 	ToggleDebugView(FRAME_TIME);
@@ -680,6 +682,7 @@ void DebugRenderer::SetParticlePositions(const std::vector<glm::vec3>& particle_
 	glBindVertexArray(0);
 }
 
+// TODO
 void DebugRenderer::SetParticleVelocities(const std::vector<glm::vec3>& particle_pos)
 {
 
@@ -737,7 +740,7 @@ DebugRenderer::GridCellView DebugRenderer::GetCellViewActive()
 	return active_cell_view_;
 }
 
-bool DebugRenderer::Draw(Camera& camera, Skybox& skybox)
+bool DebugRenderer::Draw()
 {
 	for (auto& view : active_views_) {
 		switch (view) {
@@ -773,6 +776,7 @@ bool DebugRenderer::Draw(Camera& camera, Skybox& skybox)
 			glBindVertexArray(0);
 			break;
 		case PARTICLES:
+			// TODO
 			debug_particle_shader_.SetActive();
 			glBindVertexArray(VAO_particle_sprite_);
 			glDrawArraysInstanced(GL_TRIANGLES, 0, 6, particle_sprite_elements_);

@@ -484,6 +484,7 @@ void SequentialParticleBased::IntegrateParticles(float delta, glm::vec3 accel)
 
 void SequentialParticleBased::PushApartParticles()
 {
+	// TODO
 }
 
 void SequentialParticleBased::TransferVelocitiesToGrid()
@@ -504,8 +505,15 @@ void SequentialParticleBased::TransferVelocitiesToGrid()
 	for (int i = 0; i < particle_pos_.size(); i++) {
 		glm::vec3 ws_pos = particle_pos_[i];
 		glm::vec3 ws_vel = particle_vel_[i];
-		ws_pos -= ws_lower_bound_;
-		glm::ivec3 grid_pos = glm::ivec3(ws_pos.x / ws_grid_interval_, ws_pos.y / ws_grid_interval_, ws_pos.z / ws_grid_interval_);
+		ws_pos += glm::abs(ws_lower_bound_);
+
+		// TODO: handle particles exactly in the upper bound (these particles evalute to grid_dim, which is out of bounds)
+		glm::ivec3 grid_pos = glm::clamp(
+			glm::ivec3(ws_pos.x / ws_grid_interval_, ws_pos.y / ws_grid_interval_, ws_pos.z / ws_grid_interval_),
+			glm::ivec3(0),
+			glm::ivec3(grid_dim_ - 1)
+		);
+
 		if (cell_types_[grid_pos.x * grid_dim_ * grid_dim_ + grid_pos.y * grid_dim_ + grid_pos.z] == AIR) {
 			cell_types_[grid_pos.x * grid_dim_ * grid_dim_ + grid_pos.y * grid_dim_ + grid_pos.z] = FLUID;
 		}
@@ -880,6 +888,7 @@ void SequentialParticleBased::TransferVelocitiesToParticles(float flip_ratio)
 SequentialParticleBased::SequentialParticleBased()
 	: seperate_particles_(false)
 {
+	// TODO
 }
 
 SequentialParticleBased::~SequentialParticleBased()
@@ -922,38 +931,61 @@ void SequentialParticleBased::SetInitialVelocities(const std::vector<glm::vec3>&
 	delta_velocities_.resize((grid_dim_ + 1) * (grid_dim_ + 1) * (grid_dim_ + 1), glm::vec3(0, 0, 0));
 
 	particle_vel_ = initial;
-	particle_pos_.clear();
+	//particle_pos_.clear();
+	//// TODO
+	//float particles_per_side = floor(cbrt(initial.size()));
+	//glm::vec3 pos = lower_bound + glm::vec3(interval);
+	//float side_count_x = 0.0f;
+	//float side_count_y = 0.0f;
+	//float side_count_z = 0.0f;
+	//for (int i = 0; i < initial.size(); i++) {
+	//	pos += glm::vec3(
+	//		(side_count_x / particles_per_side) * (upper_bound.x - lower_bound.x), 
+	//		(side_count_y / particles_per_side) * (upper_bound.y - lower_bound.y),
+	//		(side_count_z / particles_per_side) * (upper_bound.z - lower_bound.z)
+	//	);
+	//	side_count_x++;
+	//	if (pos.x > upper_bound.x + interval) {
+	//		pos.x = lower_bound.x + interval;
+	//		side_count_x = 0.0f;
+	//		side_count_y++;
+	//	}
+	//	if (pos.y > upper_bound.y + interval) {
+	//		pos.y = upper_bound.y + interval;
+	//		side_count_y = 0.0f;
+	//		side_count_z++;
+	//	}
+	//	if (pos.z > upper_bound.z + interval) {
+	//		pos.z = upper_bound.z + interval;
+	//		side_count_z = 0.0f;
+	//	}
+	//	particle_pos_.push_back(pos);
+	//	printf("Pushing pos: ");
+	//	printf("[ %3.3f %3.3f %3.3f ]\n", pos.x, pos.y, pos.z);
+	//}
 
+	// Setting particle positions
+	// TODO: under the assumption that all sides are equal
+	particle_pos_ = std::vector<glm::vec3>(initial.size());
 	float particles_per_side = floor(cbrt(initial.size()));
-	glm::vec3 pos = lower_bound + glm::vec3(interval);
-	float side_count_x = 0.0f;
-	float side_count_y = 0.0f;
-	float side_count_z = 0.0f;
-	for (int i = 0; i < initial.size(); i++) {
-		pos += glm::vec3(
-			(side_count_x / particles_per_side) * (upper_bound.x - lower_bound.x), 
-			(side_count_y / particles_per_side) * (upper_bound.y - lower_bound.y),
-			(side_count_z / particles_per_side) * (upper_bound.z - lower_bound.z)
-		);
-		side_count_x++;
-		if (pos.x > upper_bound.x + interval) {
-			pos.x = lower_bound.x + interval;
-			side_count_x = 0.0f;
-			side_count_y++;
+	int particles_per_side_squared = particles_per_side * particles_per_side;
+	float delta = (std::fabs(lower_bound.x) + std::fabs(upper_bound.x)) / particles_per_side;
+	printf("particles per side = %f\n", particles_per_side);
+	printf("delta = %f\n", delta);
+
+	int index = 0;
+	for (float z = lower_bound.z; z < upper_bound.z; z += delta) {
+		for (float y = lower_bound.y; y < upper_bound.y; y += delta) {
+			for (float x = lower_bound.x; x < upper_bound.x; x += delta) {
+				particle_pos_[index] = glm::vec3(x, y, z);
+				++index;
+				printf("Pushing pos at index (%d): ", index);
+				printf("[ %3.3f %3.3f %3.3f ]\n", x, y, z);
+			}
+			printf("\n");
 		}
-		if (pos.y > upper_bound.y + interval) {
-			pos.y = upper_bound.y + interval;
-			side_count_y = 0.0f;
-			side_count_z++;
-		}
-		if (pos.z > upper_bound.z + interval) {
-			pos.z = upper_bound.z + interval;
-			side_count_z = 0.0f;
-		}
-		particle_pos_.push_back(pos);
-		printf("Pushing pos: ");
-		printf("[ %3.3f %3.3f %3.3f ]\n", pos.x, pos.y, pos.z);
 	}
+
 	printf("Set initial particle positions of size: %d\n", particle_pos_.size());
 	printf("Set initial particle velocities of size: %d\n", particle_vel_.size());
 }

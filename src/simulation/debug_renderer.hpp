@@ -136,6 +136,7 @@ private:
 	GLuint VBO_grid_cell_float_val_; 
 	int grid_cell_elements_;
 
+	// TODO
 	// Cell particle sprite visualization
 	Shader debug_particle_shader_;
 	GLuint VAO_particle_sprite_;
@@ -183,7 +184,7 @@ public:
 	GridCellView GetCellViewActive();
 	void UpdateFrameTime(float frame_time);
 
-	bool Draw(Camera& camera, Skybox& skybox);
+	bool Draw();
 };
 
 #endif

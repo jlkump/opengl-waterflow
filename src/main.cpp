@@ -213,20 +213,6 @@ void WindowKeyCallback(GLFWwindow* window, int key, int scancode, int action, in
             }
         }
     }
-
-    // Toggle particles
-    if (key == GLFW_KEY_4) {
-        if (action == GLFW_PRESS) {
-            g_debug_renderer->ToggleDebugView(DebugRenderer::PARTICLES);
-        }
-    }
-
-    // Toggle particle vectors
-    if (key == GLFW_KEY_5) {
-        if (action == GLFW_PRESS) {
-            g_debug_renderer->ToggleDebugView(DebugRenderer::PARTICLE_VELOCITIES);
-        }
-    }
 }
 
 bool Init() {
@@ -287,24 +273,29 @@ bool LoadContent()
     /* Create Skybox for scene */
     g_skybox = new Skybox({ "skybox/right.jpg", "skybox/left.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/front.jpg", "skybox/back.jpg" });
 
+    /* Create simulation */
     // g_seq_sim = new SequentialGridBased();
     g_seq_sim = new SequentialParticleBased();
     std::vector<glm::vec3> init_particle_vel;
-    for (int i = 0; i < 1000; i++) {
-        init_particle_vel.push_back(glm::normalize(glm::vec3(((float)(rand() % 100) / 100.0f), ((float)(rand() % 100) / 100.0f), ((float)(rand() % 100) / 100.0f))));
+    for (int i = 0; i < 64; i++) {
+        init_particle_vel.push_back(glm::normalize(glm::vec3(
+            ((float)(rand() % 100) / 100.0f),
+            ((float)(rand() % 100) / 100.0f),
+            ((float)(rand() % 100) / 100.0f)))
+        );
     }
-    g_seq_sim->SetInitialVelocities(init_particle_vel, glm::vec3(-1.0, -1.0, -1.0), glm::vec3(1.0, 1.0, 1.0), 0.5);
-
-    Texture2D texture_positions(particle_tex_dimen, StorageType::TEX_FLOAT, ChannelType::RGB32F, (const float*)&positions[0]);
-    Texture2D texture_velocities(particle_tex_dimen, StorageType::TEX_FLOAT, ChannelType::RGB32F, (const float*)&velocities[0]);
+    g_seq_sim->SetInitialVelocities(
+        init_particle_vel, 
+        glm::vec3(-1.0, -1.0, -1.0), 
+        glm::vec3(1.0, 1.0, 1.0), 
+        0.5
+    );
 
     /* Create the renderer */
     g_debug_renderer = new DebugRenderer();
     g_debug_renderer->SetGridBoundaries(g_seq_sim->GetGridLowerBounds(), g_seq_sim->GetGridUpperBounds(), g_seq_sim->GetGrindInterval());
     g_debug_renderer->SetGridVelocities(*g_seq_sim->GetGridVelocities(), g_seq_sim->GetGridDimensions());
-    g_debug_renderer->SetParticlePositions(texture_positions);
-    g_debug_renderer->SetParticleVelocities(texture_velocities);
-
+    g_debug_renderer->SetParticlePositions(*g_seq_sim->GetParticlePositions());
 
     UpdateView(g_cam->GetCam()->GetViewMatrix());
     UpdateProjection(g_cam->GetCam()->GetProjectionMatrix());
@@ -322,8 +313,7 @@ void UpdateLoop()
     /* Loop until the user closes the window or presses ESC */
     double lastTime = glfwGetTime();
     int nbFrames = 0;
-    while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && !glfwWindowShouldClose(window))
-    {
+    while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && !glfwWindowShouldClose(window)) {
         double currentTime = glfwGetTime();
         nbFrames++;
         if (currentTime - lastTime >= 1.0) {
@@ -370,22 +360,11 @@ void UpdateLoop()
             last_time_updated = new_time;
         }
 
-        // TODO: Change this part
-        // Update particle texture position
-        glm::ivec2 particle_tex_dimen(64, 64);
-        Texture2D texture_particle_positions(
-            particle_tex_dimen,
-            StorageType::TEX_FLOAT,
-            ChannelType::RGB32F,
-            (const float*)&(*g_seq_sim->GetParticlePositions())[0]
-        );
-        g_debug_renderer->SetParticlePositions(texture_particle_positions);
-
         ////////////////////
         //  3D Rendering  //
         ////////////////////
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-        g_debug_renderer->Draw(*g_cam->GetCam(), *g_skybox);
+        g_debug_renderer->Draw();
         g_skybox->Draw();
 
         /* Swap front and back buffers */
