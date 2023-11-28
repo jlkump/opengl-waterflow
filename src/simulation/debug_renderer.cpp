@@ -542,6 +542,45 @@ void DebugRenderer::SetupGridCellBuffers()
 	glBindVertexArray(0);
 }
 
+void DebugRenderer::SetupParticleSpriteBuffers()
+{
+	particle_sprite_elements_ = 0;
+
+	debug_particle_shader_.SetUniform1fv("particle_radius", 0.05f);
+
+
+	glGenVertexArrays(1, &VAO_particle_sprite_);
+	glGenBuffers(1, &VBO_particle_sprite_instance_);
+	glGenBuffers(1, &VBO_particle_sprite_pos_);
+	glGenBuffers(1, &VBO_particle_sprite_color_);
+
+	glBindVertexArray(VAO_particle_sprite_);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_particle_sprite_instance_);
+	glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(glm::vec3), &k_square_verts[0], GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_particle_sprite_pos_);
+	glBufferData(GL_ARRAY_BUFFER, MAX_DEBUG_PARTICLES * sizeof(glm::vec3), NULL, GL_STREAM_DRAW);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+	std::vector<glm::vec3> particle_colors;
+	for (int i = 0; i < MAX_DEBUG_PARTICLES; i++) {
+		particle_colors.push_back(glm::vec3(((float)(rand() % 100) / 100.0f), ((float)(rand() % 100) / 100.0f), ((float)(rand() % 100) / 100.0f)));
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_particle_sprite_color_);
+	glBufferData(GL_ARRAY_BUFFER, particle_colors.size() * sizeof(glm::vec3), &particle_colors[0], GL_STATIC_DRAW);
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+	glVertexAttribDivisor(0, 0); // Reuse on each instance
+	glVertexAttribDivisor(1, 1); // Unique to each instance
+	glVertexAttribDivisor(2, 1); // Unique ...
+	glBindVertexArray(0);
+}
+
 DebugRenderer::DebugRenderer() :
 	debug_instance_shader_("debug/simple_instance.vert", "debug/simple_instance.frag"),
 	debug_grid_cell_shader_("debug/cell_visualization.vert", "debug/cell_visualization.frag"),
@@ -578,7 +617,10 @@ DebugRenderer::~DebugRenderer()
 	glDeleteBuffers(1, &VBO_grid_axis_arrow_mats_);
 	glDeleteBuffers(1, &VBO_grid_axis_arrow_colors_);
 
-	delete pic_flip_renderer_;
+	glDeleteBuffers(1, &VAO_particle_sprite_);
+	glDeleteBuffers(1, &VBO_particle_sprite_instance_);
+	glDeleteBuffers(1, &VBO_particle_sprite_pos_);
+	glDeleteBuffers(1, &VBO_particle_sprite_color_);
 }
 
 void DebugRenderer::SetGridBoundaries(const glm::vec3& low_bound, const glm::vec3& high_bound, const float interval)
@@ -626,19 +668,21 @@ void DebugRenderer::SetGridFluidCells(const std::vector<float>& grid_fluid, cons
 	UpdateGridCellFloats(grid_fluid, grid_dim);
 }
 
-
-bool DebugRenderer::SetParticlePositions(const Texture2D& particle_positions)
+void DebugRenderer::SetParticlePositions(const std::vector<glm::vec3>& particle_pos)
 {
-	// TODO: handle the const
-	//Texture2D& particle_positions_copy = particle_positions;
-	pic_flip_renderer_->UpdateParticlePositionsTexture(const_cast<Texture2D&>(particle_positions));
-	return true;
+	glBindVertexArray(VAO_particle_sprite_);
+	// load data into vertex buffers
+	particle_sprite_elements_ = particle_pos.size();
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_particle_sprite_pos_);
+	glBufferData(GL_ARRAY_BUFFER, MAX_DEBUG_PARTICLES * sizeof(glm::vec3), NULL, GL_STREAM_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, particle_pos.size() * sizeof(glm::vec3), (void*)&particle_pos[0]);
+
+	glBindVertexArray(0);
 }
 
-bool DebugRenderer::SetParticleVelocities(const Texture2D& particle_velocities)
+void DebugRenderer::SetParticleVelocities(const std::vector<glm::vec3>& particle_pos)
 {
-	// TODO: update particle velocity arrows
-	return false;
+
 }
 
 bool DebugRenderer::SetView(const glm::mat4& view)
@@ -647,6 +691,10 @@ bool DebugRenderer::SetView(const glm::mat4& view)
 	// Update the uniforms for shaders
 	debug_instance_shader_.SetUniformMatrix4fv("proj_view", cached_proj_ * cached_view_);
 	debug_grid_cell_shader_.SetUniformMatrix4fv("proj_view", cached_proj_ * cached_view_);
+	debug_particle_shader_.SetUniform3fv("ws_camera_right", { view[0][0], view[1][0], view[2][0] });
+	debug_particle_shader_.SetUniform3fv("ws_camera_up", { view[0][1], view[1][1], view[2][1] });
+	debug_particle_shader_.SetUniformMatrix4fv("proj_view", cached_proj_ * cached_view_);
+
 	return true;
 }
 
@@ -656,6 +704,7 @@ bool DebugRenderer::SetProjection(const glm::mat4& proj)
 	// Update the uniforms for shaders
 	debug_instance_shader_.SetUniformMatrix4fv("proj_view", cached_proj_ * cached_view_);
 	debug_grid_cell_shader_.SetUniformMatrix4fv("proj_view", cached_proj_ * cached_view_);
+	debug_particle_shader_.SetUniformMatrix4fv("proj_view", cached_proj_ * cached_view_);
 	return true;
 }
 
@@ -724,8 +773,10 @@ bool DebugRenderer::Draw(Camera& camera, Skybox& skybox)
 			glBindVertexArray(0);
 			break;
 		case PARTICLES:
-			// TODO
-			pic_flip_renderer_->Draw(camera, skybox);
+			debug_particle_shader_.SetActive();
+			glBindVertexArray(VAO_particle_sprite_);
+			glDrawArraysInstanced(GL_TRIANGLES, 0, 6, particle_sprite_elements_);
+			glBindVertexArray(0);
 			break;
 		case PARTICLE_VELOCITIES:
 			// TODO

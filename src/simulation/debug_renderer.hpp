@@ -13,6 +13,7 @@
 #define MAX_DEBUG_AXIS_GRID_ARROWS 4096
 #define MAX_DEBUG_GRID_LINES 4096
 #define MAX_DEBUG_GRID_CELLS 1024
+#define MAX_DEBUG_PARTICLES 4096
 
 class DebugRenderer {
 public:
@@ -72,6 +73,15 @@ private:
 		1.0f, 0.0f, 1.0f
 	};
 
+	const float k_square_verts[18] = {
+		-1.0f, -1.0f, 0.0f,
+		1.0f, -1.0f, 0.0f,
+		-1.0f, 1.0f, 0.0f,
+		-1.0f, 1.0f, 0.0f,
+		1.0f, -1.0f, 0.0f,
+		1.0f, 1.0f, 0.0f,
+	};
+
 	glm::vec3 ws_grid_lower_bound_;
 	glm::vec3 ws_grid_upper_bound_;
 	float ws_grid_cell_size_;
@@ -126,9 +136,13 @@ private:
 	GLuint VBO_grid_cell_float_val_; 
 	int grid_cell_elements_;
 
-	// TODO:
+	// Cell particle sprite visualization
 	Shader debug_particle_shader_;
-	WaterParticleRenderer* pic_flip_renderer_;
+	GLuint VAO_particle_sprite_;
+	GLuint VBO_particle_sprite_instance_;
+	GLuint VBO_particle_sprite_pos_;
+	GLuint VBO_particle_sprite_color_;
+	int particle_sprite_elements_;
 
 	void UpdateGridLines();
 	void UpdateGridAxisVelocities(const std::vector<glm::vec3>& velocities, const unsigned int grid_dim);
@@ -143,6 +157,7 @@ private:
 	void SetupGridVelocityBuffers();
 	void SetupGridAxisVelocityBuffers();
 	void SetupGridCellBuffers();
+	void SetupParticleSpriteBuffers();
 
 public:
 	DebugRenderer();
@@ -154,8 +169,9 @@ public:
 	void SetGridDyeDensities(const std::vector<float>& grid_dyes, const unsigned int grid_dimensions);
 	void SetGridFluidCells(const std::vector<float>& grid_fluid, const unsigned int grid_dimensions);
 
-	bool SetParticlePositions(const Texture2D& particle_positions);
-	bool SetParticleVelocities(const Texture2D& particle_velocities);
+
+	void SetParticlePositions(const std::vector<glm::vec3>& particle_pos);
+	void SetParticleVelocities(const std::vector<glm::vec3>& particle_vel);
 
 	bool SetView(const glm::mat4& view);
 	bool SetProjection(const glm::mat4& proj);

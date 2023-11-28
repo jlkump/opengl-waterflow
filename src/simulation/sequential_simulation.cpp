@@ -900,6 +900,21 @@ void SequentialParticleBased::SetInitialVelocities(const std::vector<glm::vec3>&
 	pressures_.clear();
 	pressures_.resize(grid_dim_ * grid_dim_ * grid_dim_, 0.0f);
 
+	for (int x = 0; x < grid_dim_; x++) {
+		for (int y = 0; y < grid_dim_; y++) {
+			for (int z = 0; z < grid_dim_; z++) {
+				if (x == 0 || y == 0 || z == 0 || x + 1 == grid_dim_ || y + 1 == grid_dim_ || z + 1 == grid_dim_) {
+					is_fluid_[x * grid_dim_ * grid_dim_ + y * grid_dim_ + z] = 0.0f;
+					cell_types_[x * grid_dim_ * grid_dim_ + y * grid_dim_ + z] = SOLID;
+				}
+				else {
+					is_fluid_[x * grid_dim_ * grid_dim_ + y * grid_dim_ + z] = 1.0f;
+					cell_types_[x * grid_dim_ * grid_dim_ + y * grid_dim_ + z] = AIR;
+				}
+			}
+		}
+	}
+
 	particle_densities_.clear();
 	particle_densities_.resize((grid_dim_ + 1) * (grid_dim_ + 1) * (grid_dim_ + 1), glm::vec3(0, 0, 0));
 
@@ -907,52 +922,40 @@ void SequentialParticleBased::SetInitialVelocities(const std::vector<glm::vec3>&
 	delta_velocities_.resize((grid_dim_ + 1) * (grid_dim_ + 1) * (grid_dim_ + 1), glm::vec3(0, 0, 0));
 
 	particle_vel_ = initial;
+	particle_pos_.clear();
 
-	// Setting particle positions
-	// TODO: under the assumption that all sides are equal
-	particle_pos_ = std::vector<glm::vec3>(initial.size());
 	float particles_per_side = floor(cbrt(initial.size()));
-	int particles_per_side_squared = particles_per_side * particles_per_side;
-	float delta = (std::fabs(lower_bound.x) + std::fabs(upper_bound.x)) / particles_per_side;
-
-	int index = 0;
-	for (float z = lower_bound.z; z < upper_bound.z; z += delta) {
-		for (float y = lower_bound.y; y < upper_bound.y; y += delta) {
-			for (float x = lower_bound.x; x < upper_bound.x; x += delta) {
-				particle_pos_[index] = glm::vec3(x, y, z);
-				++index;
-			}
+	glm::vec3 pos = lower_bound + glm::vec3(interval);
+	float side_count_x = 0.0f;
+	float side_count_y = 0.0f;
+	float side_count_z = 0.0f;
+	for (int i = 0; i < initial.size(); i++) {
+		pos += glm::vec3(
+			(side_count_x / particles_per_side) * (upper_bound.x - lower_bound.x), 
+			(side_count_y / particles_per_side) * (upper_bound.y - lower_bound.y),
+			(side_count_z / particles_per_side) * (upper_bound.z - lower_bound.z)
+		);
+		side_count_x++;
+		if (pos.x > upper_bound.x + interval) {
+			pos.x = lower_bound.x + interval;
+			side_count_x = 0.0f;
+			side_count_y++;
 		}
+		if (pos.y > upper_bound.y + interval) {
+			pos.y = upper_bound.y + interval;
+			side_count_y = 0.0f;
+			side_count_z++;
+		}
+		if (pos.z > upper_bound.z + interval) {
+			pos.z = upper_bound.z + interval;
+			side_count_z = 0.0f;
+		}
+		particle_pos_.push_back(pos);
+		printf("Pushing pos: ");
+		printf("[ %3.3f %3.3f %3.3f ]\n", pos.x, pos.y, pos.z);
 	}
-
-	// TODO: previous code
-	//glm::vec3 pos = lower_bound;
-	//float side_count_x = 0.0f;
-	//float side_count_y = 0.0f;
-	//float side_count_z = 0.0f;
-	//for (int i = 0; i < initial.size(); i++) {
-	//	pos += glm::vec3(
-	//		(side_count_x / particles_per_side) * (upper_bound.x - lower_bound.x), 
-	//		(side_count_y / particles_per_side) * (upper_bound.y - lower_bound.y),
-	//		(side_count_z / particles_per_side) * (upper_bound.z - lower_bound.z)
-	//	);
-	//
-	//	side_count_x++;
-	//	if (pos.x > upper_bound.x) {
-	//		pos.x = lower_bound.x;
-	//		side_count_x = 0.0f;
-	//		side_count_y++;
-	//	}
-	//	if (pos.y > upper_bound.y) {
-	//		pos.y = upper_bound.y;
-	//		side_count_y = 0.0f;
-	//		side_count_z++;
-	//	}
-	//	if (pos.z > upper_bound.z) {
-	//		pos.z = upper_bound.z;
-	//		side_count_z = 0.0f;
-	//	}
-	//}
+	printf("Set initial particle positions of size: %d\n", particle_pos_.size());
+	printf("Set initial particle velocities of size: %d\n", particle_vel_.size());
 }
 
 void SequentialParticleBased::TimeStep(float delta)

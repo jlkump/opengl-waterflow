@@ -175,6 +175,12 @@ void WindowKeyCallback(GLFWwindow* window, int key, int scancode, int action, in
             g_simulate = !g_simulate;
         }
     }
+
+    if (key == GLFW_KEY_N) {
+        if (action == GLFW_PRESS) {
+            g_debug_renderer->ToggleDebugView(DebugRenderer::PARTICLES);
+        }
+    }
     if (key == GLFW_KEY_1) {
         if (action == GLFW_PRESS) {
             if (g_seq_sim != nullptr && g_seq_sim->GetGridPressures() != nullptr) {
@@ -281,23 +287,13 @@ bool LoadContent()
     /* Create Skybox for scene */
     g_skybox = new Skybox({ "skybox/right.jpg", "skybox/left.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/front.jpg", "skybox/back.jpg" });
 
-    /* Create the simulation */
-    //g_seq_sim = new SequentialGridBased();
+    // g_seq_sim = new SequentialGridBased();
     g_seq_sim = new SequentialParticleBased();
-    std::vector<glm::vec3> initialParticleVelocities(64 * 64);
-    for (size_t i = 0; i < initialParticleVelocities.size(); ++i) {
-        initialParticleVelocities[i] = glm::vec3(0.0f, 0.0f, 0.0f);
+    std::vector<glm::vec3> init_particle_vel;
+    for (int i = 0; i < 1000; i++) {
+        init_particle_vel.push_back(glm::normalize(glm::vec3(((float)(rand() % 100) / 100.0f), ((float)(rand() % 100) / 100.0f), ((float)(rand() % 100) / 100.0f))));
     }
-    // TODO: Note that upperbound, lowerbound, and interval correspond to the grid at the moment
-    g_seq_sim->SetInitialVelocities(
-        initialParticleVelocities, 
-        glm::vec3(-1.0), 
-        glm::vec3(1.0), 
-        0.5f
-    );
-    glm::ivec2 particle_tex_dimen(64, 64);
-    std::vector<glm::vec3>& positions = *g_seq_sim->GetParticlePositions();
-    std::vector<glm::vec3>& velocities = *g_seq_sim->GetParticleVelocities();
+    g_seq_sim->SetInitialVelocities(init_particle_vel, glm::vec3(-1.0, -1.0, -1.0), glm::vec3(1.0, 1.0, 1.0), 0.5);
 
     Texture2D texture_positions(particle_tex_dimen, StorageType::TEX_FLOAT, ChannelType::RGB32F, (const float*)&positions[0]);
     Texture2D texture_velocities(particle_tex_dimen, StorageType::TEX_FLOAT, ChannelType::RGB32F, (const float*)&velocities[0]);
@@ -353,6 +349,9 @@ void UpdateLoop()
             g_seq_sim->TimeStep(deltaTime + time_step);
 
             g_debug_renderer->SetGridVelocities(*g_seq_sim->GetGridVelocities(), g_seq_sim->GetGridDimensions());
+            if (g_seq_sim->GetParticlePositions() != nullptr) {
+                g_debug_renderer->SetParticlePositions(*g_seq_sim->GetParticlePositions());
+            }
             if (g_debug_renderer->IsDebugViewActive(DebugRenderer::GRID_CELL)) {
                 switch (g_debug_renderer->GetCellViewActive()) {
                 case DebugRenderer::DYE:
