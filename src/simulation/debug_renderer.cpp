@@ -182,6 +182,7 @@ void DebugRenderer::UpdateGridAxisVelocities(const std::vector<glm::vec3>& veloc
 	glBindVertexArray(0);
 }
 
+// TODO: remove prints
 void DebugRenderer::UpdateGridVelocities(const std::vector<glm::vec3>& velocities, const unsigned int grid_dim)
 {
 	std::vector<glm::mat4> arrow_mats;
@@ -543,11 +544,8 @@ void DebugRenderer::SetupGridCellBuffers()
 
 void DebugRenderer::SetupParticleSpriteBuffers()
 {
-	// TODO
 	particle_sprite_elements_ = 0;
-
 	debug_particle_shader_.SetUniform1fv("particle_radius", 0.05f);
-
 
 	glGenVertexArrays(1, &VAO_particle_sprite_);
 	glGenBuffers(1, &VBO_particle_sprite_instance_);
@@ -585,6 +583,50 @@ void DebugRenderer::SetupParticleSpriteBuffers()
 	glBindVertexArray(0);
 }
 
+void DebugRenderer::SetupParticleVelocityBuffers()
+{
+	// Setup for the arrows
+	glGenVertexArrays(1, &VAO_particle_arrows_);
+	glGenBuffers(1, &VBO_particle_arrow_instance_);
+	glGenBuffers(1, &VBO_particle_arrow_colors_);
+	glGenBuffers(1, &VBO_particle_arrow_mats_);
+
+	std::vector<glm::vec3> instance_arrow_verts;
+	MakeInstanceArrow(instance_arrow_verts);
+
+	glBindVertexArray(VAO_particle_arrows_);
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_particle_arrow_instance_);
+	glBufferData(GL_ARRAY_BUFFER, instance_arrow_verts.size() * sizeof(glm::vec3), &instance_arrow_verts[0], GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_particle_arrow_colors_);
+	glBufferData(GL_ARRAY_BUFFER, MAX_DEBUG_AXIS_GRID_ARROWS * sizeof(glm::vec3), NULL, GL_STREAM_DRAW);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_particle_arrow_mats_);
+	glBufferData(GL_ARRAY_BUFFER, MAX_DEBUG_AXIS_GRID_ARROWS * sizeof(glm::mat4), NULL, GL_STREAM_DRAW);
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)0);
+	glEnableVertexAttribArray(3);
+	glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(1 * sizeof(glm::vec4)));
+	glEnableVertexAttribArray(4);
+	glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(2 * sizeof(glm::vec4)));
+	glEnableVertexAttribArray(5);
+	glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(3 * sizeof(glm::vec4)));
+
+	glVertexAttribDivisor(0, 0); // Reuse on each instance
+	glVertexAttribDivisor(1, 1); // Unique to each instance
+	glVertexAttribDivisor(2, 1); // Unique ...
+	glVertexAttribDivisor(3, 1);
+	glVertexAttribDivisor(4, 1);
+	glVertexAttribDivisor(5, 1);
+
+	glBindVertexArray(0);
+}
+
 DebugRenderer::DebugRenderer() :
 	debug_instance_shader_("debug/simple_instance.vert", "debug/simple_instance.frag"),
 	debug_grid_cell_shader_("debug/cell_visualization.vert", "debug/cell_visualization.frag"),
@@ -597,8 +639,10 @@ DebugRenderer::DebugRenderer() :
 	SetupGridVelocityBuffers();
 	SetupGridAxisVelocityBuffers();
 	SetupGridCellBuffers();
+	SetupParticleSpriteBuffers();
+	SetupParticleVelocityBuffers();
 
-	ToggleDebugView(GRID_VELOCITIES);
+	//ToggleDebugView(GRID_VELOCITIES);
 	ToggleDebugView(FRAME_TIME);
 }
 
@@ -683,9 +727,44 @@ void DebugRenderer::SetParticlePositions(const std::vector<glm::vec3>& particle_
 }
 
 // TODO
-void DebugRenderer::SetParticleVelocities(const std::vector<glm::vec3>& particle_pos)
+void DebugRenderer::SetParticleVelocities(const std::vector<glm::vec3>& particle_pos, const std::vector<glm::vec3>& particle_vel)
 {
+	std::vector<glm::mat4> arrow_mats;
+	std::vector<glm::vec3> arrow_colors;
+	const float thickness = 0.01f;
+	glm::vec3 k_arrow_color = glm::vec3(0.4, 0.5, 0.7);
 
+	for (int i = 0; i < particle_vel.size(); ++i) {
+		glm::vec3 pos = particle_pos[i];
+		glm::vec3 vel = particle_vel[i];
+
+		glm::vec3 up = glm::normalize(vel);
+		glm::vec3 right = glm::cross(glm::vec3(1, 0, 0), vel);
+		glm::vec3 forward = glm::cross(right, vel);
+		right = glm::cross(vel, forward);
+
+		glm::vec3 scale = glm::vec3(thickness, glm::length(vel), thickness);
+
+		glm::mat4 mat;
+		ConstructVectorAlignedModelMat(mat, scale, pos, right, up, forward);
+
+		arrow_mats.push_back(mat);
+
+		arrow_colors.push_back(k_arrow_color);
+	}
+
+	glBindVertexArray(VAO_particle_arrows_);
+	// load data into vertex buffers
+	// particle_sprite_elements_ = arrow_mats.size(); // TODO
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_particle_arrow_mats_);
+	glBufferData(GL_ARRAY_BUFFER, MAX_DEBUG_GRID_ARROWS * sizeof(glm::mat4), NULL, GL_STREAM_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, arrow_mats.size() * sizeof(glm::mat4), (void*)&arrow_mats[0]);
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_particle_arrow_colors_);
+	glBufferData(GL_ARRAY_BUFFER, MAX_DEBUG_GRID_ARROWS * sizeof(glm::vec3), NULL, GL_STREAM_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, arrow_colors.size() * sizeof(glm::vec3), (void*)&arrow_colors[0]);
+
+	glBindVertexArray(0);
 }
 
 bool DebugRenderer::SetView(const glm::mat4& view)
@@ -708,6 +787,7 @@ bool DebugRenderer::SetProjection(const glm::mat4& proj)
 	debug_instance_shader_.SetUniformMatrix4fv("proj_view", cached_proj_ * cached_view_);
 	debug_grid_cell_shader_.SetUniformMatrix4fv("proj_view", cached_proj_ * cached_view_);
 	debug_particle_shader_.SetUniformMatrix4fv("proj_view", cached_proj_ * cached_view_);
+
 	return true;
 }
 
@@ -776,14 +856,16 @@ bool DebugRenderer::Draw()
 			glBindVertexArray(0);
 			break;
 		case PARTICLES:
-			// TODO
 			debug_particle_shader_.SetActive();
 			glBindVertexArray(VAO_particle_sprite_);
 			glDrawArraysInstanced(GL_TRIANGLES, 0, 6, particle_sprite_elements_);
 			glBindVertexArray(0);
 			break;
 		case PARTICLE_VELOCITIES:
-			// TODO
+			debug_instance_shader_.SetActive();
+			glBindVertexArray(VAO_particle_arrows_);
+			glDrawArraysInstanced(GL_TRIANGLES, 0, grid_arrow_instance_num_, particle_sprite_elements_);
+			glBindVertexArray(0);
 			break;
 		case FRAME_TIME:
 			frame_time_display_.Draw();

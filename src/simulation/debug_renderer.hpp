@@ -136,7 +136,6 @@ private:
 	GLuint VBO_grid_cell_float_val_; 
 	int grid_cell_elements_;
 
-	// TODO
 	// Cell particle sprite visualization
 	Shader debug_particle_shader_;
 	GLuint VAO_particle_sprite_;
@@ -144,6 +143,12 @@ private:
 	GLuint VBO_particle_sprite_pos_;
 	GLuint VBO_particle_sprite_color_;
 	int particle_sprite_elements_;
+
+	// Particle velocities (arrows)
+	GLuint VAO_particle_arrows_;
+	GLuint VBO_particle_arrow_instance_;
+	GLuint VBO_particle_arrow_mats_;
+	GLuint VBO_particle_arrow_colors_;
 
 	void UpdateGridLines();
 	void UpdateGridAxisVelocities(const std::vector<glm::vec3>& velocities, const unsigned int grid_dim);
@@ -159,6 +164,7 @@ private:
 	void SetupGridAxisVelocityBuffers();
 	void SetupGridCellBuffers();
 	void SetupParticleSpriteBuffers();
+	void SetupParticleVelocityBuffers();
 
 public:
 	DebugRenderer();
@@ -170,9 +176,8 @@ public:
 	void SetGridDyeDensities(const std::vector<float>& grid_dyes, const unsigned int grid_dimensions);
 	void SetGridFluidCells(const std::vector<float>& grid_fluid, const unsigned int grid_dimensions);
 
-
 	void SetParticlePositions(const std::vector<glm::vec3>& particle_pos);
-	void SetParticleVelocities(const std::vector<glm::vec3>& particle_vel);
+	void SetParticleVelocities(const std::vector<glm::vec3>& particle_pos, const std::vector<glm::vec3>& particle_vel);
 
 	bool SetView(const glm::mat4& view);
 	bool SetProjection(const glm::mat4& proj);

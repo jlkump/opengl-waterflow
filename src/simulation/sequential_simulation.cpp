@@ -974,9 +974,9 @@ void SequentialParticleBased::SetInitialVelocities(const std::vector<glm::vec3>&
 	printf("delta = %f\n", delta);
 
 	int index = 0;
-	for (float z = lower_bound.z; z < upper_bound.z; z += delta) {
-		for (float y = lower_bound.y; y < upper_bound.y; y += delta) {
-			for (float x = lower_bound.x; x < upper_bound.x; x += delta) {
+	for (float z = lower_bound.z; z < upper_bound.z && index < particle_pos_.size(); z += delta) {
+		for (float y = lower_bound.y; y < upper_bound.y && index < particle_pos_.size(); y += delta) {
+			for (float x = lower_bound.x; x < upper_bound.x && index < particle_pos_.size(); x += delta) {
 				particle_pos_[index] = glm::vec3(x, y, z);
 				++index;
 				printf("Pushing pos at index (%d): ", index);
