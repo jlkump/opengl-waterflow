@@ -1,0 +1,50 @@
+#version 430
+
+// TODO: choose worker groups
+layout(local_size_x=1, local_size_y=1, local_size_z=1) in; // One local worker per worker group
+
+layout(rgba32f, binding = 0) uniform image2D particle_positions;
+layout(rgba32f, binding = 1) uniform image2D particle_velocities;
+
+uniform float delta_time;
+uniform vec3 force;
+uniform vec3 ws_lower_bound;
+uniform vec3 ws_upper_bound;
+
+void main() {
+    // Grab the position and velocity of the respective particle
+    ivec2 particle_id = ivec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y);
+    vec3 position = imageLoad(particle_positions, particle_id).xyz;
+    vec3 velocity = imageLoad(particle_velocities, particle_id).xyz;
+
+    // Apply the force to the particle
+    vec3 new_velocity = velocity + delta_time * force;
+    vec3 new_position = position + delta_time * new_velocity;
+
+    // Make sure the particle is in bounds
+    // (1) Lower-bound restriction
+    if (new_position.x < ws_lower_bound.x) {
+        new_position.x = ws_lower_bound.x;
+    }
+    if (new_position.y < ws_lower_bound.y) {
+        new_position.y = ws_lower_bound.y;
+    }
+    if (new_position.z < ws_lower_bound.z) {
+        new_position.z = ws_lower_bound.z;
+    }
+
+    // (2) Upper-bound restriction
+    if (new_position.x > ws_upper_bound.x) {
+        new_position.x = ws_upper_bound.x;
+    }
+    if (new_position.y > ws_upper_bound.y) {
+        new_position.y = ws_upper_bound.y;
+    }
+    if (new_position.z > ws_upper_bound.z) {
+        new_position.z = ws_upper_bound.z;
+    }
+
+    // Store the new position and velocity
+    imageStore(particle_positions, particle_id, vec4(new_position, 1.0));
+    imageStore(particle_velocities, particle_id, vec4(new_velocity, 0.0));
+}
