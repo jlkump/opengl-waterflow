@@ -2,13 +2,13 @@
 
 layout(local_size_x=1, local_size_y=1, local_size_z=1) in; // One local worker per worker group
 
-layout(r32i, binding = 0) uniform image3D grid_velocities_x;
-layout(r32i, binding = 1) uniform image3D grid_velocities_y;
-layout(r32i, binding = 2) uniform image3D grid_velocities_z;
+layout(r32i, binding = 0) uniform iimage3D grid_velocities_x;
+layout(r32i, binding = 1) uniform iimage3D grid_velocities_y;
+layout(r32i, binding = 2) uniform iimage3D grid_velocities_z;
 
-layout(r32i, binding = 3) uniform image3D grid_new_velocities_x;
-layout(r32i, binding = 4) uniform image3D grid_new_velocities_y;
-layout(r32i, binding = 5) uniform image3D grid_new_velocities_z;
+layout(r32i, binding = 3) uniform iimage3D grid_new_velocities_x;
+layout(r32i, binding = 4) uniform iimage3D grid_new_velocities_y;
+layout(r32i, binding = 5) uniform iimage3D grid_new_velocities_z;
 
 layout (r32ui, binding = 6) uniform uimage3D grid_is_fluid;
 layout (r32ui, binding = 7) uniform uimage3D grid_cell_type; // 0 is solid, 1 is fluid, 2 is air
@@ -18,17 +18,17 @@ layout (r32ui, binding = 7) uniform uimage3D grid_cell_type; // 0 is solid, 1 is
 uniform float texture_precision;
 
 vec3 GetGridVelocity(ivec3 grid_id) {
-	float x = ((float)imageLoad(grid_velocities_x, grid_id).x) / texture_precision;
-	float y = ((float)imageLoad(grid_velocities_y, grid_id).x) / texture_precision;
-	float z = ((float)imageLoad(grid_velocities_z, grid_id).x) / texture_precision;
+	float x = (float(imageLoad(grid_velocities_x, grid_id).x)) / texture_precision;
+	float y = (float(imageLoad(grid_velocities_y, grid_id).x)) / texture_precision;
+	float z = (float(imageLoad(grid_velocities_z, grid_id).x)) / texture_precision;
 
 	return vec3(x, y, z);
 }
 
 void SetVelocityIn3DGridCell(ivec3 pos_id, vec3 new_vel) {
-	imageStore(grid_new_velocities_x, pos_id, (int)(new_vel.x * texture_precision));
-	imageStore(grid_new_velocities_y, pos_id, (int)(new_vel.y * texture_precision));
-	imageStore(grid_new_velocities_z, pos_id, (int)(new_vel.z * texture_precision));
+	imageStore(grid_new_velocities_x, pos_id, ivec4((new_vel.x * texture_precision)));
+	imageStore(grid_new_velocities_y, pos_id, ivec4((new_vel.y * texture_precision)));
+	imageStore(grid_new_velocities_z, pos_id, ivec4((new_vel.z * texture_precision)));
 }
 
 float GetDivergence(ivec3 pos_id) {

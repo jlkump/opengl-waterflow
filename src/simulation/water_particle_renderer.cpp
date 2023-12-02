@@ -26,7 +26,6 @@ void WaterParticleRenderer::InitializeParticleRenderingVariables()
 	glGenFramebuffers(1, &particle_frame_buffer_id_);
 	glBindFramebuffer(GL_FRAMEBUFFER, particle_frame_buffer_id_);
 
-	// Note: Add glGenRenderbuffers for depth buffer if there is wierdness with depth
 	GLuint depthrenderbuffer;
 	glGenRenderbuffers(1, &depthrenderbuffer);
 	glBindRenderbuffer(GL_RENDERBUFFER, depthrenderbuffer);
@@ -162,7 +161,6 @@ void WaterParticleRenderer::DrawParticleSprites(glm::mat4& view_mat, glm::mat4& 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
 	// 2nd attribute buffer : positions of particles' centers
-	// TODO: changed glVertexAttribPointer size from 3 to 2 because the buffer stores vec2
 	glEnableVertexAttribArray(1);
 	glBindBuffer(GL_ARRAY_BUFFER, particle_index_buffer_);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);

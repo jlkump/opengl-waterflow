@@ -1,0 +1,18 @@
+#version 430
+
+layout(local_size_x=1, local_size_y=1, local_size_z=1) in; // One local worker per worker group
+
+layout(r32i, binding = 0) uniform iimage3D grid_velocities_x;
+layout(r32i, binding = 1) uniform iimage3D grid_velocities_y;
+layout(r32i, binding = 2) uniform iimage3D grid_velocities_z;
+
+layout(r32i, binding = 3) uniform iimage3D grid_old_velocities_x;
+layout(r32i, binding = 4) uniform iimage3D grid_old_velocities_y;
+layout(r32i, binding = 5) uniform iimage3D grid_old_velocities_z;
+
+void main() {
+    ivec3 pos_id = ivec3(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y, gl_GlobalInvocationID.z);
+    imageStore(grid_old_velocities_x, pos_id, imageLoad(grid_velocities_x, pos_id));
+    imageStore(grid_old_velocities_y, pos_id, imageLoad(grid_velocities_y, pos_id));
+    imageStore(grid_old_velocities_z, pos_id, imageLoad(grid_velocities_z, pos_id));
+}

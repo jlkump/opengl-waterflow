@@ -2,12 +2,12 @@
 
 layout(local_size_x=1, local_size_y=1, local_size_z=1) in; // One local worker per worker group
 
-layout(r32i, binding = 0) uniform image2D particle_positions_x;
-layout(r32i, binding = 1) uniform image2D particle_positions_y;
-layout(r32i, binding = 2) uniform image2D particle_positions_z;
-layout(r32i, binding = 3) uniform image2D particle_velocities_x;
-layout(r32i, binding = 4) uniform image2D particle_velocities_y;
-layout(r32i, binding = 5) uniform image2D particle_velocities_z;
+layout(r32i, binding = 0) uniform iimage2D particle_positions_x;
+layout(r32i, binding = 1) uniform iimage2D particle_positions_y;
+layout(r32i, binding = 2) uniform iimage2D particle_positions_z;
+layout(r32i, binding = 3) uniform iimage2D particle_velocities_x;
+layout(r32i, binding = 4) uniform iimage2D particle_velocities_y;
+layout(r32i, binding = 5) uniform iimage2D particle_velocities_z;
 
 uniform float delta_time;
 uniform vec3 force;
@@ -16,29 +16,29 @@ uniform vec3 ws_upper_bound;
 uniform float texture_precision;
 
 vec3 GetParticlePosition(ivec2 particle_id) {
-    float x = ((float)imageLoad(particle_positions_x, particle_id).x) / texture_precision;
-    float y = ((float)imageLoad(particle_positions_y, particle_id).x) / texture_precision;
-    float z = ((float)imageLoad(particle_positions_z, particle_id).x) / texture_precision;
+    float x = (float(imageLoad(particle_positions_x, particle_id).x)) / texture_precision;
+    float y = (float(imageLoad(particle_positions_y, particle_id).x)) / texture_precision;
+    float z = (float(imageLoad(particle_positions_z, particle_id).x)) / texture_precision;
     return vec3(x, y, z);
 }
 
 vec3 GetParticleVelocity(ivec2 particle_id) {
-    float x = ((float)imageLoad(particle_velocities_x, particle_id).x) / texture_precision;
-    float y = ((float)imageLoad(particle_velocities_y, particle_id).x) / texture_precision;
-    float z = ((float)imageLoad(particle_velocities_z, particle_id).x) / texture_precision;
+    float x = (float(imageLoad(particle_velocities_x, particle_id).x)) / texture_precision;
+    float y = (float(imageLoad(particle_velocities_y, particle_id).x)) / texture_precision;
+    float z = (float(imageLoad(particle_velocities_z, particle_id).x)) / texture_precision;
     return vec3(x, y, z);
 }
 
 void SetParticlePosition(ivec2 pos_id, vec3 new_pos) {
-	imageStore(particle_positions_x, pos_id, (int)(new_pos.x * texture_precision));
-	imageStore(particle_positions_y, pos_id, (int)(new_pos.y * texture_precision));
-	imageStore(particle_positions_z, pos_id, (int)(new_pos.z * texture_precision));
+	imageStore(particle_positions_x, pos_id, ivec4((new_pos.x * texture_precision)));
+	imageStore(particle_positions_y, pos_id, ivec4((new_pos.y * texture_precision)));
+	imageStore(particle_positions_z, pos_id, ivec4((new_pos.z * texture_precision)));
 }
 
 void SetParticleVelocity(ivec2 pos_id, vec3 new_vel) {
-	imageStore(particle_velocities_x, pos_id, (int)(new_vel.x * texture_precision));
-	imageStore(particle_velocities_y, pos_id, (int)(new_vel.y * texture_precision));
-	imageStore(particle_velocities_z, pos_id, (int)(new_vel.z * texture_precision));
+	imageStore(particle_velocities_x, pos_id, ivec4((new_vel.x * texture_precision)));
+	imageStore(particle_velocities_y, pos_id, ivec4((new_vel.y * texture_precision)));
+	imageStore(particle_velocities_z, pos_id, ivec4((new_vel.z * texture_precision)));
 }
 
 void main() {
