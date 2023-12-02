@@ -461,23 +461,23 @@ void SequentialParticleBased::IntegrateParticles(float delta, glm::vec3 accel)
 		glm::vec3& pos = particle_pos_[i];
 		pos += particle_vel_[i] * delta;
 		// Boundary Conditions
-		if (pos.x > ws_upper_bound_.x) {
-			pos.x = ws_upper_bound_.x;
+		if (pos.x > ws_upper_bound_.x - ws_grid_interval_) {
+			pos.x = ws_upper_bound_.x - ws_grid_interval_;
 		}
-		if (pos.y > ws_upper_bound_.y) {
-			pos.y = ws_upper_bound_.y;
+		if (pos.y > ws_upper_bound_.y - ws_grid_interval_) {
+			pos.y = ws_upper_bound_.y - ws_grid_interval_;
 		}
-		if (pos.z > ws_upper_bound_.z) {
-			pos.z = ws_upper_bound_.z;
+		if (pos.z > ws_upper_bound_.z - ws_grid_interval_) {
+			pos.z = ws_upper_bound_.z - ws_grid_interval_;
 		}
-		if (pos.x < ws_lower_bound_.x) {
-			pos.x = ws_lower_bound_.x;
+		if (pos.x < ws_lower_bound_.x + ws_grid_interval_) {
+			pos.x = ws_lower_bound_.x + ws_grid_interval_;
 		}
-		if (pos.y < ws_lower_bound_.y) {
-			pos.y = ws_lower_bound_.y;
+		if (pos.y < ws_lower_bound_.y + ws_grid_interval_) {
+			pos.y = ws_lower_bound_.y + ws_grid_interval_;
 		}
-		if (pos.z < ws_lower_bound_.z) {
-			pos.z = ws_lower_bound_.z;
+		if (pos.z < ws_lower_bound_.z + ws_grid_interval_) {
+			pos.z = ws_lower_bound_.z + ws_grid_interval_;
 		}
 	}
 }
