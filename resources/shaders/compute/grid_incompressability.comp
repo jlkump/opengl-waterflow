@@ -12,9 +12,9 @@ layout(r32i, binding = 5) uniform image3D grid_new_velocities_z;
 
 layout (r32ui, binding = 6) uniform uimage3D grid_is_fluid;
 layout (r32ui, binding = 7) uniform uimage3D grid_cell_type; // 0 is solid, 1 is fluid, 2 is air
-layout (r32f, binding = 8) uniform image3D grid_pressures;
+// layout (r32f, binding = 8) uniform image3D grid_pressures;
 
-uniform float cp; // = density_ * ws_grid_interval_ / delta; // For pressure calc
+// uniform float cp; // = density_ * ws_grid_interval_ / delta; // For pressure calc
 uniform float texture_precision;
 
 vec3 GetGridVelocity(ivec3 grid_id) {
@@ -63,7 +63,7 @@ void main() {
 		vec3 v_z_pos = GetGridVelocity(pos_id + ivec3(0, 0, 1));
 
 		float p = -total_divergence / s;
-		imageStore(grid_pressures, pos_id, imageLoad(grid_pressures, pos_id) + cp * p);
+		// imageStore(grid_pressures, pos_id, imageLoad(grid_pressures, pos_id) + cp * p);
 
 		v_cur.x -= s_x_neg * p;
 		v_cur.y -= s_y_neg * p;

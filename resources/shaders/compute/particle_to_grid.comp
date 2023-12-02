@@ -20,8 +20,8 @@ layout(r32i, binding = 13) uniform image2D particle_velocities_z;
 
 uniform uint grid_dim;
 uniform float ws_grid_interval;
-uniform float ws_lower_bound;
-uniform float ws_upper_bound;
+uniform vec3 ws_lower_bound;
+uniform vec3 ws_upper_bound;
 uniform float texture_precision;
 
 void SetVelocityIn3DGridCell(ivec3 grid_id, vec3 new_vel, int component) {
