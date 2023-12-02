@@ -260,3 +260,11 @@ bool Shader::SetUniform1fv(const std::string& uniform_name, const float& f)
     }
     return false;
 }
+
+bool Shader::SetUniform1ui(const std::string& uniform_name, const unsigned int& ui)
+{
+    if (GetUniformLocation(uniform_name)) {
+        glProgramUniform1ui(program_id_, uniform_ids_[uniform_name], ui);
+    }
+    return false;
+}

@@ -10,12 +10,17 @@ enum StorageType {
 	TEX_FLOAT,
 	TEX_BYTE,
 	TEX_SHORT,
+	TEX_UINT,
 	TEX_INT,
 };
 
 enum ChannelType {
 	R,
+	R32F,
+	R32I,
+	R32UI,
 	RG,
+	RG32F,
 	RGB,
 	RGB32F,
 	RGBA,
@@ -70,6 +75,7 @@ protected:
 	*/
 	bool valid_texture_;
 	
+	void GenTexture(const void* data = nullptr);
 
 	// For children classes so that they don't have to follow the same format as the public facing API
 	Texture2D() : dimensions_(glm::ivec2(0, 0)), storage_type_(StorageType::TEX_FLOAT), 
@@ -108,6 +114,7 @@ public:
 	GLuint GetTextureId() const;
 
 	bool ModifyTextureData(glm::ivec2 top_left_start, glm::ivec2 data_dimensions, const void* texture_data);
+	void SetNewData(glm::ivec2 dimensions, const void* data);
 	glm::ivec2 GetDimensions() const;
 	GLenum GetGLStorageType() const;
 	GLenum GetGLChannelType() const;
@@ -170,6 +177,9 @@ protected:
 	* TODO: This might not be entirely necessary since we can track validity by seeing if the texture_id_ != 0
 	*/
 	bool valid_texture_;
+
+	void GenTexture(const void* data);
+
 public:
 	Texture3D(glm::ivec3 dimensions, StorageType storage_type = StorageType::TEX_FLOAT, 
 		ChannelType channel_type = ChannelType::RGBA, const void* initial_data = nullptr);
@@ -189,6 +199,7 @@ public:
 	GLuint GetTextureId() const;
 
 	bool ModifyTextureData(glm::ivec3 top_left_start, glm::ivec3 data_dimensions, const void* texture_data);
+	void SetNewData(glm::ivec3 dimensions, const void* texture_data);
 	glm::ivec3 GetDimensions() const;
 	GLenum GetGLStorageType() const;
 	GLenum GetGLChannelType() const;

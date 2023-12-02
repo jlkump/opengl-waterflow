@@ -7,15 +7,7 @@
 ///	Private Methods ///
 ///////////////////////
 
-// Code for creating a Texture object are from Tomasz Ga'aj's
-// OpenGL CMake tutorial, modified to this project's use-case
-// Specifically, this version of texture allows for the creation
-// of empty textures and the future modification of those textures.
-
-Texture2D::Texture2D(glm::ivec2 dimensions, StorageType storage_type, ChannelType channel_type, const void* initial_data) :
-	dimensions_(dimensions), storage_type_(storage_type), channel_type_(channel_type),
-	gl_storage_type_(GL_NONE), gl_channel_type_(GL_NONE), valid_texture_(false), texture_id_(0)
-{
+void Texture2D::GenTexture(const void* data) {
 	// Generate handle for texture on GPU
 	glGenTextures(1, &texture_id_);
 	// Bind the texture to the active texture. Future texture calls modify this texture
@@ -30,51 +22,78 @@ Texture2D::Texture2D(glm::ivec2 dimensions, StorageType storage_type, ChannelTyp
 	// TODO: figure out format and internal format for glTexImage2D(...)
 	GLenum format = GL_RGBA;
 
-	switch (channel_type) {
-		case ChannelType::R:
-			gl_channel_type_ = GL_RED;
-			format = GL_RED;
-			break;
-		case ChannelType::RG:
-			gl_channel_type_ = GL_RG;
-			format = GL_RG;
-			break;
-		case ChannelType::RGB:
-			gl_channel_type_ = GL_RGB;
-			format = GL_RGB;
-			break;
-		case ChannelType::RGB32F:
-			gl_channel_type_ = GL_RGB32F;
-			format = GL_RGB;
-			break;
-		case ChannelType::RGBA:
-			gl_channel_type_ = GL_RGBA;
-			format = GL_RGBA;
-			break;
-		case ChannelType::RGBA32F:
-			gl_channel_type_ = GL_RGBA32F;
-			format = GL_RGBA;
-			break;
+	switch (channel_type_) {
+	case ChannelType::R:
+		gl_channel_type_ = GL_RED;
+		format = GL_RED;
+		break;
+	case ChannelType::R32F:
+		gl_channel_type_ = GL_R32F;
+		format = GL_RED;
+		break;
+	case ChannelType::R32I:
+		gl_channel_type_ = GL_R32I;
+		format = GL_RED;
+		break;
+	case ChannelType::R32UI:
+		gl_channel_type_ = GL_R32UI;
+		format = GL_RED;
+		break;
+	case ChannelType::RG:
+		gl_channel_type_ = GL_RG;
+		format = GL_RG;
+		break;
+	case ChannelType::RGB:
+		gl_channel_type_ = GL_RGB;
+		format = GL_RGB;
+		break;
+	case ChannelType::RGB32F:
+		gl_channel_type_ = GL_RGB32F;
+		format = GL_RGB;
+		break;
+	case ChannelType::RGBA:
+		gl_channel_type_ = GL_RGBA;
+		format = GL_RGBA;
+		break;
+	case ChannelType::RGBA32F:
+		gl_channel_type_ = GL_RGBA32F;
+		format = GL_RGBA;
+		break;
 	}
 
-	switch (storage_type) {
-		case StorageType::TEX_BYTE:
-			gl_storage_type_ = GL_BYTE;
-			break;
-		case StorageType::TEX_SHORT:
-			gl_storage_type_ = GL_SHORT;
-			break;
-		case StorageType::TEX_INT:
-			gl_storage_type_ = GL_INT;
-			break;
-		case StorageType::TEX_FLOAT:
-			gl_storage_type_ = GL_FLOAT;
-			break;
+	switch (storage_type_) {
+	case StorageType::TEX_BYTE:
+		gl_storage_type_ = GL_BYTE;
+		break;
+	case StorageType::TEX_SHORT:
+		gl_storage_type_ = GL_SHORT;
+		break;
+	case StorageType::TEX_INT:
+		gl_storage_type_ = GL_INT;
+		break;
+	case StorageType::TEX_UINT:
+		gl_storage_type_ = GL_UNSIGNED_INT;
+		break;
+	case StorageType::TEX_FLOAT:
+		gl_storage_type_ = GL_FLOAT;
+		break;
 	}
 	// Place texture data to the GPU
-	glTexImage2D(GL_TEXTURE_2D, 0, gl_channel_type_, dimensions.x, dimensions.y, 0, format, gl_storage_type_, initial_data);
+	glTexImage2D(GL_TEXTURE_2D, 0, gl_channel_type_, dimensions_.x, dimensions_.y, 0, format, gl_storage_type_, data);
 	// TODO: Error check the result of OpenGL calls
 	valid_texture_ = true;
+}
+
+// Code for creating a Texture object are from Tomasz Ga'aj's
+// OpenGL CMake tutorial, modified to this project's use-case
+// Specifically, this version of texture allows for the creation
+// of empty textures and the future modification of those textures.
+
+Texture2D::Texture2D(glm::ivec2 dimensions, StorageType storage_type, ChannelType channel_type, const void* initial_data) :
+	dimensions_(dimensions), storage_type_(storage_type), channel_type_(channel_type),
+	gl_storage_type_(GL_NONE), gl_channel_type_(GL_NONE), valid_texture_(false), texture_id_(0)
+{
+	GenTexture(initial_data);
 }
 
 Texture2D::Texture2D(const std::string& texture_filename) : 
@@ -160,6 +179,16 @@ glm::ivec2 Texture2D::GetDimensions() const
 	return dimensions_;
 }
 
+void Texture2D::SetNewData(glm::ivec2 dimensions, const void* texture_data)
+{
+	if (texture_id_ != 0)
+	{
+		glDeleteTextures(1, &texture_id_);
+	}
+	dimensions_ = dimensions;
+	GenTexture(texture_data);
+}
+
 GLenum Texture2D::GetGLStorageType() const
 {
 	return storage_type_;
@@ -192,32 +221,71 @@ bool Texture2D::BindImageTexture(GLenum texture_unit_binding)
 
 
 Texture3D::Texture3D(glm::ivec3 dimensions, StorageType storage_type, ChannelType channel_type, const void* initial_data)
-	: gl_storage_type_(GL_NONE), gl_channel_type_(GL_NONE), valid_texture_(false), texture_id_(0)
+	: dimensions_(dimensions), channel_type_(channel_type), storage_type_(storage_type),
+	gl_storage_type_(GL_NONE), gl_channel_type_(GL_NONE), valid_texture_(false), texture_id_(0)
 {
-    glGenTextures(1, &texture_id_);
-    glBindTexture(GL_TEXTURE_3D, texture_id_);
+	GenTexture(initial_data);
+}
 
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+Texture3D::~Texture3D()
+{
+	if (texture_id_ != 0)
+	{
+		glDeleteTextures(1, &texture_id_);
+	}
+}
 
-	switch (channel_type) {
+void Texture3D::GenTexture(const void* data)
+{
+	glGenTextures(1, &texture_id_);
+	glBindTexture(GL_TEXTURE_3D, texture_id_);
+
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+	GLenum format = GL_RGBA;
+	switch (channel_type_) {
 	case ChannelType::R:
 		gl_channel_type_ = GL_RED;
+		format = GL_RED;
+		break;
+	case ChannelType::R32F:
+		gl_channel_type_ = GL_R32F;
+		format = GL_RED;
+		break;
+	case ChannelType::R32I:
+		gl_channel_type_ = GL_R32I;
+		format = GL_RED;
+		break;
+	case ChannelType::R32UI:
+		gl_channel_type_ = GL_R32UI;
+		format = GL_RED;
 		break;
 	case ChannelType::RG:
 		gl_channel_type_ = GL_RG;
+		format = GL_RG;
 		break;
 	case ChannelType::RGB:
 		gl_channel_type_ = GL_RGB;
+		format = GL_RGB;
+		break;
+	case ChannelType::RGB32F:
+		gl_channel_type_ = GL_RGB32F;
+		format = GL_RGB;
 		break;
 	case ChannelType::RGBA:
 		gl_channel_type_ = GL_RGBA;
+		format = GL_RGBA;
+		break;
+	case ChannelType::RGBA32F:
+		gl_channel_type_ = GL_RGBA32F;
+		format = GL_RGBA;
 		break;
 	}
 
-	switch (storage_type) {
+	switch (storage_type_) {
 	case StorageType::TEX_BYTE:
 		gl_storage_type_ = GL_BYTE;
 		break;
@@ -227,22 +295,17 @@ Texture3D::Texture3D(glm::ivec3 dimensions, StorageType storage_type, ChannelTyp
 	case StorageType::TEX_INT:
 		gl_storage_type_ = GL_INT;
 		break;
+	case StorageType::TEX_UINT:
+		gl_storage_type_ = GL_UNSIGNED_INT;
+		break;
 	case StorageType::TEX_FLOAT:
 		gl_storage_type_ = GL_FLOAT;
 		break;
 	}
 
-	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, dimensions.x, dimensions.y, dimensions.z, 0, GL_RGBA, GL_FLOAT, 0);
+	glTexImage3D(GL_TEXTURE_3D, 0, gl_channel_type_, dimensions_.x, dimensions_.y, dimensions_.z, 0, format, gl_storage_type_, data);
 
 	valid_texture_ = true;
-}
-
-Texture3D::~Texture3D()
-{
-	if (texture_id_ != 0)
-	{
-		glDeleteTextures(1, &texture_id_);
-	}
 }
 
 GLuint Texture3D::GetTextureId() const
@@ -276,6 +339,16 @@ bool Texture3D::ModifyTextureData(glm::ivec3 top_left_start, glm::ivec3 data_dim
 		data_dimensions.x, data_dimensions.y, data_dimensions.z, 
 		gl_channel_type_, gl_storage_type_, texture_data);
 	return true;
+}
+
+void Texture3D::SetNewData(glm::ivec3 dimensions, const void* texture_data)
+{
+	if (texture_id_ != 0)
+	{
+		glDeleteTextures(1, &texture_id_);
+	}
+	dimensions_ = dimensions;
+	GenTexture(texture_data);
 }
 
 glm::ivec3 Texture3D::GetDimensions() const

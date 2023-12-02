@@ -142,6 +142,7 @@ public:
 	bool SetUniformMatrix3fv(const std::string& uniform_name, const glm::mat3& matrix);
 	bool SetUniform3fv(const std::string& uniform_name, const glm::vec3& vec);
 	bool SetUniform1fv(const std::string& uniform_name, const float& f);
+	bool SetUniform1ui(const std::string& uniform_name, const unsigned int& ui);
 };
 
 #endif
