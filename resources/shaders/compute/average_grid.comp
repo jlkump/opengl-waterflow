@@ -2,14 +2,34 @@
 
 layout(local_size_x=1, local_size_y=1, local_size_z=1) in; // One local worker per worker group
 
-layout (rgba32f, binding = 0) uniform image3D grid_vel;
-layout (rgba32f, binding = 1) uniform image3D grid_count;
+layout(r32i, binding = 0) uniform image3D grid_velocities_x;
+layout(r32i, binding = 1) uniform image3D grid_velocities_y;
+layout(r32i, binding = 2) uniform image3D grid_velocities_z;
+layout(r32ui, binding = 3) uniform image3D grid_count_x;
+layout(r32ui, binding = 4) uniform image3D grid_count_y;
+layout(r32ui, binding = 5) uniform image3D grid_count_z;
+
+uniform float texture_precision;
+
+vec3 GetGridVelocity(ivec3 grid_id) {
+	float x = ((float)imageLoad(grid_velocities_x, grid_id).x) / texture_precision;
+    float y = ((float)imageLoad(grid_velocities_y, grid_id).x) / texture_precision;
+    float z = ((float)imageLoad(grid_velocities_z, grid_id).x) / texture_precision;
+	return vec3(x, y, z);
+}
+
+vec3 GetGridCount(ivec3 grid_id) {
+	float x = ((float)imageLoad(grid_count_x, grid_id).x);
+    float y = ((float)imageLoad(grid_count_y, grid_id).x);
+    float z = ((float)imageLoad(grid_count_z, grid_id).x);
+	return vec3(x, y, z);
+}
 
 void main() {
 	ivec3 pos_id = ivec3(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y, gl_GlobalInvocationID.z);
 
-	vec3 vel = imageLoad(grid_vel, pos_id).xyz;
-	vec3 count = imageLoad(grid_count, pos_id).xyz;
+	vec3 vel = GetGridVelocity(pos_id);
+	vec3 count = GetGridCount(pos_id);
 	if (count.x != 0) {
 		vel.x = vel.x / count.x;
 	}

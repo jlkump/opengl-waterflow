@@ -2,19 +2,40 @@
 
 layout(local_size_x=1, local_size_y=1, local_size_z=1) in; // One local worker per worker group
 
-layout (rgba32f, binding = 0) uniform image3D grid_vel;
-layout (rgba32f, binding = 1) uniform image3D grid_new_vel;
-layout (r32ui, binding = 2) uniform uimage3D grid_is_fluid;
-layout (r32ui, binding = 3) uniform uimage3D grid_cell_type; // 0 is solid, 1 is fluid, 2 is air
-layout (r32f, binding = 4) uniform image3D grid_pressures;
+layout(r32i, binding = 0) uniform image3D grid_velocities_x;
+layout(r32i, binding = 1) uniform image3D grid_velocities_y;
+layout(r32i, binding = 2) uniform image3D grid_velocities_z;
+
+layout(r32i, binding = 3) uniform image3D grid_new_velocities_x;
+layout(r32i, binding = 4) uniform image3D grid_new_velocities_y;
+layout(r32i, binding = 5) uniform image3D grid_new_velocities_z;
+
+layout (r32ui, binding = 6) uniform uimage3D grid_is_fluid;
+layout (r32ui, binding = 7) uniform uimage3D grid_cell_type; // 0 is solid, 1 is fluid, 2 is air
+layout (r32f, binding = 8) uniform image3D grid_pressures;
 
 uniform float cp; // = density_ * ws_grid_interval_ / delta; // For pressure calc
+uniform float texture_precision;
+
+vec3 GetGridVelocity(ivec3 grid_id) {
+	float x = ((float)imageLoad(grid_velocities_x, grid_id).x) / texture_precision;
+	float y = ((float)imageLoad(grid_velocities_y, grid_id).x) / texture_precision;
+	float z = ((float)imageLoad(grid_velocities_z, grid_id).x) / texture_precision;
+
+	return vec3(x, y, z);
+}
+
+void SetVelocityIn3DGridCell(ivec3 pos_id, vec3 new_vel) {
+	imageStore(grid_new_velocities_x, pos_id, (int)(new_vel.x * texture_precision));
+	imageStore(grid_new_velocities_y, pos_id, (int)(new_vel.y * texture_precision));
+	imageStore(grid_new_velocities_z, pos_id, (int)(new_vel.z * texture_precision));
+}
 
 float GetDivergence(ivec3 pos_id) {
-	vec3 cell = imageLoad(grid_vel, pos_id).xyz;
-	vec3 cell_x = imageLoad(grid_vel, pos_id + ivec3(1, 0, 0)).xyz;
-	vec3 cell_y = imageLoad(grid_vel, pos_id + ivec3(0, 1, 0)).xyz;
-	vec3 cell_z = imageLoad(grid_vel, pos_id + ivec3(0, 0, 1)).xyz;
+	vec3 cell = GetGridVelocity(pos_id);
+	vec3 cell_x = GetGridVelocity(pos_id + ivec3(1, 0, 0));
+	vec3 cell_y = GetGridVelocity(pos_id + ivec3(0, 1, 0));
+	vec3 cell_z = GetGridVelocity(pos_id + ivec3(0, 0, 1));
 
 	return cell_x.x - cell.x + cell_y.y - cell.y + cell_z.z - cell.z;
 }
@@ -36,10 +57,10 @@ void main() {
 
 		float total_divergence = GetDivergence(pos_id);
 		
-		vec3 v_cur = imageLoad(grid_vel, pos_id).xyz;
-		vec3 v_x_pos = imageLoad(grid_vel, pos_id + ivec3(1, 0, 0)).xyz;
-		vec3 v_y_pos = imageLoad(grid_vel, pos_id + ivec3(0, 1, 0)).xyz;
-		vec3 v_z_pos = imageLoad(grid_vel, pos_id + ivec3(0, 0, 1)).xyz;
+		vec3 v_cur = GetGridVelocity(pos_id);
+		vec3 v_x_pos = GetGridVelocity(pos_id + ivec3(1, 0, 0));
+		vec3 v_y_pos = GetGridVelocity(pos_id + ivec3(0, 1, 0));
+		vec3 v_z_pos = GetGridVelocity(pos_id + ivec3(0, 0, 1));
 
 		float p = -total_divergence / s;
 		imageStore(grid_pressures, pos_id, imageLoad(grid_pressures, pos_id) + cp * p);
@@ -51,9 +72,9 @@ void main() {
 		v_y_pos.y += s_y_pos * p;
 		v_z_pos.z += s_z_pos * p;
 
-		imageStore(grid_new_vel, pos_id, vec4(v_cur, 0.0));
-		imageStore(grid_new_vel, pos_id + ivec3(1, 0, 0), vec4(v_x_pos, 0.0));
-		imageStore(grid_new_vel, pos_id + ivec3(0, 1, 0), vec4(v_y_pos, 0.0));
-		imageStore(grid_new_vel, pos_id + ivec3(0, 0, 1), vec4(v_z_pos, 0.0));
+		SetVelocityIn3DGridCell(pos_id, v_cur);
+		SetVelocityIn3DGridCell(pos_id + ivec3(1, 0, 0), v_x_pos);
+		SetVelocityIn3DGridCell(pos_id + ivec3(0, 1, 0), v_y_pos);
+		SetVelocityIn3DGridCell(pos_id + ivec3(0, 0, 1), v_z_pos);
 	}
 }

@@ -1,0 +1,338 @@
+#version 430
+
+layout(local_size_x=1, local_size_y=1, local_size_z=1) in; // One local worker per worker group
+
+layout(r32i, binding = 0) uniform image3D grid_velocities_x;
+layout(r32i, binding = 1) uniform image3D grid_velocities_y;
+layout(r32i, binding = 2) uniform image3D grid_velocities_z;
+layout(r32ui, binding = 3) uniform image3D grid_count_x;
+layout(r32ui, binding = 4) uniform image3D grid_count_y;
+layout(r32ui, binding = 5) uniform image3D grid_count_z;
+layout(r32ui, binding = 6) uniform uimage3D grid_is_fluid;
+layout(r32ui, binding = 7) uniform uimage3D grid_cell_type; // 0 is solid, 1 is fluid, 2 is air
+
+layout(r32i, binding = 8) uniform image2D particle_positions_x;
+layout(r32i, binding = 9) uniform image2D particle_positions_y;
+layout(r32i, binding = 10) uniform image2D particle_positions_z;
+
+layout(r32i, binding = 11) uniform image2D particle_velocities_x;
+layout(r32i, binding = 12) uniform image2D particle_velocities_y;
+layout(r32i, binding = 13) uniform image2D particle_velocities_z;
+
+layout(r32i, binding = 14) uniform image3D grid_old_velocities_x;
+layout(r32i, binding = 15) uniform image3D grid_old_velocities_y;
+layout(r32i, binding = 16) uniform image3D grid_old_velocities_z;
+
+uniform uint grid_dim;
+uniform float ws_grid_interval;
+uniform float ws_lower_bound;
+uniform float ws_upper_bound;
+uniform float texture_precision;
+
+vec3 GetGridVelocity(ivec3 grid_id) {
+    float x = ((float)imageLoad(grid_velocities_x, grid_id).x) / texture_precision;
+    float y = ((float)imageLoad(grid_velocities_y, grid_id).x) / texture_precision;
+    float z = ((float)imageLoad(grid_velocities_z, grid_id).x) / texture_precision;
+    return vec3(x, y, z);
+}
+
+vec3 GetGridOldVelocity(vec3 grid_id) {
+    float x = ((float)imageLoad(grid_old_velocities_x, grid_id).x) / texture_precision;
+    float y = ((float)imageLoad(grid_old_velocities_y, grid_id).x) / texture_precision;
+    float z = ((float)imageLoad(grid_old_velocities_z, grid_id).x) / texture_precision;
+    return vec3(x, y, z);
+}
+
+void SetVelocityIn3DGridCell(ivec3 grid_id, vec3 new_vel, int component) {
+    imageAtomicAdd(grid_velocities_x, grid_id, (int)(new_vel.x * texture_precision));
+    imageAtomicAdd(grid_velocities_y, grid_id, (int)(new_vel.y * texture_precision));
+    imageAtomicAdd(grid_velocities_z, grid_id, (int)(new_vel.z * texture_precision));
+    
+    // Add particle count of respective cell
+    switch (component) {
+    case 0:
+        imageAtomicAdd(grid_count_x, 1);
+        break;
+    case 1:
+        imageAtomicAdd(grid_count_y, 1);
+        break;
+    case 2:
+        imageAtomicAdd(grid_count_z, 1);
+        break;
+    }
+}
+
+vec3 GetParticlePosition(ivec2 particle_id) {
+    float x = ((float)imageLoad(particle_positions_x, particle_id).x) / texture_precision;
+    float y = ((float)imageLoad(particle_positions_y, particle_id).x) / texture_precision;
+    float z = ((float)imageLoad(particle_positions_z, particle_id).x) / texture_precision;
+    return vec3(x, y, z);
+}
+
+vec3 GetParticleVelocity(ivec2 particle_id) {
+    float x = ((float)imageLoad(particle_velocities_x, particle_id).x) / texture_precision;
+    float y = ((float)imageLoad(particle_velocities_y, particle_id).x) / texture_precision;
+    float z = ((float)imageLoad(particle_velocities_z, particle_id).x) / texture_precision;
+    return vec3(x, y, z);
+}
+
+void SetParticleVelocity(ivec2 pos_id, vec3 new_vel) {
+	imageStore(particle_velocities_x, pos_id, (int)(new_vel.x * texture_precision));
+	imageStore(particle_velocities_y, pos_id, (int)(new_vel.y * texture_precision));
+	imageStore(particle_velocities_z, pos_id, (int)(new_vel.z * texture_precision));
+}
+
+vec3 GetGridOffset(int component) {
+    vec3 delta = vec3(0.0);
+
+    switch (component) {
+    case 0: // x
+        delta.y = ws_grid_interval * 0.5;
+        delta.z = ws_grid_interval * 0.5;
+        break;
+    case 1: // y
+        delta.x = ws_grid_interval * 0.5;
+        delta.z = ws_grid_interval * 0.5;
+        break;
+    case 2: // z
+        delta.x = ws_grid_interval * 0.5;
+        delta.y = ws_grid_interval * 0.5;
+        break;
+    }
+
+    return delta;
+}
+
+vec3 GetWorldSpaceVelocity(int component, vec3 vel) {
+    switch (component) {
+    case 0:
+        vel.z = 0.0f;
+        vel.y = 0.0f;
+        break;
+    case 1:
+        vel.x = 0.0f;
+        vel.z = 0.0f;
+        break;
+    case 2:
+        vel.y = 0.0f;
+        vel.x = 0.0f;
+        break;
+    }
+
+    return vel;
+}
+
+float IsValid(ivec3 cell_pos) {
+    return imageLoad(grid_cell_type, cell_pos) != 2 
+            || imageLoad(grid_cell_type, cell_pos + offset) != 2 
+            ? 1.0f : 0.0f;
+}
+
+void main() {
+    // Get particle data
+    ivec2 particle_id = ivec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y);
+    vec3 position = GetParticlePosition(particle_id);
+    vec3 velocity = GetParticleVelocity(particle_id);
+    vec3 new_velocity = velocity;
+
+    // Find the cell with the particle
+
+    // TODO: Update fluid
+
+
+    // TODO: density
+    // Compute the new grid velocity and density by component
+    // Denote components x=0, y=1, z=2
+    float one_over_ws_interval = 1.0 / ws_grid_interval;
+    for (int component = 0; component < 3; ++component) {
+
+        // Determine the offset with respect to component's direction
+        vec3 delta = GetGridOffset(component);
+
+        vec3 ws_pos = vec3(0.0);
+        ws_pos.x = clamp(
+            position.x - ws_lower_bound.x, 
+            ws_upper_bound_.x - ws_lower_bound.x, 
+            ws_grid_interval
+        );
+        ws_pos.y = clamp(
+            position.y - ws_lower_bound.y, 
+            ws_upper_bound_.y - ws_lower_bound.y, 
+            ws_grid_interval
+        );
+        ws_pos.z = clamp(
+            position.z - ws_lower_bound.z, 
+            ws_upper_bound_.z - ws_lower_bound.z, 
+            ws_grid_interval
+        );
+
+        uint x0 = min((uint)floor(ws_pos.x - delta.x * one_over_ws_interval), grid_dim - 1);
+        float tx = ((ws_pos.x - delta.x) - ((float)x0) * ws_grid_interval_) * one_over_ws_interval;
+        uint x1 = min(x0 + 1, grid_dim - 1);
+
+        uint y0 = min((uint)floor(ws_pos.y - delta.y * one_over_ws_interval), grid_dim - 1);
+        float ty = ((ws_pos.y - delta.y) - ((float)y0) * ws_grid_interval_) * one_over_ws_interval;
+        uint y1 = min(y0 + 1, grid_dim - 1);
+
+        uint z0 = min((uint)floor(ws_pos.z - delta.z * one_over_ws_interval), grid_dim - 1);
+        float tz = ((ws_pos.z - delta.z) - ((float)z0) * ws_grid_interval_) * one_over_ws_interval;
+        uint z1 = min(z0 + 1, grid_dim - 1);
+
+        float sx = 1.0 - tx;
+        float sy = 1.0 - ty;
+        float sz = 1.0 - tz;
+
+        float d0 = sx * sy * sz;
+        float d1 = tx * sy * sz;
+        float d2 = sx * sy * tz;
+        float d3 = tx * sy * tz;
+
+        float d4 = sx * ty * sz;
+        float d5 = tx * ty * sz;
+        float d6 = sx * ty * tz;
+        float d7 = tx * ty * tz;
+
+        ivec3 offset = ivec(0.0);
+        switch (component) {
+        case 0:
+            offset.x = 1;
+            break;
+        case 1:
+            offset.y = 1;
+            break;
+        case 2:
+            offset.z = 1;
+            break;
+        }
+
+        float valid0 = IsValid(ivec3(x0, y0, z0));
+        float valid1 = IsValid(ivec3(x1, y0, z0));
+        float valid2 = IsValid(ivec3(x0, y0, z1));
+        float valid3 = IsValid(ivec3(x1, y0, z1));
+        float valid4 = IsValid(ivec3(x0, y1, z0));
+        float valid5 = IsValid(ivec3(x1, y1, z0));
+        float valid6 = IsValid(ivec3(x0, y1, z1));
+        float valid7 = IsValid(ivec3(x1, y1, z1));
+
+        float d = valid0 * d0 + valid1 * d1 + valid2 * d2 + valid3 * d3 + valid4 * d4 + valid5 * d5 + valid6 * d6 + valid7 * d7;
+        vec3 ws_vel = velocity;
+        if (d > 0.0) {
+            float v0 = 0.0f;
+            float v1 = 0.0f;
+            float v2 = 0.0f;
+            float v3 = 0.0f;
+            float v4 = 0.0f;
+            float v5 = 0.0f;
+            float v6 = 0.0f;
+            float v7 = 0.0f;
+
+            float dv0 = 0.0f;
+            float dv1 = 0.0f;
+            float dv2 = 0.0f;
+            float dv3 = 0.0f;
+            float dv4 = 0.0f;
+            float dv5 = 0.0f;
+            float dv6 = 0.0f;
+            float dv7 = 0.0f;
+            // ivec3 grid_id, vec3 new_vel, int component
+            switch (component) {
+            case 0:
+                ws_vel.y = 0.0f;
+                ws_vel.z = 0.0f;
+                v1 = GetGridVelocity(ivec3(x1, y0, z0)).x;
+                v0 = GetGridVelocity(ivec3(x0, y0, z0)).x;
+                v2 = GetGridVelocity(ivec3(x0, y0, z1)).x;
+                v3 = GetGridVelocity(ivec3(x1, y0, z1)).x;
+                v4 = GetGridVelocity(ivec3(x0, y1, z0)).x;
+                v5 = GetGridVelocity(ivec3(x1, y1, z0)).x;
+                v6 = GetGridVelocity(ivec3(x0, y1, z1)).x;
+                v7 = GetGridVelocity(ivec3(x1, y1, z1)).x;
+
+                dv0 = v0 - GetGridOldVelocity(ivec3(x0, y0, z0)).x;
+                dv1 = v1 - GetGridOldVelocity(ivec3(x1, y0, z0)).x;
+                dv2 = v2 - GetGridOldVelocity(ivec3(x0, y0, z1)).x;
+                dv3 = v3 - GetGridOldVelocity(ivec3(x1, y0, z1)).x;
+                dv4 = v4 - GetGridOldVelocity(ivec3(x0, y1, z0)).x;
+                dv5 = v5 - GetGridOldVelocity(ivec3(x1, y1, z0)).x;
+                dv6 = v6 - GetGridOldVelocity(ivec3(x0, y1, z1)).x;
+                dv7 = v7 - GetGridOldVelocity(ivec3(x1, y1, z1)).x;
+                break;
+            case 1:
+                ws_vel.x = 0.0f;
+                ws_vel.z = 0.0f;
+                v0 = GetGridVelocity(ivec3(x0, y0, z0)).y;
+                v1 = GetGridVelocity(ivec3(x1, y0, z0)).y;
+                v2 = GetGridVelocity(ivec3(x0, y0, z1)).y;
+                v3 = GetGridVelocity(ivec3(x1, y0, z1)).y;
+                v4 = GetGridVelocity(ivec3(x0, y1, z0)).y;
+                v5 = GetGridVelocity(ivec3(x1, y1, z0)).y;
+                v6 = GetGridVelocity(ivec3(x0, y1, z1)).y;
+                v7 = GetGridVelocity(ivec3(x1, y1, z1)).y;
+
+                dv0 = v0 - GetGridOldVelocity(ivec3(x0, y0, z0)).y;
+                dv1 = v1 - GetGridOldVelocity(ivec3(x1, y0, z0)).y;
+                dv2 = v2 - GetGridOldVelocity(ivec3(x0, y0, z1)).y;
+                dv3 = v3 - GetGridOldVelocity(ivec3(x1, y0, z1)).y;
+                dv4 = v4 - GetGridOldVelocity(ivec3(x0, y1, z0)).y;
+                dv5 = v5 - GetGridOldVelocity(ivec3(x1, y1, z0)).y;
+                dv6 = v6 - GetGridOldVelocity(ivec3(x0, y1, z1)).y;
+                dv7 = v7 - GetGridOldVelocity(ivec3(x1, y1, z1)).y;
+                break;
+            case 2:
+                ws_vel.y = 0.0f;
+                ws_vel.x = 0.0f;
+                v0 = GetGridVelocity(ivec3(x0, y0, z0)).z;
+                v1 = GetGridVelocity(ivec3(x1, y0, z0)).z;
+                v2 = GetGridVelocity(ivec3(x0, y0, z1)).z;
+                v3 = GetGridVelocity(ivec3(x1, y0, z1)).z;
+                v4 = GetGridVelocity(ivec3(x0, y1, z0)).z;
+                v5 = GetGridVelocity(ivec3(x1, y1, z0)).z;
+                v6 = GetGridVelocity(ivec3(x0, y1, z1)).z;
+                v7 = GetGridVelocity(ivec3(x1, y1, z1)).z;
+
+                dv0 = v0 - GetGridOldVelocity(ivec3(x0, y0, z0)).z;
+                dv1 = v1 - GetGridOldVelocity(ivec3(x1, y0, z0)).z;
+                dv2 = v2 - GetGridOldVelocity(ivec3(x0, y0, z1)).z;
+                dv3 = v3 - GetGridOldVelocity(ivec3(x1, y0, z1)).z;
+                dv4 = v4 - GetGridOldVelocity(ivec3(x0, y1, z0)).z;
+                dv5 = v5 - GetGridOldVelocity(ivec3(x1, y1, z0)).z;
+                dv6 = v6 - GetGridOldVelocity(ivec3(x0, y1, z1)).z;
+                dv7 = v7 - GetGridOldVelocity(ivec3(x1, y1, z1)).z;
+                break;
+            }
+
+            float pic_v = (valid0 * v0 * d0
+				+ valid1 * v1 * d1 + valid2 * v2 * d2
+				+ valid3 * v3 * d3 + valid4 * v4 * d4
+				+ valid5 * v5 * d5 + valid6 * v6 * d6
+				+ valid7 * v7 * d7) / d;
+
+            float diff = (valid0 * dv0 * d0
+                        + valid1 * dv1 * d1 + valid2 * dv2 * d2
+                        + valid3 * dv3 * d3 + valid4 * dv4 * d4
+                        + valid5 * dv5 * d5 + valid6 * dv6 * d6
+                        + valid7 * dv7 * d7) / d;
+
+            float flip_v;
+
+            switch (component) {
+            case 0:
+                flip_v = ws_vel.x + diff;
+                new_velocity.x = flip_ratio * flip_v + (1.0f - flip_ratio) * pic_v;
+                break;
+            case 1:
+                flip_v = ws_vel.y + diff;
+                new_velocity.y = flip_ratio * flip_v + (1.0f - flip_ratio) * pic_v;
+                break;
+            case 2:
+                flip_v = ws_vel.z + diff;
+                new_velocity.z = flip_ratio * flip_v + (1.0f - flip_ratio) * pic_v;
+                break;
+            }
+        }
+    }
+
+    SetParticleVelocity(particle_id, new_velocity);
+
+    // Handle solid cell type
+}
