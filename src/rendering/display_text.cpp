@@ -123,6 +123,7 @@ bool DisplayText::Draw()
 	text_shader_singleton->SetActive();
 
 	// Bind texture
+	text_shader_singleton->SetUniformTexture2D("textureSampler", *text_texture_singleton, GL_TEXTURE0);
 	text_texture_singleton->ActiveBind(GL_TEXTURE0);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

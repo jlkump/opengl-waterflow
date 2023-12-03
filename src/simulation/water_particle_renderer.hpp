@@ -9,7 +9,7 @@
 #include "../rendering/camera.hpp"
 #include "../rendering/skybox.hpp"
 
-#define MAX_NUM_PARTICLES 512 * 512
+#define MAX_NUM_PARTICLES (1024 * 512)
 
 /*
 * 
@@ -84,11 +84,14 @@ private:
 	glm::mat4 cached_proj_;
 	Skybox* skybox_;
 	Camera* camera_;
+	Texture2D* tex_pos_x;
+	Texture2D* tex_pos_y;
+	Texture2D* tex_pos_z;
 
 public:
 	WaterParticleRenderer();
 
-	void UpdateParticlePositionsTexture(Texture2D& positions_x, Texture2D& positions_y, Texture2D& positions_z);
+	void UpdateParticlePositionsTexture(Texture2D* positions_x, Texture2D* positions_y, Texture2D* positions_z);
 
 	void UpdateViewMat(const glm::mat4& view);
 	void UpdateProjMat(const glm::mat4& proj);

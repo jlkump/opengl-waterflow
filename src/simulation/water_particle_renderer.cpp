@@ -92,7 +92,8 @@ WaterParticleRenderer::WaterParticleRenderer()
 	smoothing_frame_buffer_id_(0), 
 	smoothed_depth_texture_(glm::ivec2(viewport_width_ / reduce_resolution_factor_, viewport_height_ / reduce_resolution_factor_)),
 	water_shader_("screen_quad.vert", "water/water_shader.frag"),
-	camera_(nullptr), skybox_(nullptr), cached_view_(1.0f), cached_proj_(1.0f)
+	camera_(nullptr), skybox_(nullptr), cached_view_(1.0f), cached_proj_(1.0f),
+	tex_pos_x(nullptr), tex_pos_y(nullptr), tex_pos_z(nullptr)
 {
 	InitializeParticleRenderingVariables();
 	InitializeScreenQuadVariables();
@@ -107,10 +108,12 @@ WaterParticleRenderer::WaterParticleRenderer()
 	smoothing_shader_.SetUniform1fv("filter_radius", 9.0);
 }
 
-void WaterParticleRenderer::UpdateParticlePositionsTexture(Texture2D& positions_x, Texture2D& positions_y, Texture2D& positions_z)
+void WaterParticleRenderer::UpdateParticlePositionsTexture(Texture2D* positions_x, Texture2D* positions_y, Texture2D* positions_z)
 {
-
-	glm::ivec2 tex_dimensions = positions_x.GetDimensions();
+	tex_pos_x = positions_x;
+	tex_pos_y = positions_y;
+	tex_pos_z = positions_z;
+	glm::ivec2 tex_dimensions = positions_x->GetDimensions();
 	int current_particle_count = tex_dimensions.x * tex_dimensions.y;
 	if (current_particle_count != particle_count_)
 	{
@@ -133,9 +136,6 @@ void WaterParticleRenderer::UpdateParticlePositionsTexture(Texture2D& positions_
 		glBindVertexArray(0);
 	}
 
-	particle_shader_.SetUniformTexture2D("ws_particle_positions_x", positions_x, GL_TEXTURE0);
-	particle_shader_.SetUniformTexture2D("ws_particle_positions_y", positions_y, GL_TEXTURE1);
-	particle_shader_.SetUniformTexture2D("ws_particle_positions_z", positions_z, GL_TEXTURE2);
 	particle_count_ = current_particle_count;
 }
 
@@ -193,6 +193,18 @@ void WaterParticleRenderer::DrawParticleSprites()
 
 	// set our depth_texture_ as the frame buffer
 	particle_shader_.SetActive();
+	if (tex_pos_x != nullptr) {
+		particle_shader_.SetUniformTexture2D("ws_particle_positions_x", *tex_pos_x, GL_TEXTURE2);
+		tex_pos_x->ActiveBind(GL_TEXTURE2);
+	}
+	if (tex_pos_y != nullptr) {
+		particle_shader_.SetUniformTexture2D("ws_particle_positions_y", *tex_pos_y, GL_TEXTURE3);
+		tex_pos_y->ActiveBind(GL_TEXTURE3);
+	}
+	if (tex_pos_z != nullptr) {
+		particle_shader_.SetUniformTexture2D("ws_particle_positions_z", *tex_pos_z, GL_TEXTURE4);
+		tex_pos_z->ActiveBind(GL_TEXTURE4);
+	}
 	glBindFramebuffer(GL_FRAMEBUFFER, particle_frame_buffer_id_);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glClearColor(0, 0, 0, 1.0);
@@ -248,12 +260,16 @@ void WaterParticleRenderer::DrawWater(glm::vec3& light_dir)
 	water_shader_.SetActive();
 
 	water_shader_.SetUniformTexture2D("depth_tex", smoothed_depth_texture_, GL_TEXTURE0);
-	if (skybox_ != nullptr)
+	smoothed_depth_texture_.ActiveBind(GL_TEXTURE0);
+	if (skybox_ != nullptr) {
 		water_shader_.SetUniformTexture2D("skybox", *skybox_, GL_TEXTURE1);
-	if (camera_ != nullptr)
+		skybox_->ActiveBind(GL_TEXTURE1);
+	}
+	if (camera_ != nullptr) {
 		water_shader_.SetUniform3fv("ws_cam_pos", camera_->GetPosition());
+	}
 
-	water_shader_.SetUniform3fv("ws_light_dir",light_dir);
+	water_shader_.SetUniform3fv("ws_light_dir", light_dir);
 
 	glViewport(0, 0, viewport_width_, viewport_height_);
 

@@ -633,13 +633,21 @@ DebugRenderer::DebugRenderer() :
 	debug_particle_shader_("debug/particle.vert", "debug/particle.frag"),
 	frame_time_display_("0.0 ms/frame")
 {
+	//printf("Enter\n");
 	SetVariableDefaults();
+	//printf("SetVarDef\n");
 	SetupOriginBuffers();
+	//printf("Origin Done\n");
 	SetupGridLineBuffers();
+	//printf("Grid Lines Done\n");
 	SetupGridVelocityBuffers();
+	//printf("Grid Velocity Done\n");
 	SetupGridAxisVelocityBuffers();
+	//printf("Grid Axis Done\n");
 	SetupGridCellBuffers();
+	//printf("Grid Cells Done\n");
 	SetupParticleSpriteBuffers();
+	//printf("Grid Sprites Done\n");
 	SetupParticleVelocityBuffers();
 
 	//ToggleDebugView(GRID_VELOCITIES);

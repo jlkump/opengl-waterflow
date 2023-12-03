@@ -12,7 +12,7 @@ void Texture2D::GenTexture(const void* data) {
 	glGenTextures(1, &texture_id_);
 	// Bind the texture to the active texture. Future texture calls modify this texture
 	glBindTexture(GL_TEXTURE_2D, texture_id_);
-
+	
 	// Set texture parameters
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -33,11 +33,11 @@ void Texture2D::GenTexture(const void* data) {
 		break;
 	case ChannelType::R32I:
 		gl_channel_type_ = GL_R32I;
-		format = GL_RED;
+		format = GL_RED_INTEGER;
 		break;
 	case ChannelType::R32UI:
 		gl_channel_type_ = GL_R32UI;
-		format = GL_RED;
+		format = GL_RED_INTEGER;
 		break;
 	case ChannelType::RG:
 		gl_channel_type_ = GL_RG;
@@ -257,11 +257,11 @@ void Texture3D::GenTexture(const void* data)
 		break;
 	case ChannelType::R32I:
 		gl_channel_type_ = GL_R32I;
-		format = GL_RED;
+		format = GL_RED_INTEGER;
 		break;
 	case ChannelType::R32UI:
 		gl_channel_type_ = GL_R32UI;
-		format = GL_RED;
+		format = GL_RED_INTEGER;
 		break;
 	case ChannelType::RG:
 		gl_channel_type_ = GL_RG;

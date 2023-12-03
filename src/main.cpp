@@ -57,7 +57,7 @@ enum SimulationType {
 };
 
 const int TOTAL_SIMULATION_TYPES = 3;
-SimulationType simulation_type = SimulationType::GPU_PARTICLE;
+SimulationType simulation_type = SimulationType::SEQ_PARTICLE;
 bool enable_particles = false;
 
 // TODO: Defined a scene renderer class that makes it so we don't need all these global variables
@@ -260,6 +260,19 @@ void WindowKeyCallback(GLFWwindow* window, int key, int scancode, int action, in
     //}
 }
 
+void APIENTRY MessageCallback(GLenum source,
+    GLenum type,
+    GLuint id,
+    GLenum severity,
+    GLsizei length,
+    const GLchar* message,
+    const void* userParam)
+{
+    fprintf(stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
+        (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
+        type, severity, message);
+}
+
 bool Init() {
     /* Initialize the library */
     if (!glfwInit())
@@ -307,6 +320,10 @@ bool Init() {
     glEnable(GL_BLEND);
     glDepthFunc(GL_LESS);
 
+    //// During init, enable debug output
+    //glEnable(GL_DEBUG_OUTPUT);
+    //glDebugMessageCallback(MessageCallback, 0);
+
     return true;
 }
 
@@ -339,7 +356,12 @@ void SetSimulation() {
     g_sim = nullptr;
     g_simulate = false;
 
-    const int num_particles = 262144;
+    const int num_particles = 4096;
+    const float interval = 0.25;
+    const glm::vec3 low_bound = glm::vec3(-1.0, -1.0, -1.0);
+    const glm::vec3 up_bound = glm::vec3(1.0, 1.0, 1.0);
+    const int grid_dim = (up_bound.x - low_bound.x) / interval;
+    printf("Grid dim: %d\n", grid_dim);
 
     switch (simulation_type) {
     case SimulationType::SEQ_GRID:
@@ -357,7 +379,7 @@ void SetSimulation() {
     case SimulationType::GPU_PARTICLE:
         printf("Simulation set to (GPU_PARTICLE)\n");
         // GPU_Simulation(int num_particles_sqrt, int grid_dim, int iteration)
-        g_sim = new GPU_Simulation(static_cast<int>(sqrt(num_particles)), 10, 20);
+        g_sim = new GPU_Simulation(static_cast<int>(sqrt(num_particles)), grid_dim, 40);
         break;
 
     default:
@@ -378,22 +400,21 @@ void SetSimulation() {
 
     g_sim->SetInitialVelocities(
         init_particle_vel,
-        glm::vec3(-1.0, -1.0, -1.0), 
-        glm::vec3(1.0, 1.0, 1.0), 
-        0.2
+        low_bound, 
+        up_bound, 
+        interval
     );
 
     // Create/Update debug renderer
-    if (g_debug_renderer == nullptr) {
-        g_debug_renderer = new DebugRenderer();
-    }
-    if (simulation_type != SimulationType::GPU_PARTICLE) {
-        g_debug_renderer->SetGridBoundaries(g_sim->GetGridLowerBounds(), g_sim->GetGridUpperBounds(), g_sim->GetGridInterval());
-        g_debug_renderer->SetGridVelocities(*g_sim->GetGridVelocities(), g_sim->GetGridDimensions());
+    if (g_debug_renderer != nullptr) {
+        if (simulation_type != SimulationType::GPU_PARTICLE) {
+            g_debug_renderer->SetGridBoundaries(g_sim->GetGridLowerBounds(), g_sim->GetGridUpperBounds(), g_sim->GetGridInterval());
+            g_debug_renderer->SetGridVelocities(*g_sim->GetGridVelocities(), g_sim->GetGridDimensions());
 
-        if (simulation_type == SimulationType::SEQ_PARTICLE) {
-            g_debug_renderer->SetParticlePositions(*g_sim->GetParticlePositions());
-            g_debug_renderer->SetParticleVelocities(*g_sim->GetParticlePositions(), *g_sim->GetParticleVelocities());
+            if (simulation_type == SimulationType::SEQ_PARTICLE) {
+                g_debug_renderer->SetParticlePositions(*g_sim->GetParticlePositions());
+                g_debug_renderer->SetParticleVelocities(*g_sim->GetParticlePositions(), *g_sim->GetParticleVelocities());
+            }
         }
     }
 
@@ -406,6 +427,7 @@ bool LoadContent()
 
     // Create Skybox for scene
     g_skybox = new Skybox({ "skybox/right.jpg", "skybox/left.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/front.jpg", "skybox/back.jpg" });
+    g_debug_renderer = new DebugRenderer();
 
     // Create simulation 
     SetSimulation();
@@ -494,10 +516,14 @@ void UpdateLoop()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         if (simulation_type == SimulationType::GPU_PARTICLE && dynamic_cast<GPU_Simulation*>(g_sim) != nullptr 
             && dynamic_cast<GPU_Simulation*>(g_sim)->GetTexParticlePositions_X() != nullptr && g_draw_realistic) {
-            g_particle_renderer->UpdateParticlePositionsTexture(*dynamic_cast<GPU_Simulation*>(g_sim)->GetTexParticlePositions_X(), *dynamic_cast<GPU_Simulation*>(g_sim)->GetTexParticlePositions_Y(), *dynamic_cast<GPU_Simulation*>(g_sim)->GetTexParticlePositions_Z());
+            g_particle_renderer->UpdateParticlePositionsTexture(
+                dynamic_cast<GPU_Simulation*>(g_sim)->GetTexParticlePositions_X(), 
+                dynamic_cast<GPU_Simulation*>(g_sim)->GetTexParticlePositions_Y(), 
+                dynamic_cast<GPU_Simulation*>(g_sim)->GetTexParticlePositions_Z()
+            );
             g_particle_renderer->Draw();
         }
-        // g_skybox->Draw();
+        g_skybox->Draw();
         g_debug_renderer->Draw(enable_particles);
 
         /* Swap front and back buffers */
@@ -520,6 +546,7 @@ int main()
         fprintf(stderr, "Failure in loading content.");
         return 1;
     }
+    printf("Just before update begins\n");
     UpdateLoop();
     glfwTerminate();
 
