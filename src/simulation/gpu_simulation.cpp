@@ -101,12 +101,12 @@ void GPU_Simulation::TimeStep(float delta)
 	move_particles_shader_.Dispatch();
 	move_particles_shader_.Barrier();
 
-	particle_to_grid_shader_.SetUniformTexture2D("particle_positions_x", particle_pos_x, 8);
-	particle_to_grid_shader_.SetUniformTexture2D("particle_positions_y", particle_pos_y, 9);
-	particle_to_grid_shader_.SetUniformTexture2D("particle_positions_z", particle_pos_z, 10);
-	particle_to_grid_shader_.SetUniformTexture2D("particle_velocities_x", particle_vel_x, 11);
-	particle_to_grid_shader_.SetUniformTexture2D("particle_velocities_y", particle_vel_y, 12);
-	particle_to_grid_shader_.SetUniformTexture2D("particle_velocities_z", particle_vel_z, 13);
+	particle_to_grid_shader_.SetUniformTexture2D("particle_positions_x", particle_pos_x, GL_TEXTURE8);
+	particle_to_grid_shader_.SetUniformTexture2D("particle_positions_y", particle_pos_y, GL_TEXTURE9);
+	particle_to_grid_shader_.SetUniformTexture2D("particle_positions_z", particle_pos_z, GL_TEXTURE10);
+	particle_to_grid_shader_.SetUniformTexture2D("particle_velocities_x", particle_vel_x, GL_TEXTURE11);
+	particle_to_grid_shader_.SetUniformTexture2D("particle_velocities_y", particle_vel_y, GL_TEXTURE12);
+	particle_to_grid_shader_.SetUniformTexture2D("particle_velocities_z", particle_vel_z, GL_TEXTURE13);
 	particle_to_grid_shader_.SetActive();
 	new_x_->ActiveBind(0);
 	new_y_->ActiveBind(1);
@@ -154,12 +154,12 @@ void GPU_Simulation::TimeStep(float delta)
 		old_z_ = temp_z;
 	}
 
-	grid_to_particle_shader_.SetUniformTexture3D("grid_velocities_x", *new_x_, 8);
-	grid_to_particle_shader_.SetUniformTexture3D("grid_velocities_y", *new_y_, 9);
-	grid_to_particle_shader_.SetUniformTexture3D("grid_velocities_z", *new_z_, 10);
-	grid_to_particle_shader_.SetUniformTexture3D("grid_old_velocities_x", *old_x_, 11);
-	grid_to_particle_shader_.SetUniformTexture3D("grid_old_velocities_y", *old_y_, 12);
-	grid_to_particle_shader_.SetUniformTexture3D("grid_old_velocities_z", *old_z_, 13);
+	grid_to_particle_shader_.SetUniformTexture3D("grid_velocities_x", *new_x_, GL_TEXTURE8);
+	grid_to_particle_shader_.SetUniformTexture3D("grid_velocities_y", *new_y_, GL_TEXTURE9);
+	grid_to_particle_shader_.SetUniformTexture3D("grid_velocities_z", *new_z_, GL_TEXTURE10);
+	grid_to_particle_shader_.SetUniformTexture3D("grid_old_velocities_x", *old_x_, GL_TEXTURE11);
+	grid_to_particle_shader_.SetUniformTexture3D("grid_old_velocities_y", *old_y_, GL_TEXTURE12);
+	grid_to_particle_shader_.SetUniformTexture3D("grid_old_velocities_z", *old_z_, GL_TEXTURE13);
 	grid_to_particle_shader_.SetActive();
 	grid_is_fluid.ActiveBind(0);
 	grid_cell_type.ActiveBind(1);

@@ -282,10 +282,11 @@ bool LoadContent()
     g_skybox = new Skybox({ "skybox/right.jpg", "skybox/left.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/front.jpg", "skybox/back.jpg" });
 
     /* Create simulation */
-    // g_seq_sim = new SequentialGridBased();
+    //g_seq_sim = new SequentialGridBased();
+    
     g_seq_sim = new SequentialParticleBased();
     std::vector<glm::vec3> init_particle_vel;
-    for (int i = 0; i < 1000; i++) {
+    for (int i = 0; i < 262144; i++) {
         //init_particle_vel.push_back(glm::normalize(glm::vec3(
         //    ((float)(rand() % 100) / 100.0f),
         //    ((float)(rand() % 100) / 100.0f),
@@ -295,17 +296,19 @@ bool LoadContent()
     }
     g_seq_sim->SetInitialVelocities(
         init_particle_vel, 
-        glm::vec3(-1.0, -1.0, -1.0), 
-        glm::vec3(1.0, 1.0, 1.0), 
-        0.5
+        glm::vec3(0.0, 0.0, 0.0), 
+        glm::vec3(3.0, 3.0, 3.0), 
+        0.1
     );
 
     /* Create the renderer */
     g_debug_renderer = new DebugRenderer();
     g_debug_renderer->SetGridBoundaries(g_seq_sim->GetGridLowerBounds(), g_seq_sim->GetGridUpperBounds(), g_seq_sim->GetGrindInterval());
-    g_debug_renderer->SetGridVelocities(*g_seq_sim->GetGridVelocities(), g_seq_sim->GetGridDimensions());
-    g_debug_renderer->SetParticlePositions(*g_seq_sim->GetParticlePositions());
-    g_debug_renderer->SetParticleVelocities(*g_seq_sim->GetParticlePositions(), *g_seq_sim->GetParticleVelocities());
+    //g_debug_renderer->SetGridVelocities(*g_seq_sim->GetGridVelocities(), g_seq_sim->GetGridDimensions());
+    if (g_seq_sim->GetParticlePositions() != nullptr) { //&& g_seq_sim->GetParticleVelocities() != nullptr) {
+        g_debug_renderer->SetParticlePositions(*g_seq_sim->GetParticlePositions());
+        //g_debug_renderer->SetParticleVelocities(*g_seq_sim->GetParticlePositions(), *g_seq_sim->GetParticleVelocities());
+    }
 
     UpdateView(g_cam->GetCam()->GetViewMatrix());
     UpdateProjection(g_cam->GetCam()->GetProjectionMatrix());
@@ -318,7 +321,7 @@ void UpdateLoop()
     float previous_time = static_cast<float>(glfwGetTime());
     float new_time = 0.0f;
     float last_time_updated = 0.0f;
-    float time_step = 0.0f;
+    float time_step = 0.1f;
 
     /* Loop until the user closes the window or presses ESC */
     double lastTime = glfwGetTime();
@@ -351,27 +354,27 @@ void UpdateLoop()
             g_debug_renderer->SetGridVelocities(*g_seq_sim->GetGridVelocities(), g_seq_sim->GetGridDimensions());
             if (g_seq_sim->GetParticlePositions() != nullptr) {
                 g_debug_renderer->SetParticlePositions(*g_seq_sim->GetParticlePositions());
-                g_debug_renderer->SetParticleVelocities(*g_seq_sim->GetParticlePositions(), *g_seq_sim->GetParticleVelocities());
+                //g_debug_renderer->SetParticleVelocities(*g_seq_sim->GetParticlePositions(), *g_seq_sim->GetParticleVelocities());
                 //printf("Velocities:\n");
                 //for (const auto& vel : *g_seq_sim->GetParticleVelocities()) {
                 //    printf("\t(%f %f %f)\n", vel.x, vel.y, vel.z);
                 //}
             }
-            if (g_debug_renderer->IsDebugViewActive(DebugRenderer::GRID_CELL)) {
-                switch (g_debug_renderer->GetCellViewActive()) {
-                case DebugRenderer::DYE:
-                    g_debug_renderer->SetGridDyeDensities(*g_seq_sim->GetGridDyeDensities(), g_seq_sim->GetGridDimensions());
-                    break;
-                case DebugRenderer::IS_FLUID:
-                    g_debug_renderer->SetGridDyeDensities(*g_seq_sim->GetGridFluidCells(), g_seq_sim->GetGridDimensions());
-                    break;
-                case DebugRenderer::PRESSURE:
-                    g_debug_renderer->SetGridPressures(*g_seq_sim->GetGridPressures(), g_seq_sim->GetGridDimensions());
-                    break;
-                case DebugRenderer::NONE:
-                    break;
-                }
-            }
+            //if (g_debug_renderer->IsDebugViewActive(DebugRenderer::GRID_CELL)) {
+            //    switch (g_debug_renderer->GetCellViewActive()) {
+            //    case DebugRenderer::DYE:
+            //        g_debug_renderer->SetGridDyeDensities(*g_seq_sim->GetGridDyeDensities(), g_seq_sim->GetGridDimensions());
+            //        break;
+            //    case DebugRenderer::IS_FLUID:
+            //        g_debug_renderer->SetGridDyeDensities(*g_seq_sim->GetGridFluidCells(), g_seq_sim->GetGridDimensions());
+            //        break;
+            //    case DebugRenderer::PRESSURE:
+            //        g_debug_renderer->SetGridPressures(*g_seq_sim->GetGridPressures(), g_seq_sim->GetGridDimensions());
+            //        break;
+            //    case DebugRenderer::NONE:
+            //        break;
+            //    }
+            //}
             last_time_updated = new_time;
         }
 

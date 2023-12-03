@@ -84,7 +84,7 @@ void WaterParticleRenderer::InitializeSmoothingVariables()
 /////////////////
 
 WaterParticleRenderer::WaterParticleRenderer()
-	: particle_shader_("water/water_particle_shader.vert", "water/water_particle_shader.frag"),
+	: particle_shader_("water/particle_sprites.vert", "water/particle_sprites.frag"),
 	particle_billboard_buffer_(0), particle_index_buffer_(0), particle_VAO_(0), 
 	depth_texture_(glm::ivec2(viewport_width_ / reduce_resolution_factor_, viewport_height_ / reduce_resolution_factor_)),
 	quad_VAO_(0), quad_position_buffer_(0),
@@ -104,10 +104,10 @@ WaterParticleRenderer::WaterParticleRenderer()
 	smoothing_shader_.SetUniform1fv("filter_radius", 9.0);
 }
 
-void WaterParticleRenderer::UpdateParticlePositionsTexture(Texture2D& positions)
+void WaterParticleRenderer::UpdateParticlePositionsTexture(Texture2D& positions_x, Texture2D& positions_y, Texture2D& positions_z)
 {
 
-	glm::ivec2 tex_dimensions = positions.GetDimensions();
+	glm::ivec2 tex_dimensions = positions_x.GetDimensions();
 	int current_particle_count = tex_dimensions.x * tex_dimensions.y;
 	if (current_particle_count != particle_count_)
 	{
@@ -130,7 +130,9 @@ void WaterParticleRenderer::UpdateParticlePositionsTexture(Texture2D& positions)
 		glBindVertexArray(0);
 	}
 
-	particle_shader_.SetUniformTexture2D("ws_particle_positions", positions, GL_TEXTURE0);
+	particle_shader_.SetUniformTexture2D("ws_particle_positions_x", positions_x, GL_TEXTURE0);
+	particle_shader_.SetUniformTexture2D("ws_particle_positions_y", positions_y, GL_TEXTURE1);
+	particle_shader_.SetUniformTexture2D("ws_particle_positions_z", positions_z, GL_TEXTURE2);
 	particle_count_ = current_particle_count;
 }
 

@@ -84,7 +84,7 @@ private:
 public:
 	WaterParticleRenderer();
 
-	void UpdateParticlePositionsTexture(Texture2D& positions);
+	void UpdateParticlePositionsTexture(Texture2D& positions_x, Texture2D& positions_y, Texture2D& positions_z);
 
 	void Draw(Camera& cam, Skybox& skybox);
 

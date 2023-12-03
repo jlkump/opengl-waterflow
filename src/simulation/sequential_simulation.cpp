@@ -330,10 +330,10 @@ float SequentialGridBased::SampleGridVelocity(glm::vec3 ws_pos, SampleType s)
 }
 
 SequentialGridBased::SequentialGridBased()
-	: ws_lower_bound_(-1.0, -1.0, -1.0),
-	ws_upper_bound_(1.0, 1.0, 1.0),
-	ws_grid_interval_(0.5),
-	grid_dim_(4),
+	: ws_lower_bound_(0.0, 0.0, 0.0),
+	ws_upper_bound_(10.0, 10.0, 10.0),
+	ws_grid_interval_(0.1),
+	grid_dim_(100),
 	number_of_iterations_(40),
 	velocities_((grid_dim_ + 1)* (grid_dim_ + 1)* (grid_dim_ + 1)),
 	is_fluid_((grid_dim_) * (grid_dim_) * (grid_dim_)),
@@ -970,24 +970,24 @@ void SequentialParticleBased::SetInitialVelocities(const std::vector<glm::vec3>&
 	float particles_per_side = floor(cbrt(initial.size()));
 	int particles_per_side_squared = particles_per_side * particles_per_side;
 	float delta = (std::fabs(lower_bound.x) + std::fabs(upper_bound.x)) / particles_per_side;
-	printf("particles per side = %f\n", particles_per_side);
-	printf("delta = %f\n", delta);
+	//printf("particles per side = %f\n", particles_per_side);
+	//printf("delta = %f\n", delta);
 
 	int index = 0;
-	for (float z = lower_bound.z; z < upper_bound.z && index < particle_pos_.size(); z += delta) {
-		for (float y = lower_bound.y; y < upper_bound.y && index < particle_pos_.size(); y += delta) {
-			for (float x = lower_bound.x; x < upper_bound.x && index < particle_pos_.size(); x += delta) {
+	for (float z = lower_bound.z + ws_grid_interval_; z < upper_bound.z - ws_grid_interval_ && index < particle_pos_.size(); z += delta) {
+		for (float y = lower_bound.y + ws_grid_interval_; y < upper_bound.y - ws_grid_interval_ && index < particle_pos_.size(); y += delta) {
+			for (float x = lower_bound.x + ws_grid_interval_; x < upper_bound.x - ws_grid_interval_ && index < particle_pos_.size(); x += delta) {
 				particle_pos_[index] = glm::vec3(x, y, z);
 				++index;
-				printf("Pushing pos at index (%d): ", index);
-				printf("[ %3.3f %3.3f %3.3f ]\n", x, y, z);
+				//printf("Pushing pos at index (%d): ", index);
+				//printf("[ %3.3f %3.3f %3.3f ]\n", x, y, z);
 			}
-			printf("\n");
+			//printf("\n");
 		}
 	}
 
-	printf("Set initial particle positions of size: %d\n", particle_pos_.size());
-	printf("Set initial particle velocities of size: %d\n", particle_vel_.size());
+	//printf("Set initial particle positions of size: %d\n", particle_pos_.size());
+	//printf("Set initial particle velocities of size: %d\n", particle_vel_.size());
 }
 
 void SequentialParticleBased::TimeStep(float delta)
