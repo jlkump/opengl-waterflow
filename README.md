@@ -1,5 +1,11 @@
 # opengl-waterflow
-This is a project on the rendering and simulation of water in real-time using particles as the representation for water. The rendering for the water is fully complete, however, the physics simulation is not yet complete. Currently, only gravity affects the particles and there is no particle iteraction. If you would like to see the project for yourself, you can download the source code and build using cmake. Once the source code is downloaded / copied using git, enter the file `build` and type `cmake -A Win32 ..` or `cmake ..` depending on if you use Windows or not. The binaries can be found in `build/Release` and `build/Debug`.
+This is a project on the rendering and simulation of water in real-time using particles as the representation for water. 
+
+The rendering for the water is fully complete but is not incorperated with the simulation half of the project.
+
+The physics simulation is done through compute shaders. Currently, only gravity affects the particles and there is no particle iteraction. 
+
+If you would like to see the project for yourself, you can download the source code and build using cmake. Once the source code is downloaded / cloned using git, enter the file `build` and type `cmake -A Win32 ..` or `cmake ..` depending on if you use Windows or not. The binaries can be found in `build/Release` and `build/Debug`.
 
 ## References and Resources
 ### Simulation and Rendering
