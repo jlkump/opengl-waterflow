@@ -59,7 +59,7 @@ private:
 	GLuint quad_VAO_;
 	GLuint quad_position_buffer_;
 	GLuint quad_index_buffer_;
-	void DrawParticleSprites(glm::mat4& view_mat, glm::mat4& proj_mat);
+	void DrawParticleSprites();
 
 
 	//////////////////////
@@ -76,17 +76,26 @@ private:
 	// Water Shader //
 	//////////////////
 	Shader water_shader_;
-	void DrawWater(glm::mat4& inv_view, glm::mat4& inv_proj, glm::vec3& cam_pos, glm::vec3& light_dir, Skybox& skybox);
+	void DrawWater(glm::vec3& light_dir);
 
 	// TODO: Add references to the scene elements (camera, skybox) and only update uniforms when they change
 	// Will be far more efficient than updating on every draw frame
+	glm::mat4 cached_view_;
+	glm::mat4 cached_proj_;
+	Skybox* skybox_;
+	Camera* camera_;
 
 public:
 	WaterParticleRenderer();
 
 	void UpdateParticlePositionsTexture(Texture2D& positions_x, Texture2D& positions_y, Texture2D& positions_z);
 
-	void Draw(Camera& cam, Skybox& skybox);
+	void UpdateViewMat(const glm::mat4& view);
+	void UpdateProjMat(const glm::mat4& proj);
+	void UpdateSkybox(Skybox* skybox);
+	void UpdateCamera(Camera* camera);
+	void UpdateTexturePrecision(float texture_precision);
+	void Draw();
 
 };
 

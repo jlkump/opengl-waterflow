@@ -91,11 +91,14 @@ WaterParticleRenderer::WaterParticleRenderer()
 	smoothing_shader_("screen_quad.vert", "water/water_smooth_depth.frag"),
 	smoothing_frame_buffer_id_(0), 
 	smoothed_depth_texture_(glm::ivec2(viewport_width_ / reduce_resolution_factor_, viewport_height_ / reduce_resolution_factor_)),
-	water_shader_("screen_quad.vert", "water/water_shader.frag")
+	water_shader_("screen_quad.vert", "water/water_shader.frag"),
+	camera_(nullptr), skybox_(nullptr), cached_view_(1.0f), cached_proj_(1.0f)
 {
 	InitializeParticleRenderingVariables();
 	InitializeScreenQuadVariables();
 	InitializeSmoothingVariables();
+
+	water_shader_.SetUniform3fv("diffuse_color", glm::normalize(glm::vec3(-0.1, 0.1, 0.2)));
 
 	// Particle shader uniform
 	particle_shader_.SetUniform1fv("particle_radius", 0.05f);
@@ -136,18 +139,57 @@ void WaterParticleRenderer::UpdateParticlePositionsTexture(Texture2D& positions_
 	particle_count_ = current_particle_count;
 }
 
+void WaterParticleRenderer::UpdateViewMat(const glm::mat4& view)
+{
+	cached_view_ = view;
+
+	water_shader_.SetUniformMatrix4fv("inv_view", glm::inverse(cached_view_));
+
+	particle_shader_.SetUniform3fv("ws_camera_right", { cached_view_[0][0], cached_view_[1][0], cached_view_[2][0] });
+	particle_shader_.SetUniform3fv("ws_camera_up", { cached_view_[0][1], cached_view_[1][1], cached_view_[2][1] });
+	particle_shader_.SetUniformMatrix4fv("proj_view", cached_proj_ * cached_view_);
+
+}
+
+void WaterParticleRenderer::UpdateProjMat(const glm::mat4& proj)
+{
+	cached_proj_ = proj;
+
+	water_shader_.SetUniformMatrix4fv("inv_proj", glm::inverse(cached_proj_));
+
+	particle_shader_.SetUniformMatrix4fv("proj", cached_proj_);
+	particle_shader_.SetUniformMatrix4fv("proj_view", cached_proj_ * cached_view_);
+
+}
+
+void WaterParticleRenderer::UpdateSkybox(Skybox* skybox)
+{
+	skybox_ = skybox;
+}
+
+void WaterParticleRenderer::UpdateCamera(Camera* camera)
+{
+	camera_ = camera;
+	if (camera != nullptr) {
+		UpdateViewMat(camera->GetViewMatrix());
+		UpdateViewMat(camera->GetProjectionMatrix());
+	}
+}
+
+void WaterParticleRenderer::UpdateTexturePrecision(float texture_precision)
+{
+	particle_shader_.SetUniform1fv("texture_precision", texture_precision);
+}
+
 
 /////////////
 // Drawing //
 /////////////
 
-void WaterParticleRenderer::DrawParticleSprites(glm::mat4& view_mat, glm::mat4& proj_mat)
+void WaterParticleRenderer::DrawParticleSprites()
 {
 	// particle_shader_.SetUniformMatrix4fv("view", view_mat);
-	particle_shader_.SetUniformMatrix4fv("proj", proj_mat);
-	particle_shader_.SetUniform3fv("ws_camera_right", { view_mat[0][0], view_mat[1][0], view_mat[2][0] });
-	particle_shader_.SetUniform3fv("ws_camera_up", { view_mat[0][1], view_mat[1][1], view_mat[2][1] });
-	particle_shader_.SetUniformMatrix4fv("proj_view", proj_mat * view_mat);
+
 
 	// set our depth_texture_ as the frame buffer
 	particle_shader_.SetActive();
@@ -201,16 +243,17 @@ void WaterParticleRenderer::SmoothDepthTexture()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void WaterParticleRenderer::DrawWater(glm::mat4& inv_view, glm::mat4& inv_proj, glm::vec3& cam_pos, glm::vec3& light_dir, Skybox& skybox)
+void WaterParticleRenderer::DrawWater(glm::vec3& light_dir)
 {
 	water_shader_.SetActive();
-	water_shader_.SetUniformMatrix4fv("inv_view", inv_view);
-	water_shader_.SetUniformMatrix4fv("inv_proj", inv_proj);
+
 	water_shader_.SetUniformTexture2D("depth_tex", smoothed_depth_texture_, GL_TEXTURE0);
-	water_shader_.SetUniformTexture2D("skybox", skybox, GL_TEXTURE1);
-	water_shader_.SetUniform3fv("ws_cam_pos", cam_pos);
+	if (skybox_ != nullptr)
+		water_shader_.SetUniformTexture2D("skybox", *skybox_, GL_TEXTURE1);
+	if (camera_ != nullptr)
+		water_shader_.SetUniform3fv("ws_cam_pos", camera_->GetPosition());
+
 	water_shader_.SetUniform3fv("ws_light_dir",light_dir);
-	water_shader_.SetUniform3fv("diffuse_color", glm::normalize(glm::vec3(-0.1, 0.1, 0.2)));
 
 	glViewport(0, 0, viewport_width_, viewport_height_);
 
@@ -224,12 +267,10 @@ void WaterParticleRenderer::DrawWater(glm::mat4& inv_view, glm::mat4& inv_proj, 
 	glBindVertexArray(0);
 }
 
-void WaterParticleRenderer::Draw(Camera& cam, Skybox& skybox)
+void WaterParticleRenderer::Draw()
 {
-	glm::mat4 view_mat = cam.GetViewMatrix();
-	glm::mat4 proj_mat = cam.GetProjectionMatrix();
-	DrawParticleSprites(view_mat, proj_mat);
+	DrawParticleSprites();
 	SmoothDepthTexture();
-	DrawWater(glm::inverse(view_mat), glm::inverse(proj_mat), cam.GetPosition(), glm::normalize(glm::vec3(0.4, -0.8, -0.4)), skybox);
+	DrawWater(glm::normalize(glm::vec3(0.4, -0.8, -0.4)));
 
 }

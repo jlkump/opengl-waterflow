@@ -18,10 +18,12 @@ uniform float particle_radius;
 
 uniform mat4 proj_view;
 
+uniform float texture_precision;
+
 vec3 GetParticlePosition(vec2 particle_index_uv) {
-	float x = float(texture(ws_particle_positions_x, particle_index_uv).x);
-	float y = float(texture(ws_particle_positions_y, particle_index_uv).x);
-	float z = float(texture(ws_particle_positions_z, particle_index_uv).x);
+	float x = float(texture(ws_particle_positions_x, particle_index_uv).x) / texture_precision;
+	float y = float(texture(ws_particle_positions_y, particle_index_uv).x) / texture_precision;
+	float z = float(texture(ws_particle_positions_z, particle_index_uv).x) / texture_precision;
 	return vec3(x, y, z);
 }
 

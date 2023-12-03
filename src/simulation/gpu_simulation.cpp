@@ -58,8 +58,6 @@ GPU_Simulation::GPU_Simulation(int num_particles_sqrt, int grid_dimen, int itera
 	grid_to_particle_shader_.SetUniform3fv("ws_upper_bound", ws_upper_bound_grid_);
 	grid_to_particle_shader_.SetUniform1fv("texture_precision", k_texture_precision_);
 	grid_to_particle_shader_.SetUniform1fv("flip_ratio", flip_ratio_);
-
-	// TODO: Initialize particle sprites for rendering
 	
 	// Setting grid
 	unsigned int grid_dim_cubed = grid_dim_ * grid_dim_ * grid_dim_;

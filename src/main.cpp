@@ -42,10 +42,12 @@ const int kWindowWidth = 1024;
 const int kWindowHeight = 768;
 
 FPSCamera* g_cam = nullptr;
+WaterParticleRenderer* g_particle_renderer = nullptr;
 Skybox* g_skybox = nullptr;
 DebugRenderer* g_debug_renderer = nullptr;
 Simulation* g_sim = nullptr;
 bool g_simulate = false;
+bool g_draw_realistic = false;
 std::set<int> g_keys_pressed;
 
 enum SimulationType {
@@ -55,7 +57,7 @@ enum SimulationType {
 };
 
 const int TOTAL_SIMULATION_TYPES = 3;
-SimulationType simulation_type = SimulationType::SEQ_GRID;
+SimulationType simulation_type = SimulationType::GPU_PARTICLE;
 bool enable_particles = false;
 
 // TODO: Defined a scene renderer class that makes it so we don't need all these global variables
@@ -70,6 +72,8 @@ bool UpdateView(const glm::mat4& view) {
         g_skybox->SetView(view);
     if (g_debug_renderer)
         g_debug_renderer->SetView(view);
+    if (g_particle_renderer)
+        g_particle_renderer->UpdateViewMat(view);
     return true;
 }
 
@@ -78,6 +82,8 @@ bool UpdateProjection(const glm::mat4& proj) {
         g_skybox->SetProjection(proj);
     if (g_debug_renderer)
         g_debug_renderer->SetProjection(proj);
+    if (g_particle_renderer)
+        g_particle_renderer->UpdateProjMat(proj);
     return true;
 }
 
@@ -214,38 +220,44 @@ void WindowKeyCallback(GLFWwindow* window, int key, int scancode, int action, in
         }
     }
 
-    if (key == GLFW_KEY_1) {
+    if (key == GLFW_KEY_I) {
         if (action == GLFW_PRESS) {
-            if (g_sim != nullptr && g_sim->GetGridPressures() != nullptr) {
-                if (g_debug_renderer->IsCellViewActive(DebugRenderer::PRESSURE) || !g_debug_renderer->IsDebugViewActive(DebugRenderer::GRID_CELL)) {
-                    g_debug_renderer->ToggleDebugView(DebugRenderer::GRID_CELL);
-                }
-                g_debug_renderer->SetGridPressures(*g_sim->GetGridPressures(), g_sim->GetGridDimensions());
-            }
+            g_draw_realistic = !g_draw_realistic;
         }
     }
-    if (key == GLFW_KEY_2) {
-        if (action == GLFW_PRESS) {
-            if (g_sim != nullptr && g_sim->GetGridDyeDensities() != nullptr) {
-                if (g_debug_renderer->IsCellViewActive(DebugRenderer::DYE) || !g_debug_renderer->IsDebugViewActive(DebugRenderer::GRID_CELL)) {
-                    g_debug_renderer->ToggleDebugView(DebugRenderer::GRID_CELL);
-                }
-                g_debug_renderer->SetGridDyeDensities(*g_sim->GetGridDyeDensities(), g_sim->GetGridDimensions());
-            }
-        }
-    }
-    if (key == GLFW_KEY_3) {
-        if (action == GLFW_PRESS) {
-            if (g_sim != nullptr && g_sim->GetGridFluidCells() != nullptr) {
-                printf("Displaying fluid cells\n");
-                if (g_debug_renderer->IsCellViewActive(DebugRenderer::IS_FLUID) || !g_debug_renderer->IsDebugViewActive(DebugRenderer::GRID_CELL)) {
-                    printf("Toggling cell display\n");
-                    g_debug_renderer->ToggleDebugView(DebugRenderer::GRID_CELL);
-                }
-                g_debug_renderer->SetGridFluidCells(*g_sim->GetGridFluidCells(), g_sim->GetGridDimensions());
-            }
-        }
-    }
+
+    //if (key == GLFW_KEY_1) {
+    //    if (action == GLFW_PRESS) {
+    //        if (g_sim != nullptr && g_sim->GetGridPressures() != nullptr) {
+    //            if (g_debug_renderer->IsCellViewActive(DebugRenderer::PRESSURE) || !g_debug_renderer->IsDebugViewActive(DebugRenderer::GRID_CELL)) {
+    //                g_debug_renderer->ToggleDebugView(DebugRenderer::GRID_CELL);
+    //            }
+    //            g_debug_renderer->SetGridPressures(*g_sim->GetGridPressures(), g_sim->GetGridDimensions());
+    //        }
+    //    }
+    //}
+    //if (key == GLFW_KEY_2) {
+    //    if (action == GLFW_PRESS) {
+    //        if (g_sim != nullptr && g_sim->GetGridDyeDensities() != nullptr) {
+    //            if (g_debug_renderer->IsCellViewActive(DebugRenderer::DYE) || !g_debug_renderer->IsDebugViewActive(DebugRenderer::GRID_CELL)) {
+    //                g_debug_renderer->ToggleDebugView(DebugRenderer::GRID_CELL);
+    //            }
+    //            g_debug_renderer->SetGridDyeDensities(*g_sim->GetGridDyeDensities(), g_sim->GetGridDimensions());
+    //        }
+    //    }
+    //}
+    //if (key == GLFW_KEY_3) {
+    //    if (action == GLFW_PRESS) {
+    //        if (g_sim != nullptr && g_sim->GetGridFluidCells() != nullptr) {
+    //            printf("Displaying fluid cells\n");
+    //            if (g_debug_renderer->IsCellViewActive(DebugRenderer::IS_FLUID) || !g_debug_renderer->IsDebugViewActive(DebugRenderer::GRID_CELL)) {
+    //                printf("Toggling cell display\n");
+    //                g_debug_renderer->ToggleDebugView(DebugRenderer::GRID_CELL);
+    //            }
+    //            g_debug_renderer->SetGridFluidCells(*g_sim->GetGridFluidCells(), g_sim->GetGridDimensions());
+    //        }
+    //    }
+    //}
 }
 
 bool Init() {
@@ -327,7 +339,7 @@ void SetSimulation() {
     g_sim = nullptr;
     g_simulate = false;
 
-    const int num_particles = static_cast<int>(pow(32, 2)); // TODO
+    const int num_particles = 262144;
 
     switch (simulation_type) {
     case SimulationType::SEQ_GRID:
@@ -345,7 +357,7 @@ void SetSimulation() {
     case SimulationType::GPU_PARTICLE:
         printf("Simulation set to (GPU_PARTICLE)\n");
         // GPU_Simulation(int num_particles_sqrt, int grid_dim, int iteration)
-        g_sim = new GPU_Simulation(static_cast<int>(sqrt(num_particles)), 4, 40);
+        g_sim = new GPU_Simulation(static_cast<int>(sqrt(num_particles)), 10, 20);
         break;
 
     default:
@@ -355,7 +367,7 @@ void SetSimulation() {
 
     // TODO: Setup simulation variables
     std::vector<glm::vec3> init_particle_vel;
-    for (int i = 0; i < 262144; i++) {
+    for (int i = 0; i < num_particles; i++) {
         //init_particle_vel.push_back(glm::normalize(glm::vec3(
         //    ((float)(rand() % 100) / 100.0f),
         //    ((float)(rand() % 100) / 100.0f),
@@ -366,9 +378,9 @@ void SetSimulation() {
 
     g_sim->SetInitialVelocities(
         init_particle_vel,
-        glm::vec3(0.0, 0.0, 0.0), 
-        glm::vec3(3.0, 3.0, 3.0), 
-        0.1
+        glm::vec3(-1.0, -1.0, -1.0), 
+        glm::vec3(1.0, 1.0, 1.0), 
+        0.2
     );
 
     // Create/Update debug renderer
@@ -384,6 +396,7 @@ void SetSimulation() {
             g_debug_renderer->SetParticleVelocities(*g_sim->GetParticlePositions(), *g_sim->GetParticleVelocities());
         }
     }
+
 }
 
 bool LoadContent()
@@ -396,6 +409,13 @@ bool LoadContent()
 
     // Create simulation 
     SetSimulation();
+
+    g_particle_renderer = new WaterParticleRenderer();
+    g_particle_renderer->UpdateSkybox(g_skybox);
+    g_particle_renderer->UpdateCamera(g_cam->GetCam());
+    if (dynamic_cast<GPU_Simulation*>(g_sim) != nullptr)
+        g_particle_renderer->UpdateTexturePrecision(dynamic_cast<GPU_Simulation*>(g_sim)->GetTexturePrecision());
+    
 
     UpdateView(g_cam->GetCam()->GetViewMatrix());
     UpdateProjection(g_cam->GetCam()->GetProjectionMatrix());
@@ -461,6 +481,8 @@ void UpdateLoop()
                         break;
                     }
                 }
+            } else {
+                // GPU Simulation rendering
             }
 
             last_time_updated = new_time;
@@ -470,12 +492,13 @@ void UpdateLoop()
         //  3D Rendering  //
         ////////////////////
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-        g_debug_renderer->Draw(enable_particles);
-        if (simulation_type == SimulationType::GPU_PARTICLE) {
-            // Currently, the GPU particle simulation will do its own rendering
-            static_cast<GPU_Simulation*>(g_sim)->Draw();
+        if (simulation_type == SimulationType::GPU_PARTICLE && dynamic_cast<GPU_Simulation*>(g_sim) != nullptr 
+            && dynamic_cast<GPU_Simulation*>(g_sim)->GetTexParticlePositions_X() != nullptr && g_draw_realistic) {
+            g_particle_renderer->UpdateParticlePositionsTexture(*dynamic_cast<GPU_Simulation*>(g_sim)->GetTexParticlePositions_X(), *dynamic_cast<GPU_Simulation*>(g_sim)->GetTexParticlePositions_Y(), *dynamic_cast<GPU_Simulation*>(g_sim)->GetTexParticlePositions_Z());
+            g_particle_renderer->Draw();
         }
-        //g_skybox->Draw();
+        // g_skybox->Draw();
+        g_debug_renderer->Draw(enable_particles);
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
