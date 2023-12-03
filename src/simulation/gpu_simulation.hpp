@@ -6,6 +6,12 @@
 
 class GPU_Simulation : public Simulation {
 private:
+	enum CellType {
+		SOLID,
+		FLUID,
+		AIR
+	};
+
 	ComputeShader copy_new_to_old_shader_;
 	ComputeShader init_grid_shader_;
 	ComputeShader move_particles_shader_;
@@ -56,6 +62,7 @@ private:
 	const float k_texture_precision_;
 	int iterations_;
 	float flip_ratio_;
+
 public:
 	GPU_Simulation(int num_particles_sqrt, int grid_dim, int iteration);
 	~GPU_Simulation();
@@ -66,7 +73,7 @@ public:
 	virtual unsigned int GetGridDimensions();
 	virtual glm::vec3 GetGridUpperBounds();
 	virtual glm::vec3 GetGridLowerBounds();
-	virtual float GetGrindInterval();
+	virtual float GetGridInterval();
 	virtual std::vector<float>* GetGridPressures();
 	virtual std::vector<float>* GetGridDyeDensities();
 	virtual std::vector<float>* GetGridFluidCells();
@@ -78,6 +85,9 @@ public:
 	Texture2D* GetTexParticlePositions_Z();
 
 	float GetTexturePrecision();
+
+	// Rendering
+	void Draw();
 };
 
 

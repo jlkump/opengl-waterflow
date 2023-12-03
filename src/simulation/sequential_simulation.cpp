@@ -59,9 +59,11 @@ void SequentialGridBased::SolveIncompressability(float delta)
 		for (int x = 1; x < grid_dim_ - 1; x++) {
 			for (int y = 1; y < grid_dim_ - 1; y++) {
 				for (int z = 1; z < grid_dim_ - 1; z++) {
+
 					if (cell_types_[x * grid_dim_ * grid_dim_ + y * grid_dim_ + z] != FLUID) {
 						continue;
 					}
+
 					// TODO: DEBUG Might want to sum total and check instead
 					float s = is_fluid_[x * grid_dim_ * grid_dim_ + y * grid_dim_ + z];
 					float s_x_neg = is_fluid_[(x-1) * grid_dim_ * grid_dim_ + y * grid_dim_ + z];
@@ -72,6 +74,9 @@ void SequentialGridBased::SolveIncompressability(float delta)
 					float s_z_pos = is_fluid_[x * grid_dim_ * grid_dim_ + y * grid_dim_ + (z+1)];
 
 					s = s_x_neg + s_x_pos + s_y_neg + s_y_pos + s_z_neg + s_z_pos;
+					if (s == 0.0) {
+						continue;
+					}
 
 					float total_divergence = GetDivergence(velocities_, grid_dim_, x, y, z);
 					
@@ -421,7 +426,7 @@ glm::vec3 SequentialGridBased::GetGridLowerBounds()
 	return ws_lower_bound_;
 }
 
-float SequentialGridBased::GetGrindInterval()
+float SequentialGridBased::GetGridInterval()
 {
 	return ws_grid_interval_;
 }
@@ -453,31 +458,41 @@ std::vector<float>* SequentialGridBased::GetGridFluidCells()
 
 void SequentialParticleBased::IntegrateParticles(float delta, glm::vec3 accel)
 {
+	glm::vec3 adjusted_lower = ws_lower_bound_ + ws_grid_interval_;
+	glm::vec3 adjusted_upper = ws_upper_bound_ - ws_grid_interval_;
+
 	// Semi-implicit Euler integration
 	for (glm::vec3& vel : particle_vel_) {
 		vel += accel * delta;
 	}
 	for (int i = 0; i < particle_pos_.size(); i++) {
 		glm::vec3& pos = particle_pos_[i];
+		glm::vec3& vel = particle_vel_[i];
 		pos += particle_vel_[i] * delta;
 		// Boundary Conditions
-		if (pos.x > ws_upper_bound_.x - ws_grid_interval_) {
-			pos.x = ws_upper_bound_.x - ws_grid_interval_;
+		if (pos.x > adjusted_upper.x) {
+			pos.x = adjusted_upper.x;
+			vel.x = 0.0f;
 		}
-		if (pos.y > ws_upper_bound_.y - ws_grid_interval_) {
-			pos.y = ws_upper_bound_.y - ws_grid_interval_;
+		if (pos.y > adjusted_upper.y) {
+			pos.y = adjusted_upper.y;
+			vel.y = 0.0f;
 		}
-		if (pos.z > ws_upper_bound_.z - ws_grid_interval_) {
-			pos.z = ws_upper_bound_.z - ws_grid_interval_;
+		if (pos.z > adjusted_upper.z) {
+			pos.z = adjusted_upper.z;
+			vel.z = 0.0f;
 		}
-		if (pos.x < ws_lower_bound_.x + ws_grid_interval_) {
-			pos.x = ws_lower_bound_.x + ws_grid_interval_;
+		if (pos.x < adjusted_lower.x) {
+			pos.x = adjusted_lower.x;
+			vel.x = 0.0f;
 		}
-		if (pos.y < ws_lower_bound_.y + ws_grid_interval_) {
-			pos.y = ws_lower_bound_.y + ws_grid_interval_;
+		if (pos.y < adjusted_lower.y) {
+			pos.y = adjusted_lower.y;
+			vel.y = 0.0f;
 		}
-		if (pos.z < ws_lower_bound_.z + ws_grid_interval_) {
-			pos.z = ws_lower_bound_.z + ws_grid_interval_;
+		if (pos.z < adjusted_lower.z) {
+			pos.z = adjusted_lower.z;
+			vel.z = 0.0f;
 		}
 	}
 }
@@ -505,7 +520,7 @@ void SequentialParticleBased::TransferVelocitiesToGrid()
 	for (int i = 0; i < particle_pos_.size(); i++) {
 		glm::vec3 ws_pos = particle_pos_[i];
 		glm::vec3 ws_vel = particle_vel_[i];
-		ws_pos += glm::abs(ws_lower_bound_);
+		ws_pos -= ws_lower_bound_;
 
 		// TODO: handle particles exactly in the upper bound (these particles evalute to grid_dim, which is out of bounds)
 		glm::ivec3 grid_pos = glm::clamp(
@@ -969,14 +984,19 @@ void SequentialParticleBased::SetInitialVelocities(const std::vector<glm::vec3>&
 	particle_pos_ = std::vector<glm::vec3>(initial.size());
 	float particles_per_side = floor(cbrt(initial.size()));
 	int particles_per_side_squared = particles_per_side * particles_per_side;
-	float delta = (std::fabs(lower_bound.x) + std::fabs(upper_bound.x)) / particles_per_side;
+
+	int index = 0;
+	glm::vec3 grid_interval_magnitude(std::abs(ws_grid_interval_));
+	glm::vec3 adjusted_lower = lower_bound + grid_interval_magnitude;
+	glm::vec3 adjusted_upper = upper_bound - grid_interval_magnitude;
+	float delta = (std::fabs(adjusted_lower.x) + std::fabs(adjusted_upper.x)) / particles_per_side;
+
 	//printf("particles per side = %f\n", particles_per_side);
 	//printf("delta = %f\n", delta);
 
-	int index = 0;
-	for (float z = lower_bound.z + ws_grid_interval_; z < upper_bound.z - ws_grid_interval_ && index < particle_pos_.size(); z += delta) {
-		for (float y = lower_bound.y + ws_grid_interval_; y < upper_bound.y - ws_grid_interval_ && index < particle_pos_.size(); y += delta) {
-			for (float x = lower_bound.x + ws_grid_interval_; x < upper_bound.x - ws_grid_interval_ && index < particle_pos_.size(); x += delta) {
+	for (float z = adjusted_lower.z; z < adjusted_upper.z && index < particle_pos_.size(); z += delta) {
+		for (float y = adjusted_lower.y; y < adjusted_upper.y && index < particle_pos_.size(); y += delta) {
+			for (float x = adjusted_lower.x; x < adjusted_upper.x && index < particle_pos_.size(); x += delta) {
 				particle_pos_[index] = glm::vec3(x, y, z);
 				++index;
 				//printf("Pushing pos at index (%d): ", index);

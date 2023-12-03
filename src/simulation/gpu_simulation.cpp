@@ -5,8 +5,8 @@ GPU_Simulation::GPU_Simulation(int num_particles_sqrt, int grid_dimen, int itera
 	init_grid_shader_("compute/init_grid.comp", glm::ivec3(grid_dimen + 1, grid_dimen + 1, grid_dimen + 1)),
 	move_particles_shader_("compute/move_particles.comp", glm::ivec3(num_particles_sqrt, num_particles_sqrt, 1)),
 	particle_to_grid_shader_("compute/particle_to_grid.comp", glm::ivec3(num_particles_sqrt, num_particles_sqrt, 1)),
-	average_grid_shader_("compute/average_grid.comp", glm::ivec3(grid_dimen + 1, grid_dimen + 1, grid_dimen + 1)),
-	grid_incompressability_shader_("compute/grid_incompressability.comp", glm::ivec3(grid_dimen + 1, grid_dimen + 1, grid_dimen + 1)),
+	average_grid_shader_("compute/average_grid.comp", glm::ivec3(grid_dimen, grid_dimen, grid_dimen)),
+	grid_incompressability_shader_("compute/grid_incompressability.comp", glm::ivec3(grid_dimen, grid_dimen, grid_dimen)),
 	grid_to_particle_shader_("compute/grid_to_particle.comp", glm::ivec3(num_particles_sqrt, num_particles_sqrt, 1)),
 	grid_vel_x(glm::ivec3(grid_dimen + 1), StorageType::TEX_INT, ChannelType::R32I), 
 	grid_vel_y(glm::ivec3(grid_dimen + 1), StorageType::TEX_INT, ChannelType::R32I), 
@@ -17,8 +17,8 @@ GPU_Simulation::GPU_Simulation(int num_particles_sqrt, int grid_dimen, int itera
 	grid_count_x(glm::ivec3(grid_dimen + 1), StorageType::TEX_INT, ChannelType::R32UI),
 	grid_count_y(glm::ivec3(grid_dimen + 1), StorageType::TEX_INT, ChannelType::R32UI),
 	grid_count_z(glm::ivec3(grid_dimen + 1), StorageType::TEX_INT, ChannelType::R32UI),
-	grid_is_fluid(glm::ivec3(grid_dimen + 1), StorageType::TEX_INT, ChannelType::R32UI),
-	grid_cell_type(glm::ivec3(grid_dimen + 1), StorageType::TEX_INT, ChannelType::R32UI),
+	grid_is_fluid(glm::ivec3(grid_dimen), StorageType::TEX_INT, ChannelType::R32UI),
+	grid_cell_type(glm::ivec3(grid_dimen), StorageType::TEX_INT, ChannelType::R32UI),
 	particle_pos_x(glm::ivec2(num_particles_sqrt, num_particles_sqrt), StorageType::TEX_INT, ChannelType::R32I),
 	particle_pos_y(glm::ivec2(num_particles_sqrt, num_particles_sqrt), StorageType::TEX_INT, ChannelType::R32I),
 	particle_pos_z(glm::ivec2(num_particles_sqrt, num_particles_sqrt), StorageType::TEX_INT, ChannelType::R32I),
@@ -35,6 +35,7 @@ GPU_Simulation::GPU_Simulation(int num_particles_sqrt, int grid_dimen, int itera
 	iterations_(iteration),
 	flip_ratio_(0.1)
 {
+	// Setup the compute shaders
 	move_particles_shader_.SetUniform1fv("delta_time", 0.0f);
 	move_particles_shader_.SetUniform3fv("force", glm::vec3(0, -9.8, 0));
 	move_particles_shader_.SetUniform3fv("ws_lower_bound", ws_lower_bound_particles_);
@@ -58,6 +59,42 @@ GPU_Simulation::GPU_Simulation(int num_particles_sqrt, int grid_dimen, int itera
 	grid_to_particle_shader_.SetUniform1fv("texture_precision", k_texture_precision_);
 	grid_to_particle_shader_.SetUniform1fv("flip_ratio", flip_ratio_);
 
+	// TODO: Initialize particle sprites for rendering
+	
+	// Setting grid
+	unsigned int grid_dim_cubed = grid_dim_ * grid_dim_ * grid_dim_;
+	unsigned int grid_dim_plus_one_cubed = (grid_dim_ + 1) * (grid_dim_ + 1) * (grid_dim_ + 1);
+
+	std::vector<int> zero_data_int(grid_dim_plus_one_cubed); // zero-filled vector
+	std::vector<unsigned int> zero_data_uint(grid_dim_plus_one_cubed); // zero-filled vector
+	std::vector<unsigned int> grid_is_fluid_data(grid_dim_cubed);
+	std::vector<unsigned int> grid_cell_type_data(grid_dim_cubed);
+	for (int x = 0; x < grid_dim_; x++) {
+		for (int y = 0; y < grid_dim_; y++) {
+			for (int z = 0; z < grid_dim_; z++) {
+				if (x == 0 || y == 0 || z == 0 || x + 1 == grid_dim_ || y + 1 == grid_dim_ || z + 1 == grid_dim_) {
+					grid_is_fluid_data[x * grid_dim_ * grid_dim_ + y * grid_dim_ + z] = 0;
+					grid_cell_type_data[x * grid_dim_ * grid_dim_ + y * grid_dim_ + z] = SOLID;
+				}
+				else {
+					grid_is_fluid_data[x * grid_dim_ * grid_dim_ + y * grid_dim_ + z] = 1;
+					grid_cell_type_data[x * grid_dim_ * grid_dim_ + y * grid_dim_ + z] = AIR;
+				}
+			}
+		}
+	}
+
+	grid_vel_x.SetNewData(glm::ivec3(grid_dim_ + 1), (const void*)&zero_data_int[0]);
+	grid_vel_y.SetNewData(glm::ivec3(grid_dim_ + 1), (const void*)&zero_data_int[0]);
+	grid_vel_z.SetNewData(glm::ivec3(grid_dim_ + 1), (const void*)&zero_data_int[0]);
+	grid_old_vel_x.SetNewData(glm::ivec3(grid_dim_ + 1), (const void*)&zero_data_int[0]);
+	grid_old_vel_y.SetNewData(glm::ivec3(grid_dim_ + 1), (const void*)&zero_data_int[0]);
+	grid_old_vel_z.SetNewData(glm::ivec3(grid_dim_ + 1), (const void*)&zero_data_int[0]);
+	grid_count_x.SetNewData(glm::ivec3(grid_dim_ + 1), (const void*)&zero_data_uint[0]);
+	grid_count_y.SetNewData(glm::ivec3(grid_dim_ + 1), (const void*)&zero_data_uint[0]);
+	grid_count_z.SetNewData(glm::ivec3(grid_dim_ + 1), (const void*)&zero_data_uint[0]);
+	grid_is_fluid.SetNewData(glm::ivec3(grid_dim_), (const void*)&grid_is_fluid_data[0]);
+	grid_cell_type.SetNewData(glm::ivec3(grid_dim_), (const void*)&grid_cell_type_data[0]);
 }
 
 GPU_Simulation::~GPU_Simulation()
@@ -66,20 +103,63 @@ GPU_Simulation::~GPU_Simulation()
 
 void GPU_Simulation::SetInitialVelocities(const std::vector<glm::vec3>& initial, glm::vec3 lower_bound, glm::vec3 upper_bound, float interval)
 {
-	std::vector<int> particle_vel_data_x = std::vector<int>(initial.size());
-	std::vector<int> particle_vel_data_y = std::vector<int>(initial.size());
-	std::vector<int> particle_vel_data_z = std::vector<int>(initial.size());
+	// Setting velocities
+	std::vector<int> particle_vel_data_x(initial.size());
+	std::vector<int> particle_vel_data_y(initial.size());
+	std::vector<int> particle_vel_data_z(initial.size());
 
-	for (int i = 0; i < initial.size(); i++) {
-		particle_vel_data_x.push_back(initial[i].x); // todo conversion
+	for (const glm::vec3& vel : initial) {
+		particle_vel_data_x.push_back(vel.x * k_texture_precision_);
+		particle_vel_data_y.push_back(vel.y * k_texture_precision_);
+		particle_vel_data_z.push_back(vel.z * k_texture_precision_);
 	}
 
 	particle_vel_x.SetNewData(glm::ivec2(floor(sqrt(initial.size()))), (const void*)&particle_vel_data_x[0]);
+	particle_vel_y.SetNewData(glm::ivec2(floor(sqrt(initial.size()))), (const void*)&particle_vel_data_y[0]);
+	particle_vel_z.SetNewData(glm::ivec2(floor(sqrt(initial.size()))), (const void*)&particle_vel_data_z[0]);
+
+
+
+	// Creating positions (currently spreads it evenly across the grid)
+	// TODO: under the assumption that all sides are equal
+	std::vector<glm::vec3> particle_pos(initial.size());
+	float particles_per_side = floor(cbrt(initial.size()));
+	int particles_per_side_squared = particles_per_side * particles_per_side;
+
+	int index = 0;
+	glm::vec3 grid_interval_magnitude(std::abs(ws_grid_interval_));
+	glm::vec3 adjusted_lower = lower_bound + grid_interval_magnitude;
+	glm::vec3 adjusted_upper = upper_bound - grid_interval_magnitude;
+	float delta = (std::fabs(adjusted_lower.x) + std::fabs(adjusted_upper.x)) / particles_per_side;
+
+	for (float z = adjusted_lower.z; z < adjusted_upper.z && index < particle_pos.size(); z += delta) {
+		for (float y = adjusted_lower.y; y < adjusted_upper.y && index < particle_pos.size(); y += delta) {
+			for (float x = adjusted_lower.x; x < adjusted_upper.x && index < particle_pos.size(); x += delta) {
+				particle_pos[index] = glm::vec3(x, y, z);
+				++index;
+			}
+		}
+	}
+
+	// Setting positions
+	std::vector<int> particle_pos_data_x(initial.size());
+	std::vector<int> particle_pos_data_y(initial.size());
+	std::vector<int> particle_pos_data_z(initial.size());
+
+	for (const glm::vec3& pos : particle_pos) {
+		particle_pos_data_x.push_back(pos.x * k_texture_precision_);
+		particle_pos_data_y.push_back(pos.y * k_texture_precision_);
+		particle_pos_data_z.push_back(pos.z * k_texture_precision_);
+	}
+
+	particle_pos_x.SetNewData(glm::ivec2(floor(sqrt(initial.size()))), (const void*)&particle_pos_data_x[0]);
+	particle_pos_y.SetNewData(glm::ivec2(floor(sqrt(initial.size()))), (const void*)&particle_pos_data_y[0]);
+	particle_pos_z.SetNewData(glm::ivec2(floor(sqrt(initial.size()))), (const void*)&particle_pos_data_z[0]);
 }
 
 void GPU_Simulation::TimeStep(float delta)
 {
-
+	// init_grid
 	init_grid_shader_.SetActive();
 	new_x_->ActiveBind(0);
 	new_y_->ActiveBind(1);
@@ -90,6 +170,7 @@ void GPU_Simulation::TimeStep(float delta)
 	init_grid_shader_.Dispatch();
 	init_grid_shader_.Barrier();
 
+	// init_particles
 	move_particles_shader_.SetUniform1fv("delta_time", delta);
 	move_particles_shader_.SetActive();
 	particle_pos_x.ActiveBind(0);
@@ -101,6 +182,7 @@ void GPU_Simulation::TimeStep(float delta)
 	move_particles_shader_.Dispatch();
 	move_particles_shader_.Barrier();
 
+	// particle_to_grid
 	particle_to_grid_shader_.SetUniformTexture2D("particle_positions_x", particle_pos_x, GL_TEXTURE8);
 	particle_to_grid_shader_.SetUniformTexture2D("particle_positions_y", particle_pos_y, GL_TEXTURE9);
 	particle_to_grid_shader_.SetUniformTexture2D("particle_positions_z", particle_pos_z, GL_TEXTURE10);
@@ -119,6 +201,7 @@ void GPU_Simulation::TimeStep(float delta)
 	particle_to_grid_shader_.Dispatch();
 	particle_to_grid_shader_.Barrier();
 
+	// average_grid
 	average_grid_shader_.SetActive();
 	new_x_->ActiveBind(0);
 	new_y_->ActiveBind(1);
@@ -130,7 +213,7 @@ void GPU_Simulation::TimeStep(float delta)
 	average_grid_shader_.Barrier();
 
 
-
+	// grid_incompressability
 	for (int i = 0; i < iterations_; i++) {
 		grid_incompressability_shader_.SetActive();
 		new_x_->ActiveBind(0);
@@ -154,6 +237,7 @@ void GPU_Simulation::TimeStep(float delta)
 		old_z_ = temp_z;
 	}
 
+	// grid_to_particle
 	grid_to_particle_shader_.SetUniformTexture3D("grid_velocities_x", *new_x_, GL_TEXTURE8);
 	grid_to_particle_shader_.SetUniformTexture3D("grid_velocities_y", *new_y_, GL_TEXTURE9);
 	grid_to_particle_shader_.SetUniformTexture3D("grid_velocities_z", *new_z_, GL_TEXTURE10);
@@ -172,6 +256,7 @@ void GPU_Simulation::TimeStep(float delta)
 	grid_to_particle_shader_.Dispatch();
 	grid_to_particle_shader_.Barrier();
 
+	// copy_new_to_old
 	copy_new_to_old_shader_.SetActive();
 	new_x_->ActiveBind(0);
 	new_y_->ActiveBind(1);
@@ -185,51 +270,57 @@ void GPU_Simulation::TimeStep(float delta)
 
 std::vector<glm::vec3>* GPU_Simulation::GetGridVelocities()
 {
+	printf("GPU_Simulation::GetGridVelocities() not implemented yet.\n");
 	return nullptr;
 }
 
 unsigned int GPU_Simulation::GetGridDimensions()
 {
-	return 0;
+	return grid_dim_;
 }
 
 glm::vec3 GPU_Simulation::GetGridUpperBounds()
 {
-	return glm::vec3();
+	return ws_upper_bound_grid_;
 }
 
 glm::vec3 GPU_Simulation::GetGridLowerBounds()
 {
-	return glm::vec3();
+	return ws_lower_bound_grid_;
 }
 
-float GPU_Simulation::GetGrindInterval()
+float GPU_Simulation::GetGridInterval()
 {
-	return 0.0f;
+	return ws_grid_interval_;
 }
 
 std::vector<float>* GPU_Simulation::GetGridPressures()
 {
+	printf("GPU_Simulation::GetGridPressures() not implemented yet.\n");
 	return nullptr;
 }
 
 std::vector<float>* GPU_Simulation::GetGridDyeDensities()
 {
+	printf("GPU_Simulation::GetGridDyeDensities() not implemented yet.\n");
 	return nullptr;
 }
 
 std::vector<float>* GPU_Simulation::GetGridFluidCells()
 {
+	printf("GPU_Simulation::GetGridFluidCells() not implemented yet.\n");
 	return nullptr;
 }
 
 std::vector<glm::vec3>* GPU_Simulation::GetParticleVelocities()
 {
+	printf("GPU_Simulation::GetParticleVelocities() not implemented yet.\n");
 	return nullptr;
 }
 
 std::vector<glm::vec3>* GPU_Simulation::GetParticlePositions()
 {
+	printf("GPU_Simulation::GetParticlePositions() not implemented yet.\n");
 	return nullptr;
 }
 
@@ -251,4 +342,9 @@ Texture2D* GPU_Simulation::GetTexParticlePositions_Z()
 float GPU_Simulation::GetTexturePrecision()
 {
 	return k_texture_precision_;
+}
+
+void GPU_Simulation::Draw()
+{
+	// TODO: do somehow
 }

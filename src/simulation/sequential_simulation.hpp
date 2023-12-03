@@ -12,7 +12,7 @@ public:
 	virtual unsigned int GetGridDimensions() = 0;
 	virtual glm::vec3 GetGridUpperBounds() = 0;
 	virtual glm::vec3 GetGridLowerBounds() = 0;
-	virtual float GetGrindInterval() = 0;
+	virtual float GetGridInterval() = 0;
 	virtual std::vector<float>* GetGridPressures() = 0;
 	virtual std::vector<float>* GetGridDyeDensities() = 0;
 	virtual std::vector<float>* GetGridFluidCells() = 0;
@@ -68,7 +68,7 @@ public:
 	virtual unsigned int GetGridDimensions();
 	virtual glm::vec3 GetGridUpperBounds();
 	virtual glm::vec3 GetGridLowerBounds();
-	virtual float GetGrindInterval();
+	virtual float GetGridInterval();
 	virtual std::vector<glm::vec3>* GetParticleVelocities();
 	virtual std::vector<glm::vec3>* GetParticlePositions();
 	virtual std::vector<float>* GetGridPressures();

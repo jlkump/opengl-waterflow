@@ -188,8 +188,9 @@ public:
 	bool IsCellViewActive(GridCellView view);
 	GridCellView GetCellViewActive();
 	void UpdateFrameTime(float frame_time);
+	void ResetActiveViews();
 
-	bool Draw();
+	bool Draw(bool enable_particles);
 };
 
 #endif

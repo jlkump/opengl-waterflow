@@ -55,23 +55,29 @@ void main() {
     // (1) Lower-bound restriction
     if (new_position.x < ws_lower_bound.x) {
         new_position.x = ws_lower_bound.x;
+        new_velocity.x = 0.0;
     }
     if (new_position.y < ws_lower_bound.y) {
         new_position.y = ws_lower_bound.y;
+        new_velocity.y = 0.0;
     }
     if (new_position.z < ws_lower_bound.z) {
         new_position.z = ws_lower_bound.z;
+        new_velocity.z = 0.0;
     }
 
     // (2) Upper-bound restriction
     if (new_position.x > ws_upper_bound.x) {
         new_position.x = ws_upper_bound.x;
+        new_velocity.x = 0.0;
     }
     if (new_position.y > ws_upper_bound.y) {
         new_position.y = ws_upper_bound.y;
+        new_velocity.y = 0.0;
     }
     if (new_position.z > ws_upper_bound.z) {
         new_position.z = ws_upper_bound.z;
+        new_velocity.z = 0.0;
     }
 
     // Store the new position and velocity

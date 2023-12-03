@@ -156,7 +156,7 @@ void DebugRenderer::UpdateGridAxisVelocities(const std::vector<glm::vec3>& veloc
 
 				ConstructVectorAlignedModelMat(x_mat, x_scale, x_pos, glm::vec3(0, 1, 0), glm::vec3(1, 0, 0), glm::vec3(0, 0, 1));
 				ConstructVectorAlignedModelMat(y_mat, y_scale, y_pos, glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0, 0, 1));
-				ConstructVectorAlignedModelMat(z_mat, z_scale, z_pos, glm::vec3(1, 0, 0), glm::vec3(1, 0, 0), glm::vec3(0, 1, 0));
+				ConstructVectorAlignedModelMat(z_mat, z_scale, z_pos, glm::vec3(1, 0, 0), glm::vec3(0, 0, 1), glm::vec3(0, 1, 0));
 
 				arrow_mats.push_back(x_mat);
 				arrow_mats.push_back(y_mat);
@@ -820,7 +820,7 @@ DebugRenderer::GridCellView DebugRenderer::GetCellViewActive()
 	return active_cell_view_;
 }
 
-bool DebugRenderer::Draw()
+bool DebugRenderer::Draw(bool enable_particles)
 {
 	for (auto& view : active_views_) {
 		switch (view) {
@@ -856,16 +856,20 @@ bool DebugRenderer::Draw()
 			glBindVertexArray(0);
 			break;
 		case PARTICLES:
-			debug_particle_shader_.SetActive();
-			glBindVertexArray(VAO_particle_sprite_);
-			glDrawArraysInstanced(GL_TRIANGLES, 0, 6, particle_sprite_elements_);
-			glBindVertexArray(0);
+			if (enable_particles) {
+				debug_particle_shader_.SetActive();
+				glBindVertexArray(VAO_particle_sprite_);
+				glDrawArraysInstanced(GL_TRIANGLES, 0, 6, particle_sprite_elements_);
+				glBindVertexArray(0);
+			}
 			break;
 		case PARTICLE_VELOCITIES:
-			debug_instance_shader_.SetActive();
-			glBindVertexArray(VAO_particle_arrows_);
-			glDrawArraysInstanced(GL_TRIANGLES, 0, grid_arrow_instance_num_, particle_sprite_elements_);
-			glBindVertexArray(0);
+			if (enable_particles) {
+				debug_instance_shader_.SetActive();
+				glBindVertexArray(VAO_particle_arrows_);
+				glDrawArraysInstanced(GL_TRIANGLES, 0, grid_arrow_instance_num_, particle_sprite_elements_);
+				glBindVertexArray(0);
+			}
 			break;
 		case FRAME_TIME:
 			frame_time_display_.Draw();
@@ -878,4 +882,12 @@ bool DebugRenderer::Draw()
 
 void DebugRenderer::UpdateFrameTime(float frame_time) {
 	frame_time_display_.SetText(std::to_string(frame_time) + " ms/frame");
+}
+
+// TODO: change method name
+void DebugRenderer::ResetActiveViews() {
+	active_views_.clear();
+
+	// Enable the defaults
+	ToggleDebugView(FRAME_TIME);
 }
