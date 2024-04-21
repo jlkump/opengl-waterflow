@@ -57,7 +57,7 @@ enum SimulationType {
 };
 
 const int TOTAL_SIMULATION_TYPES = 3;
-SimulationType simulation_type = SimulationType::SEQ_PARTICLE;
+SimulationType simulation_type = SimulationType::GPU_PARTICLE;
 bool enable_particles = false;
 
 // TODO: Defined a scene renderer class that makes it so we don't need all these global variables
